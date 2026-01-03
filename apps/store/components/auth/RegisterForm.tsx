@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
+import { apiRequest } from "@/lib/api-client";
 
 // Zod schema for register form
 const registerSchema = z.object({
@@ -49,9 +50,8 @@ export function RegisterForm({ googleOAuthEnabled = false }: RegisterFormProps) 
   useEffect(() => {
     const fetchLocation = async () => {
       try {
-        const response = await fetch("/api/geolocation");
-        if (response.ok) {
-          const data = await response.json();
+        const data = await apiRequest<any>("GET", "/geolocation");
+        if (data) {
           setUserLocation(data);
         }
       } catch (error) {
@@ -66,25 +66,15 @@ export function RegisterForm({ googleOAuthEnabled = false }: RegisterFormProps) 
 
     try {
       // Call register API
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          method: "email",
-          fullName: values.fullName,
-          email: values.email,
-          password: values.password,
-          country: userLocation?.country || undefined,
-          countryCode: userLocation?.countryCode || undefined,
-          ipAddress: userLocation?.ip || undefined,
-        }),
+      await apiRequest<any>("POST", "/auth/register", {
+        method: "email",
+        fullName: values.fullName,
+        email: values.email,
+        password: values.password,
+        country: userLocation?.country || undefined,
+        countryCode: userLocation?.countryCode || undefined,
+        ipAddress: userLocation?.ip || undefined,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Registration failed");
-      }
 
       toast.success("Account created successfully!");
       // JWT token is automatically set in httpOnly cookie by the API
@@ -96,9 +86,29 @@ export function RegisterForm({ googleOAuthEnabled = false }: RegisterFormProps) 
     }
   };
 
-  const handleGoogleLogin = () => {
-    // Redirect to Google OAuth
-    window.location.href = "/api/auth/google";
+  const handleGoogleLogin = async () => {
+    try {
+      // Fetch OAuth config from backend
+      const oauthConfig = await apiRequest<any>("GET", "/configs/oauth");
+      if (!oauthConfig.google?.enabled || !oauthConfig.google?.clientId) {
+        toast.error("Google login is not configured");
+        return;
+      }
+
+      const clientId = oauthConfig.google.clientId;
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const redirectUri = `${origin}/google-callback`;
+      const scope = "openid email profile";
+      const responseType = "code";
+
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(
+        redirectUri
+      )}&response_type=${responseType}&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
+
+      window.location.href = authUrl;
+    } catch (error) {
+      toast.error("Failed to initiate Google login");
+    }
   };
 
   return (

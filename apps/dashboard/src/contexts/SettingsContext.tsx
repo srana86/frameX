@@ -1,7 +1,20 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { formatCurrency, getCurrencySymbol, DEFAULT_CURRENCY, type CurrencyConfig, CURRENCIES } from "@/lib/currency";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+import {
+  formatCurrency,
+  getCurrencySymbol,
+  DEFAULT_CURRENCY,
+  type CurrencyConfig,
+  CURRENCIES,
+} from "@/lib/currency";
+import { api } from "@/lib/api-client";
 
 export interface GeneralSettings {
   siteName: string;
@@ -18,7 +31,10 @@ interface SettingsContextType {
   loading: boolean;
   error: string | null;
   // Currency helpers
-  formatAmount: (amount: number, options?: { showCode?: boolean; compact?: boolean }) => string;
+  formatAmount: (
+    amount: number,
+    options?: { showCode?: boolean; compact?: boolean }
+  ) => string;
   currencySymbol: string;
   currencyCode: string;
   // Settings management
@@ -36,7 +52,9 @@ const DEFAULT_SETTINGS: GeneralSettings = {
   refreshInterval: 30,
 };
 
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+const SettingsContext = createContext<SettingsContextType | undefined>(
+  undefined
+);
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<GeneralSettings>(DEFAULT_SETTINGS);
@@ -45,11 +63,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const fetchSettings = useCallback(async () => {
     try {
-      const res = await fetch("/api/settings/general");
-      if (res.ok) {
-        const data = await res.json();
-        setSettings({ ...DEFAULT_SETTINGS, ...data });
-      }
+      const data = await api.get<GeneralSettings>("settings/general");
+      setSettings({ ...DEFAULT_SETTINGS, ...data });
     } catch (err) {
       console.error("Failed to fetch settings:", err);
       setError("Failed to load settings");
@@ -62,25 +77,21 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     fetchSettings();
   }, [fetchSettings]);
 
-  const updateSettings = useCallback(async (newSettings: Partial<GeneralSettings>) => {
-    try {
-      const res = await fetch("/api/settings/general", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newSettings),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to update settings");
+  const updateSettings = useCallback(
+    async (newSettings: Partial<GeneralSettings>) => {
+      try {
+        const data = await api.put<GeneralSettings>(
+          "settings/general",
+          newSettings
+        );
+        setSettings((prev) => ({ ...prev, ...data }));
+      } catch (err: any) {
+        console.error("Failed to update settings:", err);
+        throw err;
       }
-
-      const data = await res.json();
-      setSettings((prev) => ({ ...prev, ...data }));
-    } catch (err: any) {
-      console.error("Failed to update settings:", err);
-      throw err;
-    }
-  }, []);
+    },
+    []
+  );
 
   const refreshSettings = useCallback(async () => {
     setLoading(true);
@@ -129,4 +140,3 @@ export function useCurrency() {
   const { formatAmount, currencySymbol, currencyCode } = useSettings();
   return { formatAmount, currencySymbol, currencyCode };
 }
-

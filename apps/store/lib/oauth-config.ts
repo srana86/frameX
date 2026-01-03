@@ -6,19 +6,18 @@ import { defaultOAuthConfig } from "./oauth-config-types";
 export type { OAuthConfig } from "./oauth-config-types";
 export { defaultOAuthConfig } from "./oauth-config-types";
 
+import { apiRequest } from "./api-client";
+
 /**
- * Get OAuth configuration from database
+ * Get OAuth configuration from backend
  * Server-only function - do not import in client components
  */
 export async function getOAuthConfig(): Promise<OAuthConfig> {
   try {
-    const { getCollection } = await import("./mongodb");
-    const col = await getCollection<OAuthConfig>("oauth_config");
-    const doc = await col.findOne({ id: "oauth_config_v1" });
+    const config = await apiRequest<OAuthConfig>("GET", "/configs/oauth");
 
-    if (doc) {
-      const { _id, ...config } = doc;
-      return config as OAuthConfig;
+    if (config) {
+      return config;
     }
   } catch (error) {
     console.error("Error fetching OAuth config:", error);

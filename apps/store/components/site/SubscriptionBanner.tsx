@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { X, AlertTriangle, Clock, CreditCard, FileText, CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SubscriptionStatusDetails, SubscriptionInvoice, MerchantSubscription, SubscriptionPlan } from "@/lib/subscription-types";
+import { apiRequest } from "@/lib/api-client";
 
 interface SubscriptionBannerProps {
   className?: string;
@@ -34,19 +35,14 @@ export function SubscriptionBanner({ className }: SubscriptionBannerProps) {
 
   const fetchSubscriptionStatus = async () => {
     try {
-      const res = await fetch("/api/subscription/status");
-      if (res.ok) {
-        const result = await res.json();
+      const result = await apiRequest<SubscriptionData>("GET", "/subscription/status");
+      if (result) {
         console.log("[SubscriptionBanner] Received data:", result);
         setData(result);
-      } else {
-        const errorData = await res.json();
-        console.error("[SubscriptionBanner] Error:", errorData);
-        setError(errorData.error || "Failed to fetch status");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch subscription status:", error);
-      setError("Network error");
+      setError(error.message || "Failed to fetch status");
     } finally {
       setLoading(false);
     }
@@ -103,9 +99,8 @@ export function SubscriptionBanner({ className }: SubscriptionBannerProps) {
   } else if (status.isGracePeriod) {
     bannerType = "grace";
     title = "Grace Period Active";
-    message = `Your subscription has ended. You have ${status.graceDaysRemaining} day${
-      status.graceDaysRemaining !== 1 ? "s" : ""
-    } left in your grace period. Renew now to avoid service interruption.`;
+    message = `Your subscription has ended. You have ${status.graceDaysRemaining} day${status.graceDaysRemaining !== 1 ? "s" : ""
+      } left in your grace period. Renew now to avoid service interruption.`;
     actionText = "Pay Invoice";
     bgColor = "bg-orange-50";
     borderColor = "border-orange-200";
@@ -114,9 +109,8 @@ export function SubscriptionBanner({ className }: SubscriptionBannerProps) {
   } else if (status.showUrgentNotice) {
     bannerType = "urgent";
     title = "Subscription Expiring Soon";
-    message = `Your subscription expires in ${status.daysRemaining} day${
-      status.daysRemaining !== 1 ? "s" : ""
-    }. Renew now to avoid any interruption.`;
+    message = `Your subscription expires in ${status.daysRemaining} day${status.daysRemaining !== 1 ? "s" : ""
+      }. Renew now to avoid any interruption.`;
     actionText = "Renew Now";
     bgColor = "bg-amber-50";
     borderColor = "border-amber-200";
@@ -163,8 +157,8 @@ export function SubscriptionBanner({ className }: SubscriptionBannerProps) {
                 bannerType === "expired" || bannerType === "grace"
                   ? "bg-red-600 hover:bg-red-700 text-white"
                   : bannerType === "urgent"
-                  ? "bg-amber-600 hover:bg-amber-700 text-white"
-                  : "bg-blue-600 hover:bg-blue-700 text-white"
+                    ? "bg-amber-600 hover:bg-amber-700 text-white"
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
               )}
             >
               {actionText}
@@ -224,16 +218,10 @@ function PaymentModal({ subscription, plan, invoice, onClose, onPaymentSuccess }
     setLoading(true);
 
     try {
-      const res = await fetch("/api/subscription/renew", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          invoiceId: invoice?.id,
-          ...formData,
-        }),
+      const data = await apiRequest<any>("POST", "/subscription/renew", {
+        invoiceId: invoice?.id,
+        ...formData,
       });
-
-      const data = await res.json();
 
       if (data.GatewayPageURL) {
         window.location.href = data.GatewayPageURL;

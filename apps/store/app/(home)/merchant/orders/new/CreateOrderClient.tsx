@@ -18,6 +18,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
+import { apiRequest } from "@/lib/api-client";
 import {
   ArrowLeft,
   Plus,
@@ -103,13 +104,10 @@ export default function CreateOrderClient() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch("/api/products");
-        if (res.ok) {
-          const data = (await res.json()) as { products?: Product[] } | Product[];
-          // Handle both response formats: object with products property or direct array
-          const productsArray = Array.isArray(data) ? data : data?.products || [];
-          setProducts(Array.isArray(productsArray) ? productsArray : []);
-        }
+        const data: any = await apiRequest("GET", "/products");
+        // Handle both response formats: object with products property or direct array
+        const productsArray = Array.isArray(data) ? data : data?.data?.products || data?.products || [];
+        setProducts(Array.isArray(productsArray) ? productsArray : []);
       } catch (error) {
         toast.error("Failed to load products");
         setProducts([]); // Ensure products is always an array
@@ -224,20 +222,9 @@ export default function CreateOrderClient() {
         paidAmount: values.paymentStatus === "completed" ? total : undefined,
       };
 
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(order),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to create order");
-      }
-
-      const created = (await res.json()) as Order;
+      const created: any = await apiRequest("POST", "/orders", order);
       toast.success("Order created successfully!");
-      router.push(`/merchant/orders/${created.id}`);
+      router.push(`/merchant/orders/${created?.data?.id || created?.id}`);
     } catch (error: any) {
       toast.error(error?.message || "Failed to create order");
     } finally {

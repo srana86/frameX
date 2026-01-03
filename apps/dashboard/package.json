@@ -3,14 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3001",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3001",
     "lint": "eslint",
-    "postinstall": "npm rebuild lightningcss || true",
-    "test:fraud-check": "bun run scripts/test-fraud-check.ts",
-    "test:fraud-check:unit": "bun run scripts/test-fraud-check-unit.ts",
-    "test:fraud-check:http": "bun run scripts/test-fraud-check.ts --http"
+    "postinstall": "npm rebuild lightningcss || true"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

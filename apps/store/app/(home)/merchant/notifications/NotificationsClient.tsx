@@ -24,6 +24,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { useNotificationsSocket } from "@/hooks/use-notifications-socket";
 import { Skeleton } from "@/components/ui/skeleton";
+import { apiRequest } from "@/lib/api-client";
 import {
   Pagination,
   PaginationContent,
@@ -73,15 +74,9 @@ export function NotificationsClient() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch("/api/auth/me");
-        if (res.ok) {
-          const data = await res.json();
-          setIsAuthenticated(!!data.user);
-          setUserId(data.user?.id || null);
-        } else {
-          setIsAuthenticated(false);
-          setUserId(null);
-        }
+        const data: any = await apiRequest("GET", "/auth/me");
+        setIsAuthenticated(!!data.data?.user || !!data.user);
+        setUserId(data.data?.user?.id || data.user?.id || null);
       } catch (error) {
         setIsAuthenticated(false);
         setUserId(null);
@@ -111,16 +106,10 @@ export function NotificationsClient() {
       setLoading(true);
       try {
         const readFilter = filter === "unread" ? "&unreadOnly=true" : "";
-        const res = await fetch(`/api/notifications?page=${page}&limit=${limit}${readFilter}`, {
-          cache: "no-store",
-          next: { revalidate: 0 },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setNotifications(data.notifications || []);
-          setUnreadCount(data.unreadCount || 0);
-          setPagination(data.pagination || pagination);
-        }
+        const data: any = await apiRequest("GET", `/notifications?page=${page}&limit=${limit}${readFilter}`);
+        setNotifications(data.data?.notifications || data.notifications || []);
+        setUnreadCount(data.data?.unreadCount || data.unreadCount || 0);
+        setPagination(data.data?.pagination || data.pagination || pagination);
       } catch (error) {
         toast.error("Failed to load notifications");
       } finally {
@@ -152,18 +141,12 @@ export function NotificationsClient() {
   // Mark notification as read
   const markAsRead = async (notificationId: string) => {
     try {
-      const res = await fetch("/api/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notificationId }),
-      });
-      if (res.ok) {
-        setNotifications((prev) => prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)));
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-        if (activeTab === "unread") {
-          // Remove from list if in unread tab
-          setNotifications((prev) => prev.filter((n) => n.id !== notificationId || n.read));
-        }
+      await apiRequest("PATCH", "/notifications", { notificationId });
+      setNotifications((prev) => prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+      if (activeTab === "unread") {
+        // Remove from list if in unread tab
+        setNotifications((prev) => prev.filter((n) => n.id !== notificationId || n.read));
       }
     } catch (error) {
       toast.error("Failed to mark notification as read");
@@ -173,15 +156,9 @@ export function NotificationsClient() {
   // Mark all notifications as read
   const markAllAsRead = async () => {
     try {
-      const res = await fetch("/api/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ markAllAsRead: true }),
-      });
-      if (res.ok) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-        setUnreadCount(0);
-      }
+      await apiRequest("PATCH", "/notifications", { markAllAsRead: true });
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
     } catch (error) {
       toast.error("Failed to mark all notifications as read");
     }
@@ -312,9 +289,8 @@ export function NotificationsClient() {
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`group mx-2 sm:mx-4 rounded-md border border-gray-100/80 my-1 sm:my-1.5 px-3 sm:px-4 py-2.5 sm:py-3 transition-all duration-200 cursor-pointer ${
-                    !notification.read ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50"
-                  }`}
+                  className={`group mx-2 sm:mx-4 rounded-md border border-gray-100/80 my-1 sm:my-1.5 px-3 sm:px-4 py-2.5 sm:py-3 transition-all duration-200 cursor-pointer ${!notification.read ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50"
+                    }`}
                   onClick={() => {
                     if (!notification.read) {
                       markAsRead(notification.id);
@@ -327,9 +303,8 @@ export function NotificationsClient() {
                   <div className='flex items-start gap-3 sm:gap-4'>
                     {/* Icon */}
                     <div
-                      className={`mt-0.5 p-2 sm:p-2.5 rounded-lg shrink-0 transition-colors ${
-                        !notification.read ? "bg-primary/10 border border-primary/20" : "bg-muted/50 border border-border"
-                      }`}
+                      className={`mt-0.5 p-2 sm:p-2.5 rounded-lg shrink-0 transition-colors ${!notification.read ? "bg-primary/10 border border-primary/20" : "bg-muted/50 border border-border"
+                        }`}
                     >
                       {getNotificationIcon(notification)}
                     </div>
@@ -340,9 +315,8 @@ export function NotificationsClient() {
                         <div className='flex-1 min-w-0'>
                           <div className='flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-1.5'>
                             <p
-                              className={`text-sm sm:text-base font-semibold leading-tight ${
-                                !notification.read ? "text-foreground" : "text-muted-foreground"
-                              }`}
+                              className={`text-sm sm:text-base font-semibold leading-tight ${!notification.read ? "text-foreground" : "text-muted-foreground"
+                                }`}
                             >
                               {notification.title}
                             </p>

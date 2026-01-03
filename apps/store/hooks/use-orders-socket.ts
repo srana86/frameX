@@ -30,13 +30,8 @@ export function useOrdersSocket(merchantId: string | null, onNewOrder: (order: O
     console.log(`[Orders Socket] Joining merchant room: merchant:${merchantId}`);
 
     // Join merchant room for order updates
-    socket.emit("join-merchant", merchantId, (response?: any) => {
-      if (response) {
-        console.log("[Orders Socket] Join response:", response);
-      } else {
-        console.log("[Orders Socket] Successfully joined merchant room");
-      }
-    });
+    socket.emit("user:join-merchant", merchantId);
+    console.log("[Orders Socket] Emitted user:join-merchant");
 
     // Listen for new orders and order updates
     // Both events use "new-order" - the handler will determine if it's new or an update

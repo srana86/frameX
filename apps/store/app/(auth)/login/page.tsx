@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default async function LoginPage() {
   const oauthConfig = await getOAuthConfig();
-  const googleOAuthEnabled = oauthConfig.google.enabled && !!oauthConfig.google.clientId;
+  const googleOAuthEnabled = oauthConfig?.google?.enabled && !!oauthConfig?.google?.clientId;
 
   return <LoginForm googleOAuthEnabled={googleOAuthEnabled} />;
 }

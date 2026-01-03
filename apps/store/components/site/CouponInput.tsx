@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Tag, X, Check, Percent, DollarSign, Truck, Gift } from "lucide-react";
 import type { ApplyCouponResponse, CouponType } from "@/lib/coupon-types";
 import { useCurrencySymbol } from "@/hooks/use-currency";
+import { apiRequest } from "@/lib/api-client";
 
 interface CartItem {
   productId: string;
@@ -51,31 +52,25 @@ export function CouponInput({
 
     setLoading(true);
     try {
-      const res = await fetch("/api/coupons/apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: code.trim(),
-          cartSubtotal,
-          cartItems,
-          customerEmail,
-          customerPhone,
-          isFirstOrder,
-        }),
+      const data: any = await apiRequest("POST", "/coupons/apply", {
+        code: code.trim(),
+        cartSubtotal,
+        cartItems,
+        customerEmail,
+        customerPhone,
+        isFirstOrder,
       });
 
-      const data: ApplyCouponResponse = await res.json();
-
-      if (data.success) {
+      if (data && data.success) {
         onCouponApplied(data);
         setCode("");
         setShowInput(false);
         toast.success(data.message);
       } else {
-        toast.error(data.message || "Invalid coupon code");
+        toast.error(data?.message || "Invalid coupon code");
       }
-    } catch (error) {
-      toast.error("Failed to apply coupon. Please try again.");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to apply coupon. Please try again.");
     } finally {
       setLoading(false);
     }

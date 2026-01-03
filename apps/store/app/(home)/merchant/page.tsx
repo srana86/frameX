@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DashboardClient } from "./DashboardClient";
 import type { Product, Order } from "@/lib/types";
-import type { ProductCategory } from "@/app/api/products/categories/route";
+import type { ProductCategory } from "@/lib/types";
 import { loadMerchantCollectionData } from "@/lib/merchant-data-loader";
 import type { Investment } from "@/app/(home)/merchant/investments/actions";
 import { loadBrandConfig } from "./brand/loadBrandConfig";

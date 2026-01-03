@@ -7,6 +7,7 @@ import { GoogleTagManager } from "@next/third-parties/google";
 import * as pixel from "@/lib/fpixel";
 import type { AdsConfig } from "@/lib/ads-config-types";
 import { getAllMetaParams } from "@/lib/tracking/meta-param-builder";
+import { apiRequest } from "@/lib/api-client";
 
 interface TrackingScriptsProps {
   adsConfig: AdsConfig;
@@ -64,18 +65,15 @@ export function TrackingScripts({ adsConfig }: TrackingScriptsProps) {
       const metaParams = getAllMetaParams();
 
       // Send to server API with collected params
-      fetch("/api/tracking/meta-pixel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eventName: "PageView",
-          eventId,
-          actionSource: "website",
-          eventSourceUrl: typeof window !== "undefined" ? window.location.href : undefined,
-          fbp: metaParams.fbp || undefined,
-          fbc: metaParams.fbc || undefined,
-          clientIpAddress: metaParams.clientIpAddress || undefined,
-        }),
+      // Send to server API with collected params
+      apiRequest("POST", "/tracking/meta-pixel", {
+        eventName: "PageView",
+        eventId,
+        actionSource: "website",
+        eventSourceUrl: typeof window !== "undefined" ? window.location.href : undefined,
+        fbp: metaParams.fbp || undefined,
+        fbc: metaParams.fbc || undefined,
+        clientIpAddress: metaParams.clientIpAddress || undefined,
       }).catch(() => {
         // Silently fail to not impact user experience
       });

@@ -58,6 +58,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Logo } from "@/components/site/Logo";
 import CloudImage from "@/components/site/CloudImage";
+import { apiRequest } from "@/lib/api-client";
 import type { BrandConfig } from "@/lib/brand-config";
 import type { CurrentUser } from "@/lib/auth";
 import { toast } from "sonner";
@@ -145,12 +146,9 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
     // Fetch user profile
     const fetchProfile = async () => {
       try {
-        const res = await fetch("/api/auth/me");
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.user) {
-            setUserProfile(data.user);
-          }
+        const data = await apiRequest<any>("GET", "/auth/me");
+        if (data?.user) {
+          setUserProfile(data.user);
         }
       } catch (error) {
         console.error("Failed to fetch user profile:", error);
@@ -161,18 +159,14 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("/api/auth/logout", { method: "POST" });
-      if (response.ok) {
-        // Clear any stored user data
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("shoestore_user_profile");
-        }
-        toast.success("Logged out successfully");
-        router.push("/login");
-        router.refresh();
-      } else {
-        throw new Error("Logout failed");
+      await apiRequest("POST", "/auth/logout");
+      // Clear any stored user data
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("shoestore_user_profile");
       }
+      toast.success("Logged out successfully");
+      router.push("/login");
+      router.refresh();
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Failed to logout");
@@ -190,7 +184,7 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
             // Collapsed: Show image logo or 5-letter brand name
             <Link href='/' className='flex items-center justify-center w-full h-full min-w-0'>
               {(brandConfig.logo.type === "image" && brandConfig.logo.imagePath) ||
-              (brandConfig.logo.type === "text" && brandConfig.logo.icon?.imagePath) ? (
+                (brandConfig.logo.type === "text" && brandConfig.logo.icon?.imagePath) ? (
                 <div className='relative h-10 w-10 rounded-md flex items-center justify-center shrink-0'>
                   <CloudImage
                     src={

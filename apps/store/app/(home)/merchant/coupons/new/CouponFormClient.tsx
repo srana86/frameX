@@ -22,6 +22,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ArrowLeft, Percent, DollarSign, Truck, Gift, Star, Tag, Save, X, Package, Folder } from "lucide-react";
 import CloudImage from "@/components/site/CloudImage";
+import { apiRequest } from "@/lib/api-client";
 
 type CouponFormData = {
   code: string;
@@ -88,14 +89,10 @@ export default function CouponFormClient() {
     let cancelled = false;
     const loadData = async () => {
       try {
-        const res = await fetch("/api/products", {
-          cache: "force-cache", // Use Next.js cache
-          next: { revalidate: 60 }, // Revalidate every 60 seconds
-        });
-        if (res.ok && !cancelled) {
-          const data = await res.json();
+        const data: any = await apiRequest("GET", "/products");
+        if (!cancelled) {
           // API returns { products: [], pagination: {}, categories: [] }
-          const productsList = Array.isArray(data.products) ? data.products : Array.isArray(data) ? data : [];
+          const productsList = Array.isArray(data.products) ? data.products : Array.isArray(data) ? data : data?.data?.products || [];
           setProducts(productsList);
           // Extract unique categories from response or products
           const cats = new Set<string>();
@@ -202,22 +199,13 @@ export default function CouponFormClient() {
         buyXGetY:
           formData.type === "buy_x_get_y"
             ? {
-                buyQuantity: formData.buyQuantity || 2,
-                getQuantity: formData.getQuantity || 1,
-              }
+              buyQuantity: formData.buyQuantity || 2,
+              getQuantity: formData.getQuantity || 1,
+            }
             : undefined,
       };
 
-      const res = await fetch("/api/coupons", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to create coupon");
-      }
+      await apiRequest("POST", "/coupons", payload);
 
       toast.success("Coupon created successfully");
       router.push("/merchant/coupons");

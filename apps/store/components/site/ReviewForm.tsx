@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { X, Upload, Star } from "lucide-react";
 import imageCompression from "browser-image-compression";
+import { apiRequest } from "@/lib/api-client";
 
 type ReviewFormProps = {
   productName: string;
@@ -63,11 +64,12 @@ export function ReviewForm({ productName, productSlug }: ReviewFormProps) {
       form.append("folder", "reviews");
       form.append("resource_type", "auto");
 
-      const res = await fetch("/api/upload", { method: "POST", body: form });
-      const data = await res.json();
+      const data = await apiRequest<any>("POST", "/upload", form, {
+        "Content-Type": "multipart/form-data",
+      });
       const url = data?.secure_url || data?.url;
 
-      if (res.ok && typeof url === "string") {
+      if (typeof url === "string") {
         setImages([...images, url]);
         toast.success("Image uploaded successfully");
       } else {
@@ -121,16 +123,7 @@ export function ReviewForm({ productName, productSlug }: ReviewFormProps) {
         return;
       }
 
-      const res = await fetch(`/api/products/${productSlug}/reviews`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(reviewData),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to submit review");
-      }
+      await apiRequest("POST", `/products/${productSlug}/reviews`, reviewData);
 
       toast.success("Review submitted successfully!");
 
@@ -177,9 +170,8 @@ export function ReviewForm({ productName, productSlug }: ReviewFormProps) {
                 className='transition-transform hover:scale-110'
               >
                 <Star
-                  className={`w-8 h-8 transition-colors ${
-                    star <= (hoveredRating || rating) ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-300"
-                  }`}
+                  className={`w-8 h-8 transition-colors ${star <= (hoveredRating || rating) ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-300"
+                    }`}
                 />
               </button>
             ))}

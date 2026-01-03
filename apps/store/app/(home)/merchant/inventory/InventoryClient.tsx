@@ -3,8 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { Product } from "@/lib/types";
-import type { InventoryTransaction } from "@/app/api/inventory/route";
-import type { InventoryOverview } from "@/app/api/inventory/overview/route";
+import type { InventoryTransaction, InventoryOverview } from "@/lib/types";
 import { getInventoryProducts, getInventoryTransactions, getInventoryOverview, adjustInventoryStock } from "./actions";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -509,7 +508,7 @@ export function InventoryClient() {
                   {
                     transactions.filter((t) => {
                       const today = new Date();
-                      const txDate = new Date(t.createdAt);
+                      const txDate = new Date(t.createdAt || 0);
                       return txDate.toDateString() === today.toDateString();
                     }).length
                   }
@@ -630,11 +629,10 @@ export function InventoryClient() {
                       variant={viewMode === "list" ? "default" : "ghost"}
                       size='sm'
                       onClick={() => handleViewModeChange("list")}
-                      className={`h-8 sm:h-9 px-2.5 sm:px-3.5 text-xs sm:text-sm font-medium transition-all ${
-                        viewMode === "list"
-                          ? "bg-primary hover:bg-primary/90 text-white shadow-sm"
-                          : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
-                      }`}
+                      className={`h-8 sm:h-9 px-2.5 sm:px-3.5 text-xs sm:text-sm font-medium transition-all ${viewMode === "list"
+                        ? "bg-primary hover:bg-primary/90 text-white shadow-sm"
+                        : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
+                        }`}
                     >
                       <List className='h-4 w-4 mr-1.5' />
                       <span className='hidden sm:inline'>List</span>
@@ -643,11 +641,10 @@ export function InventoryClient() {
                       variant={viewMode === "grid" ? "default" : "ghost"}
                       size='sm'
                       onClick={() => handleViewModeChange("grid")}
-                      className={`h-8 sm:h-9 px-2.5 sm:px-3.5 text-xs sm:text-sm font-medium transition-all ${
-                        viewMode === "grid"
-                          ? "bg-primary hover:bg-primary/90 text-white shadow-sm"
-                          : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
-                      }`}
+                      className={`h-8 sm:h-9 px-2.5 sm:px-3.5 text-xs sm:text-sm font-medium transition-all ${viewMode === "grid"
+                        ? "bg-primary hover:bg-primary/90 text-white shadow-sm"
+                        : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
+                        }`}
                     >
                       <Grid3x3 className='h-4 w-4 mr-1.5' />
                       <span className='hidden sm:inline'>Grid</span>
@@ -1062,9 +1059,9 @@ export function InventoryClient() {
                               className='hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors border-b border-slate-100 dark:border-slate-800/50'
                             >
                               <TableCell className='p-2 sm:p-4'>
-                                <div className='text-xs sm:text-sm'>{new Date(transaction.createdAt).toLocaleDateString()}</div>
+                                <div className='text-xs sm:text-sm'>{new Date(transaction.createdAt || 0).toLocaleDateString()}</div>
                                 <div className='text-[10px] sm:text-xs text-muted-foreground mt-0.5'>
-                                  {new Date(transaction.createdAt).toLocaleTimeString()}
+                                  {new Date(transaction.createdAt || 0).toLocaleTimeString()}
                                 </div>
                               </TableCell>
                               <TableCell className='p-2 sm:p-4'>
@@ -1083,9 +1080,8 @@ export function InventoryClient() {
                                 </Badge>
                               </TableCell>
                               <TableCell
-                                className={`p-2 sm:p-4 text-right font-medium text-xs sm:text-sm ${
-                                  transaction.quantity > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-                                }`}
+                                className={`p-2 sm:p-4 text-right font-medium text-xs sm:text-sm ${transaction.quantity > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                                  }`}
                               >
                                 {transaction.quantity > 0 ? "+" : ""}
                                 {transaction.quantity}
@@ -1218,7 +1214,7 @@ export function InventoryClient() {
                 ) : (
                   productTransactions.map((transaction) => (
                     <TableRow key={transaction.id}>
-                      <TableCell className='text-sm'>{new Date(transaction.createdAt).toLocaleString()}</TableCell>
+                      <TableCell className='text-sm'>{new Date(transaction.createdAt || 0).toLocaleString()}</TableCell>
                       <TableCell>
                         <Badge variant={transaction.type === "restock" ? "secondary" : "default"}>{transaction.type}</Badge>
                       </TableCell>

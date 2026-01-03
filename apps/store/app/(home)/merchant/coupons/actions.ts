@@ -1,6 +1,6 @@
 "use server";
 
-import { getCollection } from "@/lib/mongodb";
+import { serverSideApiClient } from "@/lib/api-client";
 import type { Coupon, CouponStatus } from "@/lib/coupon-types";
 
 type PaginationData = {
@@ -27,76 +27,53 @@ type CouponsResponse = {
 
 export async function getCoupons(page: number = 1, limit: number = 30, status?: string, search?: string): Promise<CouponsResponse> {
   try {
-    const skip = (page - 1) * limit;
-    const collection = await getCollection<Coupon>("coupons");
+    const client = serverSideApiClient();
+    const params: Record<string, any> = { page, limit };
+    if (status && status !== "all") params.status = status;
+    if (search && search.trim()) params.search = search.trim();
 
-    // Build query
-    const query: Record<string, unknown> = {};
+    const response = await client.get("/coupons", { params });
 
-    if (status && status !== "all") {
-      query.status = status;
+    if (response.data?.data) {
+      const data = response.data.data;
+      const coupons = Array.isArray(data.coupons) ? data.coupons : (Array.isArray(data) ? data : []);
+
+      // Update expired status for old coupons
+      const now = new Date();
+      const updatedCoupons = coupons.map((coupon: Coupon) => {
+        if (coupon.status === "active" && new Date(coupon.endDate) < now) {
+          return { ...coupon, status: "expired" as CouponStatus };
+        }
+        if (coupon.status === "scheduled" && new Date(coupon.startDate) <= now && new Date(coupon.endDate) > now) {
+          return { ...coupon, status: "active" as CouponStatus };
+        }
+        return coupon;
+      });
+
+      // Calculate statistics
+      const total = updatedCoupons.length;
+      const active = updatedCoupons.filter((c: Coupon) => c.status === "active").length;
+      const totalRevenue = updatedCoupons.reduce((sum: number, c: Coupon) => sum + (c.totalRevenue || 0), 0);
+      const totalUsage = updatedCoupons.reduce((sum: number, c: Coupon) => sum + (c.usageLimit?.currentUses || 0), 0);
+
+      return {
+        coupons: updatedCoupons,
+        pagination: data.pagination || {
+          page,
+          limit,
+          total: coupons.length,
+          totalPages: Math.ceil(coupons.length / limit),
+          hasNextPage: page * limit < coupons.length,
+          hasPrevPage: page > 1,
+        },
+        statistics: data.statistics || { total, active, totalRevenue, totalUsage },
+      };
     }
-
-    if (search && search.trim()) {
-      const searchTerm = search.trim();
-      const searchRegex = { $regex: searchTerm, $options: "i" };
-      query.$or = [{ code: searchRegex }, { name: searchRegex }];
-    }
-
-    // Get all coupons for statistics (before search filter)
-    const allCoupons = await collection.find({}).sort({ createdAt: -1 }).toArray();
-
-    // Update expired status for old coupons
-    const now = new Date();
-    const updatedAllCoupons = allCoupons.map((coupon) => {
-      if (coupon.status === "active" && new Date(coupon.endDate) < now) {
-        return { ...coupon, status: "expired" as CouponStatus };
-      }
-      if (coupon.status === "scheduled" && new Date(coupon.startDate) <= now && new Date(coupon.endDate) > now) {
-        return { ...coupon, status: "active" as CouponStatus };
-      }
-      return coupon;
-    });
-
-    // Get total count for pagination
-    const totalCount = await collection.countDocuments(query);
-
-    // Fetch coupons with pagination
-    const coupons = await collection.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray();
-
-    // Update expired status for paginated coupons
-    const updatedCoupons = coupons.map((coupon) => {
-      if (coupon.status === "active" && new Date(coupon.endDate) < now) {
-        return { ...coupon, status: "expired" as CouponStatus };
-      }
-      if (coupon.status === "scheduled" && new Date(coupon.startDate) <= now && new Date(coupon.endDate) > now) {
-        return { ...coupon, status: "active" as CouponStatus };
-      }
-      return coupon;
-    });
-
-    // Calculate statistics from all coupons
-    const total = updatedAllCoupons.length;
-    const active = updatedAllCoupons.filter((c) => c.status === "active").length;
-    const totalRevenue = updatedAllCoupons.reduce((sum, c) => sum + (c.totalRevenue || 0), 0);
-    const totalUsage = updatedAllCoupons.reduce((sum, c) => sum + (c.usageLimit?.currentUses || 0), 0);
 
     return {
-      coupons: updatedCoupons,
-      pagination: {
-        page,
-        limit,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limit),
-        hasNextPage: page * limit < totalCount,
-        hasPrevPage: page > 1,
-      },
-      statistics: {
-        total,
-        active,
-        totalRevenue,
-        totalUsage,
-      },
+      coupons: [],
+      pagination: { page, limit, total: 0, totalPages: 0, hasNextPage: false, hasPrevPage: false },
+      statistics: { total: 0, active: 0, totalRevenue: 0, totalUsage: 0 },
     };
   } catch (error: any) {
     console.error("Failed to fetch coupons:", error);
@@ -106,15 +83,11 @@ export async function getCoupons(page: number = 1, limit: number = 30, status?: 
 
 export async function deleteCoupon(id: string): Promise<void> {
   try {
-    const collection = await getCollection<Coupon>("coupons");
-
-    const result = await collection.deleteOne({ id });
-
-    if (result.deletedCount === 0) {
-      throw new Error("Coupon not found");
-    }
+    const client = serverSideApiClient();
+    await client.delete(`/coupons/${id}`);
   } catch (error: any) {
     console.error("Failed to delete coupon:", error);
     throw new Error(error?.message || "Failed to delete coupon");
   }
 }
+

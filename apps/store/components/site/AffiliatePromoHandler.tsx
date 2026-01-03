@@ -46,15 +46,14 @@ export function AffiliatePromoHandler() {
     // Set affiliate cookie via API
     const setCookie = async () => {
       try {
-        const response = await fetch("/api/affiliate/set-cookie", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ promoCode: refCode }),
-        });
+        const { apiRequest } = await import("@/lib/api-client");
+        const data = await apiRequest<{ success: boolean; promoCode: string }>(
+          "POST",
+          "/affiliate/set-cookie",
+          { promoCode: refCode }
+        );
 
-        if (response.ok) {
-          // Cookie set successfully
-          const data = await response.json();
+        if (data.success) {
           console.log("Affiliate promo code set:", data.promoCode);
         }
       } catch (error) {

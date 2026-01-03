@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { Logo } from "@/components/site/Logo";
+import { apiRequest } from "@/lib/api-client";
 import type { BrandConfig } from "@/lib/brand-config";
 
 interface Category {
@@ -59,38 +60,23 @@ export function NavLinks({ brandConfig, isNavbarVisible = true, isScrolled = fal
       }
 
       try {
-        // Use AbortController for request cancellation if component unmounts
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
-        const [categoriesRes, brandsRes] = await Promise.all([
-          fetch("/api/products/categories?limit=20", { signal: controller.signal }),
-          fetch("/api/products/brands", { signal: controller.signal }),
+        const [categoriesData, brandsData] = await Promise.all([
+          apiRequest<any>("GET", "/products/categories?limit=20"),
+          apiRequest<any>("GET", "/products/brands"),
         ]);
 
-        clearTimeout(timeoutId);
+        const fetchedCategories = categoriesData?.categories || [];
+        setCategories(fetchedCategories);
+        navDataCache.categories = fetchedCategories;
 
-        if (categoriesRes.ok) {
-          const categoriesData = await categoriesRes.json();
-          const fetchedCategories = categoriesData.categories || [];
-          setCategories(fetchedCategories);
-          navDataCache.categories = fetchedCategories;
-        }
-
-        if (brandsRes.ok) {
-          const brandsData = await brandsRes.json();
-          const fetchedBrands = brandsData.brands || [];
-          setBrands(fetchedBrands);
-          navDataCache.brands = fetchedBrands;
-        }
+        const fetchedBrands = brandsData?.brands || [];
+        setBrands(fetchedBrands);
+        navDataCache.brands = fetchedBrands;
 
         // Update cache timestamp
         navDataCache.timestamp = Date.now();
       } catch (error: any) {
-        // Only log if not aborted
-        if (error.name !== "AbortError") {
-          console.error("Error fetching navigation data:", error);
-        }
+        console.error("Error fetching navigation data:", error);
         // Use cached data if available even if stale
         if (navDataCache.categories) setCategories(navDataCache.categories);
         if (navDataCache.brands) setBrands(navDataCache.brands);

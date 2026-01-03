@@ -25,6 +25,7 @@ let requestCacheTimestamp: number = 0;
 const REQUEST_CACHE_TTL = 60000; // 1 minute
 
 export async function getMerchantIdFromRequest(): Promise<string | null> {
+  console.log("[MerchantLoader] Checking for merchant ID...");
   // Check cache first
   const now = Date.now();
   if (cachedRequestMerchantId !== undefined && now - requestCacheTimestamp < REQUEST_CACHE_TTL) {
@@ -50,6 +51,7 @@ export async function getMerchantIdFromRequest(): Promise<string | null> {
 
   // Priority 2: Check environment variable (for deployed merchant instances)
   if (process.env.MERCHANT_ID) {
+    console.log("[MerchantLoader] Found MERCHANT_ID in env:", process.env.MERCHANT_ID);
     cachedRequestMerchantId = process.env.MERCHANT_ID;
     requestCacheTimestamp = now;
     return process.env.MERCHANT_ID;
@@ -86,8 +88,10 @@ export async function getMerchantIdFromRequest(): Promise<string | null> {
   }
 
   // Cache null result to prevent repeated queries
+  // Cache null result to prevent repeated queries
   cachedRequestMerchantId = null;
   requestCacheTimestamp = now;
+  console.warn("[MerchantLoader] No merchant ID found in any source.");
   return null;
 }
 

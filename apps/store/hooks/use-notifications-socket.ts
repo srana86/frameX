@@ -26,7 +26,7 @@ export function useNotificationsSocket(userId: string | null, onNewNotification:
     }
 
     // Join user room for notifications
-    socket.emit("join-user", userId);
+    socket.emit("user:join");
 
     // Listen for new notifications
     const handleNewNotification = (notification: Notification) => {

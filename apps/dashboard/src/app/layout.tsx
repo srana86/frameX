@@ -34,6 +34,8 @@ export const metadata: Metadata = {
   description: "Operational control center for merchants, deployments, and subscriptions.",
 };
 
+import { AuthProvider } from "@/contexts/AuthContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -42,8 +44,10 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body className={`${geistSans.variable} ${geistMono.variable} ${nunitoSans.variable} ${urbanist.variable} antialiased`}>
-        {children}
-        <Toaster />
+        <AuthProvider>
+          {children}
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );

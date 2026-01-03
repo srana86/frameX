@@ -11,6 +11,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { getCurrencySymbol, DEFAULT_CURRENCY } from "@/lib/currency";
+import { api } from "@/lib/api-client";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -40,7 +41,14 @@ const DEFAULT_PLANS: Plan[] = [
     description: "For individuals who just need to launch fast.",
     price: 0,
     billingCycleMonths: 1,
-    featuresList: ["1 Website", "Basic Templates", "Standard Hosting", "Drag & Drop Editor", "Basic SEO Tools", "Email Support"],
+    featuresList: [
+      "1 Website",
+      "Basic Templates",
+      "Standard Hosting",
+      "Drag & Drop Editor",
+      "Basic SEO Tools",
+      "Email Support",
+    ],
     buttonText: "Get Started",
     buttonVariant: "outline",
     iconType: "star",
@@ -107,12 +115,15 @@ function getIconComponent(iconType: string | undefined, className: string) {
 
 // Get icon background based on index
 function getIconBg(index: number, isPopular: boolean) {
-  if (isPopular) return "bg-linear-to-br from-blue-100 via-purple-100 to-purple-200";
+  if (isPopular)
+    return "bg-linear-to-br from-blue-100 via-purple-100 to-purple-200";
   return "bg-linear-to-br from-purple-100 to-purple-200";
 }
 
 export default function PricingContainer() {
-  const [currencySymbol, setCurrencySymbol] = useState(getCurrencySymbol(DEFAULT_CURRENCY));
+  const [currencySymbol, setCurrencySymbol] = useState(
+    getCurrencySymbol(DEFAULT_CURRENCY)
+  );
   const sectionRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
 
@@ -123,12 +134,11 @@ export default function PricingContainer() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const settingsRes = await fetch("/api/settings/general");
-        if (settingsRes.ok) {
-          const settings = await settingsRes.json();
-          if (settings.defaultCurrency) {
-            setCurrencySymbol(getCurrencySymbol(settings.defaultCurrency));
-          }
+        const settings = await api
+          .get<any>("settings/general")
+          .catch(() => null);
+        if (settings?.defaultCurrency) {
+          setCurrencySymbol(getCurrencySymbol(settings.defaultCurrency));
         }
       } catch (error) {
         console.error("Failed to fetch settings:", error);
@@ -165,20 +175,27 @@ export default function PricingContainer() {
   );
 
   return (
-    <section ref={sectionRef} className='w-full py-10 xs:py-12 sm:py-16 md:py-20 lg:py-24'>
-      <div className='max-w-7xl mx-auto px-3'>
+    <section
+      ref={sectionRef}
+      className="w-full py-10 xs:py-12 sm:py-16 md:py-20 lg:py-24"
+    >
+      <div className="max-w-7xl mx-auto px-3">
         {/* Header */}
-        <div ref={headerRef} className='mb-6 xs:mb-8 sm:mb-12 md:mb-16'>
+        <div ref={headerRef} className="mb-6 xs:mb-8 sm:mb-12 md:mb-16">
           <SectionHeader
-            title='Choose a Plan That Matches Your Growth'
-            subtitle='Straightforward tiers with the features you need now — and room to scale when your product demands it.'
+            title="Choose a Plan That Matches Your Growth"
+            subtitle="Straightforward tiers with the features you need now — and room to scale when your product demands it."
           />
         </div>
 
         {/* Pricing Cards - Always show 3 cards */}
-        <div className={cn("grid grid-cols-1 gap-8 items-stretch lg:grid-cols-3 lg:gap-9")}>
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-8 items-stretch lg:grid-cols-3 lg:gap-9"
+          )}
+        >
           {plans.map((plan, index) => (
-            <div key={plan.id} className='flex lg:h-full'>
+            <div key={plan.id} className="flex lg:h-full">
               <PricingCard
                 plan={{
                   id: plan.id,

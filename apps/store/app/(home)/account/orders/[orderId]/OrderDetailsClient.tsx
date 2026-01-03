@@ -30,6 +30,7 @@ import { useCurrencySymbol } from "@/hooks/use-currency";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { AlertCircle } from "lucide-react";
+import { apiRequest } from "@/lib/api-client";
 
 const statusColors: Record<string, string> = {
   pending: "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border-amber-200 dark:border-amber-800",
@@ -73,14 +74,7 @@ export default function OrderDetailsClient() {
 
     const fetchOrder = async () => {
       try {
-        const res = await fetch(`/api/orders/${orderId}`);
-        if (!res.ok) {
-          if (res.status === 404) {
-            throw new Error("Order not found");
-          }
-          throw new Error("Failed to fetch order");
-        }
-        const data = (await res.json()) as Order;
+        const data: any = await apiRequest("GET", `/orders/${orderId}`);
         setOrder(data);
         setError(null);
       } catch (err: any) {
@@ -172,9 +166,8 @@ export default function OrderDetailsClient() {
               </Badge>
               {order.paymentMethod === "online" && order.paymentStatus && (
                 <Badge
-                  className={`${
-                    paymentStatusColors[order.paymentStatus] || paymentStatusColors.pending
-                  } border font-medium px-2.5 py-1 text-xs flex items-center gap-1.5`}
+                  className={`${paymentStatusColors[order.paymentStatus] || paymentStatusColors.pending
+                    } border font-medium px-2.5 py-1 text-xs flex items-center gap-1.5`}
                 >
                   <DollarSign className='w-3.5 h-3.5' />
                   <span className='capitalize'>{order.paymentStatus}</span>
@@ -238,9 +231,8 @@ export default function OrderDetailsClient() {
                     <div>
                       <p className='text-muted-foreground text-xs mb-1'>Payment Status</p>
                       <Badge
-                        className={`${
-                          paymentStatusColors[order.paymentStatus] || paymentStatusColors.pending
-                        } border font-medium text-xs px-2 py-0.5`}
+                        className={`${paymentStatusColors[order.paymentStatus] || paymentStatusColors.pending
+                          } border font-medium text-xs px-2 py-0.5`}
                       >
                         {order.paymentStatus}
                       </Badge>

@@ -1,84 +1,50 @@
 /**
  * Environment Variables Utility
- * Helper functions to get data based on .env file
+ * Simple helper functions to access environment variables
+ * Next.js automatically loads from .env.local, .env, etc.
  */
 
-import { getEnvData, getEnvValue, getAllEnvVars } from "./env-loader";
-
-/**
- * Get encryption key from .env
- */
 export function getEncryptionKey(): string {
-  return getEnvValue("ENCRYPTION_KEY") || "";
+  return process.env.ENCRYPTION_KEY || "";
 }
 
-/**
- * Get GitHub repository from .env
- */
 export function getGitHubRepo(): string {
-  return getEnvValue("GITHUB_REPO") || "";
+  return process.env.GITHUB_REPO || "";
 }
 
-/**
- * Get GitHub token from .env
- */
 export function getGitHubToken(): string {
-  return getEnvValue("GITHUB_TOKEN") || "";
+  return process.env.GITHUB_TOKEN || "";
 }
 
-/**
- * Get MongoDB database name from .env
- */
 export function getMongoDbName(): string {
-  return getEnvValue("MONGODB_DB") || "shoestore_main";
+  return process.env.MONGODB_DB || "shoestore_main";
 }
 
-/**
- * Get merchant database name from .env
- */
 export function getMerchantDbName(): string | undefined {
-  return getEnvValue("MERCHANT_DB_NAME") || process.env.MERCHANT_DB_NAME;
+  return process.env.MERCHANT_DB_NAME;
 }
 
-/**
- * Get merchant ID from .env
- */
 export function getMerchantId(): string | undefined {
-  return getEnvValue("MERCHANT_ID") || process.env.MERCHANT_ID;
+  return process.env.MERCHANT_ID;
 }
 
-/**
- * Get all environment data from .env lines 12-16
- */
 export function getEnvConfig() {
-  return getEnvData();
+  return {
+    ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
+    GITHUB_REPO: process.env.GITHUB_REPO,
+    GITHUB_TOKEN: process.env.GITHUB_TOKEN,
+    MONGODB_DB: process.env.MONGODB_DB,
+    MERCHANT_DB_NAME: process.env.MERCHANT_DB_NAME,
+    MERCHANT_ID: process.env.MERCHANT_ID,
+  };
 }
 
-/**
- * Get complete environment configuration
- */
-export function getCompleteEnvConfig() {
-  return getAllEnvVars();
-}
-
-/**
- * Validate required environment variables
- */
 export function validateEnvVars(): { valid: boolean; missing: string[] } {
   const required = ["ENCRYPTION_KEY", "MONGODB_DB"];
-  const missing: string[] = [];
-  
-  const config = getEnvData();
-  
-  for (const key of required) {
-    if (!config[key] && !process.env[key]) {
-      missing.push(key);
-    }
-  }
-  
+  const missing = required.filter((key) => !process.env[key]);
+
   return {
     valid: missing.length === 0,
     missing,
   };
 }
-

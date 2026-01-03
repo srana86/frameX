@@ -168,3 +168,97 @@ export type Order = {
 };
 
 export type UserRole = "customer" | "merchant" | "admin";
+
+export interface ProductCategory {
+  id: string;
+  name: string;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HeroSlide {
+  id?: string;
+  image: string;
+  mobileImage?: string;
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  textPosition?: "left" | "center" | "right";
+  textColor?: string;
+  overlay?: boolean;
+  overlayOpacity?: number;
+  order: number;
+  enabled: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface FooterPage {
+  id: string;
+  slug: string;
+  title: string;
+  content: string; // Tiptap HTML content
+  category: string; // Category name
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FooterCategory {
+  id: string;
+  name: string;
+  order: number; // Display order
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PromotionalBanner {
+  id: string;
+  enabled: boolean;
+  text?: string;
+  link?: string;
+  linkText?: string;
+  backgroundColor?: string;
+  textColor?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type InventoryTransactionType =
+  | "order"
+  | "restock"
+  | "adjustment"
+  | "return";
+
+export interface InventoryTransaction {
+  id: string;
+  productId: string;
+  productName?: string;
+  type: InventoryTransactionType;
+  quantity: number;
+  previousStock: number;
+  newStock: number;
+  orderId?: string;
+  notes?: string;
+  reason?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface InventoryOverview {
+  totalProducts: number;
+  totalStock: number;
+  productsWithStock: number;
+  lowStockProducts: number;
+  lowStockThreshold: number;
+  lowStockItems: Product[];
+  outOfStockProducts?: number;
+  productsOutOfStock: number;
+  outOfStockItems: Product[];
+  totalStockValue?: number;
+  recentTransactions?: InventoryTransaction[];
+}
+

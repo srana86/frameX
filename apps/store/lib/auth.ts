@@ -1,20 +1,5 @@
 import { cookies } from "next/headers";
-import { verifyToken } from "./jwt";
-import { getCollection } from "./mongodb";
-import { ObjectId, type Document } from "mongodb";
-
-interface UserDocument extends Document {
-  _id: ObjectId;
-  fullName: string;
-  email?: string;
-  phone?: string;
-  password?: string;
-  googleId?: string;
-  role?: "customer" | "merchant" | "admin";
-  merchantId?: string; // Links to merchant deployment/subscription
-  createdAt: string;
-  updatedAt?: string;
-}
+import { serverSideApiClient } from "./api-client";
 
 export interface CurrentUser {
   id: string;
@@ -22,7 +7,7 @@ export interface CurrentUser {
   email?: string;
   phone?: string;
   role: "customer" | "merchant" | "admin";
-  merchantId?: string; // Links to merchant deployment/subscription
+  merchantId?: string;
   createdAt: string;
 }
 
@@ -35,39 +20,26 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
       return null;
     }
 
-    const payload = verifyToken(token);
+    const client = serverSideApiClient(token);
+    const response = await client.get("/auth/me");
 
-    if (!payload) {
-      return null;
+    if (response.data && response.data.success !== false) {
+      // Backend might return user directly or inside a user property
+      const userData = response.data.user || response.data;
+      return {
+        id: userData.id || userData._id,
+        fullName: userData.fullName,
+        email: userData.email,
+        phone: userData.phone,
+        role: userData.role || "customer",
+        merchantId: userData.merchantId,
+        createdAt: userData.createdAt,
+      };
     }
 
-    const col = await getCollection<UserDocument>("users");
-    let user: UserDocument | null = null;
-
-    try {
-      // Try to convert userId to ObjectId
-      const userId = new ObjectId(payload.userId);
-      user = await col.findOne({ _id: userId });
-    } catch (error) {
-      // If ObjectId conversion fails, the userId is invalid
-      return null;
-    }
-
-    if (!user) {
-      return null;
-    }
-
-    return {
-      id: String(user._id),
-      fullName: user.fullName,
-      email: user.email,
-      phone: user.phone,
-      role: (user.role || "customer") as "customer" | "merchant" | "admin",
-      merchantId: user.merchantId,
-      createdAt: user.createdAt,
-    };
+    return null;
   } catch (error) {
-    console.error("Error getting current user:", error);
+    console.error("Error getting current user from backend:", error);
     return null;
   }
 }

@@ -25,9 +25,9 @@ export function AdsConfigClient({ initialConfig }: AdsConfigClientProps) {
   const loadConfig = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/ads-config");
-      if (!res.ok) throw new Error("Failed to load config");
-      const data = await res.json();
+      const { apiRequest } = await import("@/lib/api-client");
+      // Backend route is /ads-config based on routes/index.ts
+      const data = await apiRequest<AdsConfig>("GET", "/ads-config");
       const newConfig = data || defaultAdsConfig;
       setConfig(newConfig);
     } catch (error) {
@@ -42,15 +42,9 @@ export function AdsConfigClient({ initialConfig }: AdsConfigClientProps) {
     if (!config) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/ads-config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to save config");
-      }
+      const { apiRequest } = await import("@/lib/api-client");
+      await apiRequest("PUT", "/ads-config", config);
+
       toast.success("Ads configuration saved successfully!");
       await loadConfig();
     } catch (error: any) {

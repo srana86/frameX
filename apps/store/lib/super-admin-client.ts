@@ -17,11 +17,15 @@ const getSuperAdminUrl = () => {
 const SUPER_ADMIN_URL = getSuperAdminUrl();
 
 /**
- * Helper to build clean URLs (no double slashes)
+ * Helper to build clean URLs with /api/v1/ prefix for FrameX-Server
  */
 function buildUrl(path: string): string {
   const baseUrl = SUPER_ADMIN_URL.endsWith("/") ? SUPER_ADMIN_URL.slice(0, -1) : SUPER_ADMIN_URL;
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  // Transform /api/ paths to /api/v1/ for FrameX-Server compatibility
+  let cleanPath = path.startsWith("/") ? path : `/${path}`;
+  if (cleanPath.startsWith("/api/") && !cleanPath.startsWith("/api/v1/")) {
+    cleanPath = cleanPath.replace("/api/", "/api/v1/");
+  }
   return `${baseUrl}${cleanPath}`;
 }
 

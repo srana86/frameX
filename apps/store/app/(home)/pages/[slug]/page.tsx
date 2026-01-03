@@ -1,24 +1,20 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { brandConfig } from "@/lib/brand-config";
-import { getCollection } from "@/lib/mongodb";
-import type { FooterPage } from "@/app/api/pages/route";
+import { serverSideApiClient } from "@/lib/api-client";
+import type { FooterPage } from "@/lib/types";
 
 async function getPage(slug: string): Promise<FooterPage | null> {
   try {
-    const col = await getCollection<FooterPage>("footer_pages");
-    const page = await col.findOne({ slug, enabled: true });
-
-    if (!page) {
-      return null;
+    const client = serverSideApiClient();
+    const response = await client.get(`/pages/${slug}`);
+    if (response.data?.data) {
+      return response.data.data as FooterPage;
     }
-
-    const { _id, ...pageWithoutId } = page;
-    return pageWithoutId;
   } catch (error) {
     console.error("Failed to fetch page:", error);
-    return null;
   }
+  return null;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {

@@ -25,10 +25,6 @@ const nextConfig: NextConfig = {
   // Performance optimizations
   experimental: {
     optimizePackageImports: ["lucide-react", "@radix-ui/react-dialog", "@radix-ui/react-select"],
-    // Increase body size limit for server actions (file uploads)
-    serverActions: {
-      bodySizeLimit: "10mb",
-    },
   },
   // Compress responses
   compress: true,

@@ -2,7 +2,7 @@
 
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import CloudImage from "@/components/site/CloudImage";
-import type { HeroSlide } from "@/app/api/hero-slides/route";
+import type { HeroSlide } from "@/lib/types";
 
 interface HeroCarouselProps {
   slides: HeroSlide[];

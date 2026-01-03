@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { apiRequest } from "@/lib/api-client";
 
 type CartItem = {
   productId: string;
@@ -49,22 +50,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       const raw = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
       if (raw) setItems(JSON.parse(raw));
-    } catch {}
+    } catch { }
   }, []);
 
   useEffect(() => {
     try {
       if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } catch {}
+    } catch { }
   }, [items]);
 
   // Load shipping config from merchant delivery settings (managed in dashboard)
   useEffect(() => {
     const loadShippingConfig = async () => {
       try {
-        const res = await fetch("/api/storefront/delivery-config", { cache: "no-store" });
-        if (!res.ok) return;
-        const data = await res.json();
+        const data = await apiRequest<any>("GET", "/storefront/delivery-config");
+        if (!data) return;
 
         if (typeof data.defaultDeliveryCharge === "number") {
           setBaseShippingFee(data.defaultDeliveryCharge);
@@ -108,10 +108,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                   quantity: qty,
                   eventId,
                   userData,
-                }).catch(() => {}); // Fail silently
+                }).catch(() => { }); // Fail silently
               });
             })
-            .catch(() => {}); // Fail silently if module not available
+            .catch(() => { }); // Fail silently if module not available
         }
 
         return copy;
@@ -132,10 +132,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 quantity: qty,
                 eventId,
                 userData,
-              }).catch(() => {}); // Fail silently
+              }).catch(() => { }); // Fail silently
             });
           })
-          .catch(() => {}); // Fail silently if module not available
+          .catch(() => { }); // Fail silently if module not available
       }
 
       return [...prev, newItem];
@@ -206,10 +206,10 @@ export function useCart() {
         _item?: Omit<CartItem, "quantity">,
         _qty?: number,
         _options?: { eventId?: string; track?: boolean; skipCartOpen?: boolean }
-      ) => {},
-      removeItem: () => {},
-      updateQuantity: () => {},
-      clear: () => {},
+      ) => { },
+      removeItem: () => { },
+      updateQuantity: () => { },
+      clear: () => { },
       count: 0,
       subtotal: 0,
       shipping: 0,

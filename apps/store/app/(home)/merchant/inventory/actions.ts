@@ -3,8 +3,7 @@
 import { getMerchantCollectionForAPI, buildMerchantQuery } from "@/lib/api-helpers";
 import { ObjectId } from "mongodb";
 import type { Product } from "@/lib/types";
-import type { InventoryTransaction } from "@/app/api/inventory/route";
-import type { InventoryOverview } from "@/app/api/inventory/overview/route";
+import type { InventoryTransaction, InventoryOverview } from "@/lib/types";
 
 type PaginationData = {
   page: number;

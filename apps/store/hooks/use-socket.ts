@@ -8,54 +8,44 @@ export function useSocket() {
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const socketRef = useRef<Socket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper to get cookie
+  const getCookie = (name: string) => {
+    if (typeof document === "undefined") return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(";").shift();
+    return null;
+  };
 
   useEffect(() => {
     // Only connect on client side
     if (typeof window === "undefined") return;
 
-    // Fetch dynamic socket config for multi-tenant support
+    // Initialize socket connection
     const initializeSocket = async () => {
-      // Clear any existing socket
       if (socketRef.current) {
         socketRef.current.disconnect();
-        socketRef.current = null;
       }
 
+      const token = getCookie("auth_token");
+
+      // Determine backend URL - reuse API_URL but remove /api/v1 if present, or use default
+      // If API_URL is http://localhost:5001/api/v1, we want http://localhost:5001
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api/v1";
+      const socketUrl = apiUrl.replace(/\/api\/v1\/?$/, "");
+
       try {
-        // Try to get socket URL from API (supports dynamic domains)
-        let socketUrl = window.location.origin; // Default fallback
-
-        try {
-          const configRes = await fetch("/api/socket/config", {
-            signal: AbortSignal.timeout(5000), // 5 second timeout
-          });
-
-          if (configRes.ok) {
-            const config = await configRes.json();
-            socketUrl = config.socketUrl || window.location.origin;
-          } else {
-            // Fallback to env or current origin
-            socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
-          }
-        } catch (fetchError) {
-          console.warn("[Socket] Failed to fetch config, using default:", fetchError);
-          socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
-        }
-
         const newSocket = io(socketUrl, {
-          path: "/api/socket",
-          transports: ["websocket", "polling"], // Prefer WebSocket, fallback to polling
-          upgrade: true,
-          reconnection: true,
-          reconnectionDelay: 1000, // Start with 1 second
-          reconnectionDelayMax: 5000, // Max 5 seconds between reconnection attempts
-          reconnectionAttempts: Infinity, // Keep trying to reconnect
-          timeout: 10000, // Reduced timeout to 10 seconds
-          // Add origin header for multi-tenant support
-          extraHeaders: {
-            "x-origin": window.location.origin,
+          path: "/socket.io", // Standard Socket.IO path
+          transports: ["websocket", "polling"],
+          auth: {
+            token: token // Pass token for backend auth middleware
           },
+          reconnection: true,
+          reconnectionDelay: 1000,
+          reconnectionAttempts: Infinity,
+          timeout: 20000,
         });
 
         socketRef.current = newSocket;
@@ -150,9 +140,6 @@ export function useSocket() {
 
     // Cleanup on unmount
     return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;

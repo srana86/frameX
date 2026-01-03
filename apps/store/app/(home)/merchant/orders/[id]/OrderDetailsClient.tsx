@@ -10,6 +10,7 @@ import html2canvas from "html2canvas";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Info, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { apiRequest } from "@/lib/api-client";
 import { useCurrencySymbol } from "@/hooks/use-currency";
 import { format } from "date-fns";
 import { generateReceiptHTML } from "@/utils";
@@ -170,15 +171,11 @@ export function OrderDetailsClient({ initialOrder, products, prevOrderId, nextOr
     (async () => {
       try {
         setLoadingCouriers(true);
-        const res = await fetch("/api/delivery-config?type=courier", { cache: "no-store" });
-        if (!res.ok) {
-          throw new Error("Failed to load courier services");
-        }
-        const data = (await res.json()) as CourierServicesConfig;
+        const data: any = await apiRequest("GET", "/delivery-config?type=courier");
         if (!active) return;
         // Supported courier services in this dashboard (including Paperfly)
         const supportedIds = new Set<string>(["pathao", "redx", "steadfast", "paperfly"]);
-        const activeServices = (data.services || []).filter((s) => s.enabled && supportedIds.has(s.id));
+        const activeServices = (data.services || []).filter((s: CourierService) => s.enabled && supportedIds.has(s.id));
         setCourierServices(activeServices);
         if (!selectedCourierId && activeServices.length === 1) {
           setSelectedCourierId(activeServices[0].id);
@@ -202,17 +199,8 @@ export function OrderDetailsClient({ initialOrder, products, prevOrderId, nextOr
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch(`/api/orders/${order.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(order),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to save order");
-      }
-
-      const updatedOrder = await res.json();
+      const data: any = await apiRequest("PUT", `/orders/${order.id}`, order);
+      const updatedOrder = data.data || data;
       setOrder(updatedOrder);
       toast.success("Order updated successfully!");
     } catch (error: any) {
@@ -227,13 +215,8 @@ export function OrderDetailsClient({ initialOrder, products, prevOrderId, nextOr
       toast.loading("Generating PDF receipt...", { id: "receipt-download" });
 
       // Fetch receipt data
-      const res = await fetch(`/api/orders/${order.id}/receipt`);
-      if (!res.ok) {
-        throw new Error("Failed to fetch receipt data");
-      }
-
-      const data = await res.json();
-      const { order: receiptOrder, brandConfig, totals } = data;
+      const data: any = await apiRequest("GET", `/orders/${order.id}/receipt`);
+      const { order: receiptOrder, brandConfig, totals } = data.data || data;
 
       // Generate HTML receipt
       const receiptHTML = generateReceiptHTML(receiptOrder, brandConfig, totals, currencySymbol);
@@ -331,13 +314,8 @@ export function OrderDetailsClient({ initialOrder, products, prevOrderId, nextOr
       toast.loading("Preparing receipt for printing...", { id: "receipt-print" });
 
       // Fetch receipt data
-      const res = await fetch(`/api/orders/${order.id}/receipt`);
-      if (!res.ok) {
-        throw new Error("Failed to fetch receipt data");
-      }
-
-      const data = await res.json();
-      const { order: receiptOrder, brandConfig, totals } = data;
+      const data: any = await apiRequest("GET", `/orders/${order.id}/receipt`);
+      const { order: receiptOrder, brandConfig, totals } = data.data || data;
 
       // Generate HTML receipt
       const receiptHTML = generateReceiptHTML(receiptOrder, brandConfig, totals, currencySymbol);
@@ -489,17 +467,8 @@ export function OrderDetailsClient({ initialOrder, products, prevOrderId, nextOr
 
     // Save to database
     try {
-      const res = await fetch(`/api/orders/${order.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedOrder),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to save customer information");
-      }
-
-      const savedOrder = await res.json();
+      const data: any = await apiRequest("PUT", `/orders/${order.id}`, updatedOrder);
+      const savedOrder = data.data || data;
       setOrder(savedOrder);
     } catch (error: any) {
       // Revert local state on error
@@ -540,30 +509,21 @@ export function OrderDetailsClient({ initialOrder, products, prevOrderId, nextOr
     const silent = options?.silent ?? false;
     setSyncingCourier(true);
     try {
-      const res = await fetch(`/api/orders/${order.id}/courier`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          serviceId: selectedCourierId,
-          consignmentId: consignmentId.trim(),
-        }),
+      const data: any = await apiRequest("POST", `/orders/${order.id}/courier`, {
+        serviceId: selectedCourierId,
+        consignmentId: consignmentId.trim(),
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error || "Failed to fetch courier status");
-      }
-
-      const data = await res.json();
-      setDeliveryStatus(data.deliveryStatus || "");
+      const responseData = data.data || data;
+      setDeliveryStatus(responseData.deliveryStatus || "");
       setOrder((prev) => ({
         ...prev,
         courier: {
-          serviceId: data.serviceId,
-          serviceName: data.serviceName,
-          consignmentId: data.consignmentId,
-          deliveryStatus: data.deliveryStatus,
-          lastSyncedAt: data.lastSyncedAt,
+          serviceId: responseData.serviceId,
+          serviceName: responseData.serviceName,
+          consignmentId: responseData.consignmentId,
+          deliveryStatus: responseData.deliveryStatus,
+          lastSyncedAt: responseData.lastSyncedAt,
         },
       }));
       if (!silent) {
@@ -609,13 +569,7 @@ export function OrderDetailsClient({ initialOrder, products, prevOrderId, nextOr
     setFraudError(null);
 
     try {
-      const res = await fetch("/api/merchant/fraud-check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: order.customer.phone.trim() }),
-      });
-
-      const data = await res.json();
+      const data: any = await apiRequest("POST", "/merchant/fraud-check", { phone: order.customer.phone.trim() });
 
       let fraudInfo: FraudCheckData | null = null;
 
@@ -682,18 +636,10 @@ export function OrderDetailsClient({ initialOrder, products, prevOrderId, nextOr
       if (fraudInfo) {
         setSavingFraud(true);
         try {
-          const saveRes = await fetch(`/api/orders/${order.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ...order,
-              fraudCheck: fraudInfo,
-            }),
+          const data: any = await apiRequest("PUT", `/orders/${order.id}`, {
+            ...order,
+            fraudCheck: fraudInfo,
           });
-
-          if (!saveRes.ok) {
-            throw new Error("Failed to save fraud data");
-          }
 
           // Update local order state
           setOrder((prev) => ({
@@ -738,19 +684,12 @@ export function OrderDetailsClient({ initialOrder, products, prevOrderId, nextOr
       if (!order.customer?.phone) return;
 
       try {
-        const res = await fetch("/api/blocked-customers/check", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phone: order.customer.phone,
-            email: order.customer.email,
-          }),
+        const data: any = await apiRequest("POST", "/blocked-customers/check", {
+          phone: order.customer.phone,
+          email: order.customer.email,
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          setIsCustomerBlocked(data.isBlocked);
-        }
+        setIsCustomerBlocked(data.data?.isBlocked || data.isBlocked);
       } catch (error) {
         console.error("Error checking block status:", error);
       }
@@ -770,40 +709,23 @@ export function OrderDetailsClient({ initialOrder, products, prevOrderId, nextOr
     try {
       if (block) {
         // Block the customer
-        const res = await fetch("/api/blocked-customers", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phone: order.customer.phone,
-            email: order.customer.email,
-            customerName: order.customer.fullName,
-            reason: "fraud",
-            notes: `Marked as fraud from order #${order.id}`,
-            orderId: order.id,
-          }),
+        await apiRequest("POST", "/blocked-customers", {
+          phone: order.customer.phone,
+          email: order.customer.email,
+          customerName: order.customer.fullName,
+          reason: "fraud",
+          notes: `Marked as fraud from order #${order.id}`,
+          orderId: order.id,
         });
-
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || "Failed to block customer");
-        }
 
         setIsCustomerBlocked(true);
         toast.success("Customer blocked successfully. They cannot place new orders.");
       } else {
         // Find and unblock the customer
-        const checkRes = await fetch(`/api/blocked-customers?phone=${encodeURIComponent(order.customer.phone)}`);
-        if (!checkRes.ok) throw new Error("Failed to find blocked customer");
-
-        const checkData = await checkRes.json();
-        if (checkData.customer?.id) {
-          const res = await fetch(`/api/blocked-customers/${checkData.customer.id}`, {
-            method: "DELETE",
-          });
-
-          if (!res.ok) {
-            throw new Error("Failed to unblock customer");
-          }
+        const checkData: any = await apiRequest("GET", `/blocked-customers?phone=${encodeURIComponent(order.customer.phone)}`);
+        const customerId = checkData.data?.customer?.id || checkData.customer?.id;
+        if (customerId) {
+          await apiRequest("DELETE", `/blocked-customers/${customerId}`);
         }
 
         setIsCustomerBlocked(false);
@@ -833,15 +755,7 @@ export function OrderDetailsClient({ initialOrder, products, prevOrderId, nextOr
   const confirmRemoveCourier = async () => {
     setRemoveCourierDialogOpen(false);
     try {
-      const res = await fetch(`/api/orders/${order.id}/courier`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error || "Failed to remove courier service");
-      }
+      await apiRequest("DELETE", `/orders/${order.id}/courier`);
 
       // Update local state immediately to hide remove button and change button text
       setOrder((prev) => ({
@@ -885,15 +799,7 @@ export function OrderDetailsClient({ initialOrder, products, prevOrderId, nextOr
       if (isCancelled) {
         // For cancelled orders, auto-remove and proceed
         try {
-          const res = await fetch(`/api/orders/${order.id}/courier`, {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-          });
-
-          if (!res.ok) {
-            const err = await res.json().catch(() => null);
-            throw new Error(err?.error || "Failed to remove courier service");
-          }
+          await apiRequest("DELETE", `/orders/${order.id}/courier`);
 
           // Update local state immediately
           setOrder((prev) => ({
@@ -925,15 +831,7 @@ export function OrderDetailsClient({ initialOrder, products, prevOrderId, nextOr
     setReplaceCourierDialogOpen(false);
 
     try {
-      const res = await fetch(`/api/orders/${order.id}/courier`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error || "Failed to remove courier service");
-      }
+      await apiRequest("DELETE", `/orders/${order.id}/courier`);
 
       // Update local state immediately
       setOrder((prev) => ({
@@ -975,28 +873,19 @@ export function OrderDetailsClient({ initialOrder, products, prevOrderId, nextOr
         },
       };
 
-      const res = await fetch(`/api/orders/${order.id}/courier/send`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const data: any = await apiRequest("POST", `/orders/${order.id}/courier/send`, payload);
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error || "Failed to send delivery order");
-      }
-
-      const data = await res.json();
-      setConsignmentId(data.consignmentId || "");
-      setDeliveryStatus(data.deliveryStatus || "");
+      const responseData = data.data || data;
+      setConsignmentId(responseData.consignmentId || "");
+      setDeliveryStatus(responseData.deliveryStatus || "");
       setOrder((prev) => ({
         ...prev,
         courier: {
-          serviceId: data.serviceId,
-          serviceName: data.serviceName,
-          consignmentId: data.consignmentId,
-          deliveryStatus: data.deliveryStatus,
-          lastSyncedAt: data.lastSyncedAt,
+          serviceId: responseData.serviceId,
+          serviceName: responseData.serviceName,
+          consignmentId: responseData.consignmentId,
+          deliveryStatus: responseData.deliveryStatus,
+          lastSyncedAt: responseData.lastSyncedAt,
         },
       }));
       toast.success("Delivery request created successfully");
@@ -1011,33 +900,24 @@ export function OrderDetailsClient({ initialOrder, products, prevOrderId, nextOr
   const handleManualAddDelivery = async (serviceId: string, consignmentId: string) => {
     setAddingManualCourier(true);
     try {
-      const res = await fetch(`/api/orders/${order.id}/courier`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          serviceId,
-          consignmentId,
-        }),
+      const data: any = await apiRequest("POST", `/orders/${order.id}/courier`, {
+        serviceId,
+        consignmentId,
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error || "Failed to add delivery partner");
-      }
-
-      const data = await res.json();
-      setSelectedCourierId(data.serviceId);
-      setConsignmentId(data.consignmentId || "");
-      setDeliveryStatus(data.deliveryStatus || "");
+      const responseData = data.data || data;
+      setSelectedCourierId(responseData.serviceId);
+      setConsignmentId(responseData.consignmentId || "");
+      setDeliveryStatus(responseData.deliveryStatus || "");
       setOrder((prev) => ({
         ...prev,
         courier: {
-          serviceId: data.serviceId,
-          serviceName: data.serviceName,
-          consignmentId: data.consignmentId,
-          deliveryStatus: data.deliveryStatus,
-          lastSyncedAt: data.lastSyncedAt,
-          rawStatus: data.rawStatus,
+          serviceId: responseData.serviceId,
+          serviceName: responseData.serviceName,
+          consignmentId: responseData.consignmentId,
+          deliveryStatus: responseData.deliveryStatus,
+          lastSyncedAt: responseData.lastSyncedAt,
+          rawStatus: responseData.rawStatus,
         },
       }));
       toast.success("Delivery partner added successfully. Order updated with current delivery status.");
@@ -1051,18 +931,18 @@ export function OrderDetailsClient({ initialOrder, products, prevOrderId, nextOr
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-background via-background to-muted/30 animate-in fade-in duration-300'>
-      <OrderHeader 
-          saving={saving} 
-          orderId={order.id}
-          customOrderId={order.customOrderId}
-          orderDate={order.createdAt}
-          orderStatus={order.status}
-          prevOrderId={prevOrderId}
-          nextOrderId={nextOrderId}
-          onSave={handleSave} 
-          onDownload={handleDownload} 
-          onPrint={handlePrint} 
-        />
+      <OrderHeader
+        saving={saving}
+        orderId={order.id}
+        customOrderId={order.customOrderId}
+        orderDate={order.createdAt}
+        orderStatus={order.status}
+        prevOrderId={prevOrderId}
+        nextOrderId={nextOrderId}
+        onSave={handleSave}
+        onDownload={handleDownload}
+        onPrint={handlePrint}
+      />
 
       {/* Main Content with Modern Layout */}
       <div className='w-full mx-auto py-4 sm:py-6 lg:py-8 pb-52 sm:pb-8'>

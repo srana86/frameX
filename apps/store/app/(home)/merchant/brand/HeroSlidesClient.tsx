@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { HeroSlide } from "@/app/api/hero-slides/route";
+import type { HeroSlide } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -222,9 +222,8 @@ export function HeroSlidesClient() {
               {slides.map((slide, index) => (
                 <Card
                   key={slide.id || index}
-                  className={`border-2 shadow-sm transition-all ${
-                    editingIndex === index ? "border-primary shadow-lg ring-2 ring-primary/20" : "hover:shadow-md"
-                  }`}
+                  className={`border-2 shadow-sm transition-all ${editingIndex === index ? "border-primary shadow-lg ring-2 ring-primary/20" : "hover:shadow-md"
+                    }`}
                 >
                   <CardHeader className='pb-4'>
                     <div className='flex items-center justify-between'>
@@ -448,20 +447,18 @@ export function HeroSlidesClient() {
                                     <div
                                       className='absolute inset-0'
                                       style={{
-                                        backgroundColor: `rgba(0, 0, 0, ${
-                                          slide.overlayOpacity !== undefined ? slide.overlayOpacity : 0.4
-                                        })`,
+                                        backgroundColor: `rgba(0, 0, 0, ${slide.overlayOpacity !== undefined ? slide.overlayOpacity : 0.4
+                                          })`,
                                       }}
                                     />
                                   )}
                                   <div
-                                    className={`absolute inset-0 flex flex-col justify-center p-4 ${
-                                      slide.textPosition === "left"
+                                    className={`absolute inset-0 flex flex-col justify-center p-4 ${slide.textPosition === "left"
                                         ? "items-start text-left"
                                         : slide.textPosition === "right"
-                                        ? "items-end text-right"
-                                        : "items-center text-center"
-                                    }`}
+                                          ? "items-end text-right"
+                                          : "items-center text-center"
+                                      }`}
                                     style={{ color: slide.textColor }}
                                   >
                                     <h2 className='text-lg sm:text-xl font-bold drop-shadow-lg'>{slide.title || "Title"}</h2>
@@ -500,20 +497,18 @@ export function HeroSlidesClient() {
                                     <div
                                       className='absolute inset-0'
                                       style={{
-                                        backgroundColor: `rgba(0, 0, 0, ${
-                                          slide.overlayOpacity !== undefined ? slide.overlayOpacity : 0.4
-                                        })`,
+                                        backgroundColor: `rgba(0, 0, 0, ${slide.overlayOpacity !== undefined ? slide.overlayOpacity : 0.4
+                                          })`,
                                       }}
                                     />
                                   )}
                                   <div
-                                    className={`absolute inset-0 flex flex-col justify-center p-4 ${
-                                      slide.textPosition === "left"
+                                    className={`absolute inset-0 flex flex-col justify-center p-4 ${slide.textPosition === "left"
                                         ? "items-start text-left"
                                         : slide.textPosition === "right"
-                                        ? "items-end text-right"
-                                        : "items-center text-center"
-                                    }`}
+                                          ? "items-end text-right"
+                                          : "items-center text-center"
+                                      }`}
                                     style={{ color: slide.textColor }}
                                   >
                                     <h2 className='text-base sm:text-lg font-bold drop-shadow-lg'>{slide.title || "Title"}</h2>

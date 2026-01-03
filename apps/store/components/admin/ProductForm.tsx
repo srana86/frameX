@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { Product } from "@/lib/types";
-import type { ProductCategory } from "@/app/api/products/categories/route";
+import type { Product, ProductCategory } from "@/lib/types";
+import { apiRequest } from "@/lib/api-client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -94,20 +94,17 @@ export default function ProductForm({ initial }: { initial?: Product }) {
 
   const loadCategories = async () => {
     try {
-      const res = await fetch("/api/products/categories");
-      if (!res.ok) throw new Error("Failed to load categories");
-      const data = await res.json();
+      const data: any = await apiRequest("GET", "/products/categories");
       // API returns { categories: [...], pagination: {...} }
-      const categoriesList = Array.isArray(data) ? data : data?.categories || [];
+      const categoriesList = Array.isArray(data) ? data : data?.data?.categories || data?.categories || [];
       setCategories(categoriesList);
 
       // Set default category if none is selected and categories exist
       if (!draft.category && categoriesList.length > 0) {
-        setDraft({ ...draft, category: categoriesList[0].name });
+        setDraft((prev) => ({ ...prev, category: categoriesList[0].name }));
       }
     } catch (error) {
       console.error("Failed to load categories:", error);
-      // Ensure categories is always an array even on error
       setCategories([]);
     }
   };
@@ -160,10 +157,11 @@ export default function ProductForm({ initial }: { initial?: Product }) {
       form.append("file", compressedFile);
       form.append("folder", "products");
       form.append("resource_type", "auto");
-      const res = await fetch("/api/upload", { method: "POST", body: form });
-      const data = await res.json();
-      const url = data?.secure_url || data?.url;
-      if (res.ok && typeof url === "string") {
+      const res: any = await apiRequest("POST", "/upload", form, undefined, {
+        "Content-Type": "multipart/form-data"
+      });
+      const url = res?.data?.secure_url || res?.data?.url || res?.secure_url || res?.url;
+      if (url) {
         const next = [...draft.images];
         next[idx] = url;
         setDraft({ ...draft, images: next });
@@ -220,15 +218,7 @@ export default function ProductForm({ initial }: { initial?: Product }) {
     } as Partial<Product> & { id?: string };
     try {
       toast.loading(id ? "Updating product..." : "Creating product...", { id: "save-product" });
-      const res = await fetch(id ? `/api/products/${id}` : "/api/products", {
-        method: id ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `Save failed: ${res.status} ${res.statusText}`);
-      }
+      await apiRequest(id ? "PUT" : "POST", id ? `/products/${id}` : "/products", payload);
       toast.success(id ? "Product updated" : "Product created", { id: "save-product" });
       router.push("/merchant/products");
       router.refresh();
@@ -451,9 +441,8 @@ export default function ProductForm({ initial }: { initial?: Product }) {
                   <div>
                     <p className='text-xs text-muted-foreground mb-1'>Profit Margin</p>
                     <p
-                      className={`text-base font-bold ${
-                        Number(draft.price) - Number(draft.buyPrice) >= 0 ? "text-green-600" : "text-red-600"
-                      }`}
+                      className={`text-base font-bold ${Number(draft.price) - Number(draft.buyPrice) >= 0 ? "text-green-600" : "text-red-600"
+                        }`}
                     >
                       {currencySymbol}
                       {(Number(draft.price) - Number(draft.buyPrice)).toFixed(2)}

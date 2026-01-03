@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ProductGrid } from "@/components/site/ProductGrid";
-import type { Product } from "@/lib/types";
-import type { ProductCategory } from "@/app/api/products/categories/route";
+import type { Product, ProductCategory } from "@/lib/types";
 import CloudImage from "@/components/site/CloudImage";
 import { useCurrencySymbol } from "@/hooks/use-currency";
 
@@ -30,17 +29,17 @@ export function HomePageClient({ categories, productsByCategory, allProducts, mo
   const popularProducts = selectedCategory
     ? filteredProducts.slice(0, 4)
     : categories.length > 0 && categories[0]
-    ? (productsByCategory[categories[0].name] || []).slice(0, 4)
-    : allProducts.filter((p) => p.featured).slice(0, 4);
+      ? (productsByCategory[categories[0].name] || []).slice(0, 4)
+      : allProducts.filter((p) => p.featured).slice(0, 4);
 
   // Use fetched most loved products, or fallback to filtered products
   const displayMostLovedProducts = selectedCategory
     ? filteredProducts.slice(4, 8)
     : mostLovedProducts.length > 0
-    ? mostLovedProducts
-    : categories.length > 1 && categories[1]
-    ? (productsByCategory[categories[1].name] || []).slice(0, 4)
-    : allProducts.filter((p) => !p.featured).slice(0, 4) || allProducts.slice(4, 8);
+      ? mostLovedProducts
+      : categories.length > 1 && categories[1]
+        ? (productsByCategory[categories[1].name] || []).slice(0, 4)
+        : allProducts.filter((p) => !p.featured).slice(0, 4) || allProducts.slice(4, 8);
 
   const hasProducts = filteredProducts.length > 0;
 
@@ -187,13 +186,12 @@ export function HomePageClient({ categories, productsByCategory, allProducts, mo
                             {[...Array(5)].map((_, i) => (
                               <svg
                                 key={i}
-                                className={`w-3 h-3 ${
-                                  i < 4
+                                className={`w-3 h-3 ${i < 4
                                     ? "fill-yellow-400 text-yellow-400"
                                     : i === 4
-                                    ? "fill-yellow-400/50 text-yellow-400"
-                                    : "fill-gray-200 text-gray-200"
-                                }`}
+                                      ? "fill-yellow-400/50 text-yellow-400"
+                                      : "fill-gray-200 text-gray-200"
+                                  }`}
                                 viewBox='0 0 20 20'
                               >
                                 <path d='M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z' />
@@ -276,13 +274,12 @@ export function HomePageClient({ categories, productsByCategory, allProducts, mo
                             {[...Array(5)].map((_, i) => (
                               <svg
                                 key={i}
-                                className={`w-3 h-3 ${
-                                  i < 4
+                                className={`w-3 h-3 ${i < 4
                                     ? "fill-yellow-400 text-yellow-400"
                                     : i === 4
-                                    ? "fill-yellow-400/50 text-yellow-400"
-                                    : "fill-gray-200 text-gray-200"
-                                }`}
+                                      ? "fill-yellow-400/50 text-yellow-400"
+                                      : "fill-gray-200 text-gray-200"
+                                  }`}
                                 viewBox='0 0 20 20'
                               >
                                 <path d='M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z' />

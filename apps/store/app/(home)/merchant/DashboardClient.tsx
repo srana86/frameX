@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useCallback } from "react";
 import type { Product, Order } from "@/lib/types";
-import type { ProductCategory } from "@/app/api/products/categories/route";
+import type { ProductCategory } from "@/lib/types";
 import type { Investment } from "@/app/(home)/merchant/investments/actions";
 import { useCurrencySymbol } from "@/hooks/use-currency";
 import { useOrdersSocket } from "@/hooks/use-orders-socket";
@@ -906,9 +906,8 @@ export function DashboardClient({ initialData, brandName = "E-Commerce Store" }:
             <p className='text-[10px] sm:text-base font-medium text-foreground tracking-wide'>Net Profit</p>
           </div>
           <div
-            className={`text-base sm:text-lg md:text-xl font-bold truncate ${
-              stats.netProfit >= 0 ? "text-foreground" : "text-destructive"
-            }`}
+            className={`text-base sm:text-lg md:text-xl font-bold truncate ${stats.netProfit >= 0 ? "text-foreground" : "text-destructive"
+              }`}
           >
             {currencySymbol}
             {stats.netProfit.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
@@ -926,9 +925,8 @@ export function DashboardClient({ initialData, brandName = "E-Commerce Store" }:
             <p className='text-[10px] sm:text-base font-medium text-foreground tracking-wide'>Avg Profit</p>
           </div>
           <div
-            className={`text-base sm:text-lg md:text-xl font-bold truncate ${
-              stats.averageProfit >= 0 ? "text-foreground" : "text-destructive"
-            }`}
+            className={`text-base sm:text-lg md:text-xl font-bold truncate ${stats.averageProfit >= 0 ? "text-foreground" : "text-destructive"
+              }`}
           >
             {currencySymbol}
             {stats.averageProfit.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
@@ -981,9 +979,8 @@ export function DashboardClient({ initialData, brandName = "E-Commerce Store" }:
                   variant={timePeriod === "7days" ? "default" : "outline"}
                   size='sm'
                   onClick={() => setTimePeriod("7days")}
-                  className={`text-xs sm:text-sm px-2 sm:px-3 h-7 ${
-                    timePeriod === "7days" ? "bg-primary hover:bg-primary/90 text-white border-primary" : ""
-                  }`}
+                  className={`text-xs sm:text-sm px-2 sm:px-3 h-7 ${timePeriod === "7days" ? "bg-primary hover:bg-primary/90 text-white border-primary" : ""
+                    }`}
                 >
                   <span className='hidden sm:inline'>Last </span>7d
                 </Button>
@@ -991,9 +988,8 @@ export function DashboardClient({ initialData, brandName = "E-Commerce Store" }:
                   variant={timePeriod === "30days" ? "default" : "outline"}
                   size='sm'
                   onClick={() => setTimePeriod("30days")}
-                  className={`text-xs sm:text-sm px-2 sm:px-3 h-7 ${
-                    timePeriod === "30days" ? "bg-primary hover:bg-primary/90 text-white border-primary" : ""
-                  }`}
+                  className={`text-xs sm:text-sm px-2 sm:px-3 h-7 ${timePeriod === "30days" ? "bg-primary hover:bg-primary/90 text-white border-primary" : ""
+                    }`}
                 >
                   <span className='hidden sm:inline'>Last </span>30d
                 </Button>
@@ -1001,9 +997,8 @@ export function DashboardClient({ initialData, brandName = "E-Commerce Store" }:
                   variant={timePeriod === "3months" ? "default" : "outline"}
                   size='sm'
                   onClick={() => setTimePeriod("3months")}
-                  className={`text-xs sm:text-sm px-2 sm:px-3 h-7 ${
-                    timePeriod === "3months" ? "bg-primary hover:bg-primary/90 text-white border-primary" : ""
-                  }`}
+                  className={`text-xs sm:text-sm px-2 sm:px-3 h-7 ${timePeriod === "3months" ? "bg-primary hover:bg-primary/90 text-white border-primary" : ""
+                    }`}
                 >
                   <span className='hidden sm:inline'>Last </span>3m
                 </Button>
@@ -1011,9 +1006,8 @@ export function DashboardClient({ initialData, brandName = "E-Commerce Store" }:
                   variant={timePeriod === "all" ? "default" : "outline"}
                   size='sm'
                   onClick={() => setTimePeriod("all")}
-                  className={`text-xs sm:text-sm px-2 sm:px-3 h-7 ${
-                    timePeriod === "all" ? "bg-primary hover:bg-primary/90 text-white border-primary" : ""
-                  }`}
+                  className={`text-xs sm:text-sm px-2 sm:px-3 h-7 ${timePeriod === "all" ? "bg-primary hover:bg-primary/90 text-white border-primary" : ""
+                    }`}
                 >
                   All
                 </Button>

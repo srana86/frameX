@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Pagination } from "@/components/shared/Pagination";
 import { toast } from "sonner";
+import { apiRequest } from "@/lib/api-client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -250,24 +251,22 @@ function MobileOrderCard({
             <div className='flex items-center gap-1.5'>
               <Badge
                 variant='outline'
-                className={`text-[10px] font-medium px-1.5 py-0 ${
-                  order.fraudCheck.fraud_risk === "low"
-                    ? "border-green-200 text-green-600 bg-green-50/50"
-                    : order.fraudCheck.fraud_risk === "medium"
+                className={`text-[10px] font-medium px-1.5 py-0 ${order.fraudCheck.fraud_risk === "low"
+                  ? "border-green-200 text-green-600 bg-green-50/50"
+                  : order.fraudCheck.fraud_risk === "medium"
                     ? "border-yellow-200 text-yellow-600 bg-yellow-50/50"
                     : "border-red-200 text-red-600 bg-red-50/50"
-                }`}
+                  }`}
               >
                 {order.fraudCheck.fraud_risk.toUpperCase()} RISK
               </Badge>
               <span
-                className={`text-[10px] font-semibold ${
-                  order.fraudCheck.success_rate >= 90
-                    ? "text-green-600"
-                    : order.fraudCheck.success_rate >= 70
+                className={`text-[10px] font-semibold ${order.fraudCheck.success_rate >= 90
+                  ? "text-green-600"
+                  : order.fraudCheck.success_rate >= 70
                     ? "text-yellow-600"
                     : "text-red-600"
-                }`}
+                  }`}
               >
                 {order.fraudCheck.success_rate.toFixed(0)}%
               </span>
@@ -478,8 +477,8 @@ function MobileFilterDrawer({
                         ? "default"
                         : "outline"
                       : dateRange.from && days === 0 && dateRange.from.toDateString() === new Date().toDateString()
-                      ? "default"
-                      : "outline"
+                        ? "default"
+                        : "outline"
                   }
                   size='sm'
                   className='h-10'
@@ -638,13 +637,10 @@ export function OrdersClient() {
   useEffect(() => {
     const fetchMerchantId = async () => {
       try {
-        const res = await fetch("/api/merchant/context");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.data?.merchant?.id) {
-            setMerchantId(data.data.merchant.id);
-            return;
-          }
+        const data: any = await apiRequest("GET", "/merchant/context");
+        if (data.success && data.data?.merchant?.id) {
+          setMerchantId(data.data.merchant.id);
+          return;
         }
       } catch (error) {
         console.warn("[Orders] Failed to get merchant ID from context:", error);
@@ -708,40 +704,29 @@ export function OrdersClient() {
     async (page: number = 1, status: OrderStatus | "all" = "all", search: string = "", category: string = "all") => {
       try {
         setLoading(true);
-        const [ordersData, productsRes, blockedRes] = await Promise.all([
+        const [ordersData, productsData, blockedData]: any = await Promise.all([
           getOrders(page, limit, status !== "all" ? status : undefined, search.trim() || undefined),
-          fetch("/api/products", {
-            cache: "force-cache",
-            next: { revalidate: 60 },
-          }),
-          fetch("/api/blocked-customers?activeOnly=true", {
-            cache: "force-cache",
-            next: { revalidate: 60 },
-          }),
+          apiRequest("GET", "/products"),
+          apiRequest("GET", "/blocked-customers?activeOnly=true"),
         ]);
 
-        if (!productsRes.ok) throw new Error("Failed to load products");
+        const productsList = Array.isArray(productsData) ? productsData : productsData?.data?.products || productsData?.products || [];
 
-        const productsResponse = (await productsRes.json()) as { products?: Product[] } | Product[];
-        const productsData = Array.isArray(productsResponse) ? productsResponse : productsResponse.products || [];
-
-        if (blockedRes.ok) {
-          const blockedData = await blockedRes.json();
-          const phones = new Set<string>();
-          (blockedData.customers || []).forEach((c: { phone: string }) => {
-            if (c.phone) {
-              const normalized = c.phone.replace(/\D/g, "").slice(-11);
-              phones.add(c.phone);
-              phones.add(normalized);
-              phones.add(normalized.slice(-10));
-            }
-          });
-          setBlockedPhones(phones);
-        }
+        const phones = new Set<string>();
+        const blockedList = Array.isArray(blockedData) ? blockedData : blockedData?.data?.customers || blockedData?.customers || [];
+        blockedList.forEach((c: { phone: string }) => {
+          if (c.phone) {
+            const normalized = c.phone.replace(/\D/g, "").slice(-11);
+            phones.add(c.phone);
+            phones.add(normalized);
+            phones.add(normalized.slice(-10));
+          }
+        });
+        setBlockedPhones(phones);
 
         setOrders(ordersData.orders);
         setPagination(ordersData.pagination);
-        setProducts(productsData);
+        setProducts(productsList);
       } catch (error: any) {
         console.error("Error loading orders:", error);
         toast.error(error?.message || "Failed to load orders");
@@ -1068,10 +1053,7 @@ export function OrdersClient() {
   const syncAllCourierStatus = async () => {
     setIsSyncingCourier(true);
     try {
-      const response = await fetch("/api/orders/sync-courier-status", {
-        method: "POST",
-      });
-      const data = await response.json();
+      const data: any = await apiRequest("POST", "/orders/sync-courier-status");
 
       if (data.success) {
         const { updated, skipped, failed, totalOrders } = data.results;

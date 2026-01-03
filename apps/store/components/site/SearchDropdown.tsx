@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/lib/types";
 import { useCurrencySymbol } from "@/hooks/use-currency";
 import CloudImage from "@/components/site/CloudImage";
+import { apiRequest } from "@/lib/api-client";
 
 interface SearchDropdownProps {
   onClose?: () => void;
@@ -33,13 +34,8 @@ export function SearchDropdown({ onClose }: SearchDropdownProps) {
 
     setLoadingDefaults(true);
     try {
-      const response = await fetch("/api/products/search?newest=true&limit=8");
-      if (response.ok) {
-        const data = await response.json();
-        setDefaultProducts(data.products || []);
-      } else {
-        console.error("Failed to fetch default products:", response.status);
-      }
+      const data = await apiRequest<any>("GET", "/products/search?newest=true&limit=8");
+      setDefaultProducts(data.products || []);
     } catch (error) {
       console.error("Error fetching default products:", error);
     } finally {
@@ -64,13 +60,8 @@ export function SearchDropdown({ onClose }: SearchDropdownProps) {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/products/search?q=${encodeURIComponent(searchQuery)}&limit=8`);
-      if (response.ok) {
-        const data = await response.json();
-        setResults(data.products || []);
-      } else {
-        setResults([]);
-      }
+      const data = await apiRequest<any>("GET", `/products/search?q=${encodeURIComponent(searchQuery)}&limit=8`);
+      setResults(data.products || []);
     } catch (error) {
       console.error("Search error:", error);
       setResults([]);

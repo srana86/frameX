@@ -86,7 +86,7 @@ export async function getMerchantSubscription(merchantId: string): Promise<Merch
 export async function getSubscriptionPlan(planId: string): Promise<SubscriptionPlan | null> {
   try {
     const baseUrl = SUPER_ADMIN_URL.endsWith("/") ? SUPER_ADMIN_URL.slice(0, -1) : SUPER_ADMIN_URL;
-    const response = await fetch(`${baseUrl}/api/plans/${planId}`, {
+    const response = await fetch(`${baseUrl}/api/v1/plans/${planId}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       next: { revalidate: 300 },
@@ -111,7 +111,7 @@ export async function getSubscriptionPlan(planId: string): Promise<SubscriptionP
 export async function getActivePlans(): Promise<SubscriptionPlan[]> {
   try {
     const baseUrl = SUPER_ADMIN_URL.endsWith("/") ? SUPER_ADMIN_URL.slice(0, -1) : SUPER_ADMIN_URL;
-    const response = await fetch(`${baseUrl}/api/plans`, {
+    const response = await fetch(`${baseUrl}/api/v1/plans`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       next: { revalidate: 300 },
@@ -172,7 +172,7 @@ export async function getSubscriptionWithStatus(merchantId: string): Promise<{
 export async function getPendingInvoice(merchantId: string): Promise<SubscriptionInvoice | null> {
   try {
     const baseUrl = SUPER_ADMIN_URL.endsWith("/") ? SUPER_ADMIN_URL.slice(0, -1) : SUPER_ADMIN_URL;
-    const response = await fetch(`${baseUrl}/api/invoices?merchantId=${merchantId}&status=pending`, {
+    const response = await fetch(`${baseUrl}/api/v1/invoices?merchantId=${merchantId}&status=pending`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -210,7 +210,7 @@ export async function createRenewalInvoice(merchantId: string, subscription: Mer
     const amount = subscription.amount || (plan as any).basePrice || 0;
 
     const baseUrl = SUPER_ADMIN_URL.endsWith("/") ? SUPER_ADMIN_URL.slice(0, -1) : SUPER_ADMIN_URL;
-    const response = await fetch(`${baseUrl}/api/invoices`, {
+    const response = await fetch(`${baseUrl}/api/v1/invoices`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -262,7 +262,7 @@ export async function updateSubscriptionStatus(merchantId: string): Promise<Merc
 export async function getMerchantInvoices(merchantId: string): Promise<SubscriptionInvoice[]> {
   try {
     const baseUrl = SUPER_ADMIN_URL.endsWith("/") ? SUPER_ADMIN_URL.slice(0, -1) : SUPER_ADMIN_URL;
-    const response = await fetch(`${baseUrl}/api/invoices?merchantId=${merchantId}`, {
+    const response = await fetch(`${baseUrl}/api/v1/invoices?merchantId=${merchantId}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",

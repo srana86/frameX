@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
+import { apiRequest } from "@/lib/api-client";
 
 // Zod schema for login form
 const loginSchema = z.object({
@@ -45,22 +46,12 @@ export function LoginForm({ googleOAuthEnabled = false }: LoginFormProps) {
 
     try {
       // Call login API
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          method: "email",
-          email: values.email,
-          password: values.password,
-          rememberMe: values.rememberMe,
-        }),
+      const data = await apiRequest<any>("POST", "/auth/login", {
+        method: "email",
+        email: values.email,
+        password: values.password,
+        rememberMe: values.rememberMe,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Login failed");
-      }
 
       toast.success("Login successful!");
       // JWT token is automatically set in httpOnly cookie by the API
@@ -80,9 +71,29 @@ export function LoginForm({ googleOAuthEnabled = false }: LoginFormProps) {
     }
   };
 
-  const handleGoogleLogin = () => {
-    // Redirect to Google OAuth
-    window.location.href = "/api/auth/google";
+  const handleGoogleLogin = async () => {
+    try {
+      // Fetch OAuth config from backend
+      const oauthConfig = await apiRequest<any>("GET", "/configs/oauth");
+      if (!oauthConfig.google?.enabled || !oauthConfig.google?.clientId) {
+        toast.error("Google login is not configured");
+        return;
+      }
+
+      const clientId = oauthConfig.google.clientId;
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const redirectUri = `${origin}/google-callback`;
+      const scope = "openid email profile";
+      const responseType = "code";
+
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(
+        redirectUri
+      )}&response_type=${responseType}&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
+
+      window.location.href = authUrl;
+    } catch (error) {
+      toast.error("Failed to initiate Google login");
+    }
   };
 
   return (

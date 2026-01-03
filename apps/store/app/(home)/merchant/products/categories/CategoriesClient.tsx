@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { ProductCategory } from "@/app/api/products/categories/route";
+import type { ProductCategory } from "@/lib/types";
+import { apiRequest } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -124,16 +125,22 @@ export function CategoriesClient({ initialData }: CategoriesClientProps) {
   const fetchCategories = useCallback(async (page: number = 1, limit: number = 30) => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
+      const res: any = await apiRequest("GET", "/products/categories", undefined, {
         page: page.toString(),
         limit: limit.toString(),
       });
 
-      const res = await fetch(`/api/products/categories?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to load categories");
-      const data = (await res.json()) as InitialData;
-      setCategories(data.categories);
-      setPagination(data.pagination);
+      if (res && res.success) {
+        setCategories(res.data.categories);
+        setPagination({
+          page: res.meta.page,
+          limit: res.meta.limit,
+          total: res.meta.total,
+          totalPages: res.meta.totalPage,
+          hasNextPage: res.meta.page < res.meta.totalPage,
+          hasPrevPage: res.meta.page > 1,
+        });
+      }
     } catch (error) {
       console.error("Error fetching categories:", error);
       toast.error("Failed to load categories");
@@ -197,31 +204,15 @@ export function CategoriesClient({ initialData }: CategoriesClientProps) {
     try {
       if (editingCategory) {
         // Update existing category
-        const res = await fetch(`/api/products/categories/${editingCategory.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: categoryName.trim() }),
+        await apiRequest("PUT", `/products/categories/${editingCategory.id}`, {
+          name: categoryName.trim()
         });
-
-        if (!res.ok) {
-          const error = await res.json();
-          throw new Error(error.error || "Failed to update category");
-        }
-
         toast.success("Category updated successfully");
       } else {
         // Create new category
-        const res = await fetch("/api/products/categories", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: categoryName.trim() }),
+        await apiRequest("POST", "/products/categories", {
+          name: categoryName.trim()
         });
-
-        if (!res.ok) {
-          const error = await res.json();
-          throw new Error(error.error || "Failed to create category");
-        }
-
         toast.success("Category created successfully");
       }
 
@@ -239,11 +230,7 @@ export function CategoriesClient({ initialData }: CategoriesClientProps) {
     if (!idToDelete) return;
 
     try {
-      const res = await fetch(`/api/products/categories/${idToDelete}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("Failed to delete category");
+      await apiRequest("DELETE", `/products/categories/${idToDelete}`);
 
       toast.success("Category deleted successfully");
       setDeleteId(null);
@@ -265,13 +252,10 @@ export function CategoriesClient({ initialData }: CategoriesClientProps) {
 
     // Update order in database
     try {
-      const res = await fetch("/api/products/categories", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ categories: newCategories }),
+      await apiRequest("PUT", "/products/categories", {
+        categories: newCategories.map((c, i) => ({ id: c.id, order: i }))
       });
 
-      if (!res.ok) throw new Error("Failed to update order");
       fetchCategories(currentPage, limit);
     } catch (error) {
       toast.error("Failed to update order");
@@ -309,15 +293,10 @@ export function CategoriesClient({ initialData }: CategoriesClientProps) {
     setCategories(newCategories);
     setDraggedIndex(null);
 
-    // Update order in database
     try {
-      const res = await fetch("/api/products/categories", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ categories: newCategories }),
+      await apiRequest("PUT", "/products/categories", {
+        categories: newCategories.map((c, i) => ({ id: c.id, order: i }))
       });
-
-      if (!res.ok) throw new Error("Failed to update order");
       fetchCategories(currentPage, limit);
     } catch (error) {
       toast.error("Failed to update order");
@@ -502,13 +481,12 @@ export function CategoriesClient({ initialData }: CategoriesClientProps) {
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, index)}
                     onDragEnd={handleDragEnd}
-                    className={`flex items-center gap-3 rounded-lg border p-3 sm:p-4 transition-all ${
-                      draggedIndex === index
-                        ? "opacity-50 cursor-grabbing"
-                        : dragOverIndex === index
+                    className={`flex items-center gap-3 rounded-lg border p-3 sm:p-4 transition-all ${draggedIndex === index
+                      ? "opacity-50 cursor-grabbing"
+                      : dragOverIndex === index
                         ? "border-primary bg-primary/5 scale-[1.02]"
                         : "hover:bg-accent/50 cursor-grab"
-                    }`}
+                      }`}
                   >
                     <div className='flex items-center gap-2 cursor-grab active:cursor-grabbing' onMouseDown={(e) => e.stopPropagation()}>
                       <GripVertical className='w-4 h-4 sm:w-5 sm:h-5 text-slate-400 dark:text-slate-500' />

@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "NODE_OPTIONS='--max-old-space-size=4096' tsx server.ts",
-    "dev:next": "NODE_OPTIONS='--max-old-space-size=4096' next dev",
-    "dev:custom": "NODE_OPTIONS='--max-old-space-size=4096' tsx server.ts",
+    "dev": "NODE_OPTIONS='--max-old-space-size=4096' PORT=3000 tsx server.ts",
+    "dev:next": "NODE_OPTIONS='--max-old-space-size=4096' next dev -p 3000",
+    "dev:custom": "NODE_OPTIONS='--max-old-space-size=4096' PORT=3000 tsx server.ts",
     "build": "NODE_OPTIONS='--max-old-space-size=4096' next build",
-    "start": "next start",
-    "start:custom": "NODE_ENV=production tsx server.ts",
+    "start": "next start -p 3000",
+    "start:custom": "NODE_ENV=production PORT=3000 tsx server.ts",
     "lint": "eslint"
   },
   "dependencies": {
@@ -98,7 +98,6 @@
     "react-infinite-scroll-component": "^6.1.1",
     "react-resizable-panels": "^3.0.6",
     "recharts": "2.15.4",
-    "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "sonner": "^2.0.7",
     "sslcommerz-lts": "^1.2.0",

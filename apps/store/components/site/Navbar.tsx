@@ -11,6 +11,7 @@ import { useWishlist } from "@/components/providers/wishlist-provider";
 import { Logo } from "@/components/site/Logo";
 import { SearchDropdown } from "@/components/site/SearchDropdown";
 import { NavLinks } from "@/components/site/NavLinks";
+import { apiRequest } from "@/lib/api-client";
 import type { BrandConfig } from "@/lib/brand-config";
 import {
   DropdownMenu,
@@ -53,12 +54,9 @@ export function Navbar({ brandConfig }: NavbarProps) {
   useEffect(() => {
     const fetchBanner = async () => {
       try {
-        const res = await fetch("/api/promotional-banner");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.enabled) {
-            setBanner(data);
-          }
+        const data = await apiRequest<any>("GET", "/promotional-banner");
+        if (data?.enabled) {
+          setBanner(data);
         }
       } catch (error) {
         // Silently fail - banner is optional
@@ -71,21 +69,15 @@ export function Navbar({ brandConfig }: NavbarProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch("/api/auth/me");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.user) {
-            setIsAuthenticated(true);
-            setUserName(data.user.fullName || data.user.email || null);
-            setUserRole(data.user.role || null);
-          } else {
-            setIsAuthenticated(false);
-            setUserName(null);
-            setUserRole(null);
-          }
+        const data = await apiRequest<any>("GET", "/auth/me");
+        if (data?.user) {
+          setIsAuthenticated(true);
+          setUserName(data.user.fullName || data.user.email || null);
+          setUserRole(data.user.role || null);
         } else {
           setIsAuthenticated(false);
           setUserName(null);
+          setUserRole(null);
         }
       } catch (error) {
         setIsAuthenticated(false);
@@ -98,19 +90,15 @@ export function Navbar({ brandConfig }: NavbarProps) {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("/api/auth/logout", { method: "POST" });
-      if (response.ok) {
-        // Clear localStorage
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("shoestore_user_profile");
-        }
-        setIsAuthenticated(false);
-        setUserName(null);
-        toast.success("Logged out successfully");
-        router.push("/");
-      } else {
-        throw new Error("Logout failed");
+      await apiRequest("POST", "/auth/logout");
+      // Clear localStorage
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("shoestore_user_profile");
       }
+      setIsAuthenticated(false);
+      setUserName(null);
+      toast.success("Logged out successfully");
+      router.push("/");
     } catch (error) {
       toast.error("Failed to logout");
     }

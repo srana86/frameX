@@ -10,6 +10,7 @@ import CloudImage from "@/components/site/CloudImage";
 import type { Order, CustomerInfo } from "@/lib/types";
 import { format } from "date-fns";
 import { useCurrencySymbol } from "@/hooks/use-currency";
+import { apiRequest } from "@/lib/api-client";
 
 interface OrdersTabProps {
   userProfile: CustomerInfo | null;
@@ -38,16 +39,11 @@ export default function OrdersTab({ userProfile }: OrdersTabProps) {
 
       try {
         setLoading(true);
-        const params = new URLSearchParams();
-        if (userProfile.email) params.append("email", userProfile.email);
-        if (userProfile.phone) params.append("phone", userProfile.phone);
-
-        const res = await fetch(`/api/orders/user?${params.toString()}`);
-        if (!res.ok) {
-          throw new Error("Failed to fetch orders");
-        }
-        const data = await res.json();
-        setOrders(data);
+        const data: any = await apiRequest("GET", "/orders/user", undefined, {
+          email: userProfile.email,
+          phone: userProfile.phone,
+        });
+        setOrders(data.orders || []);
         setError(null);
       } catch (err: any) {
         setError(err?.message || "Failed to load orders");
@@ -143,11 +139,11 @@ export default function OrdersTab({ userProfile }: OrdersTabProps) {
                 {order.items.map((item, idx) => (
                   <div key={idx} className="flex gap-3 pb-3 border-b last:border-0">
                     <div className="relative w-16 h-16 overflow-hidden rounded-lg border bg-accent/30 flex-shrink-0">
-                      <CloudImage 
-                        src={item.image} 
-                        alt={item.name} 
-                        fill 
-                        className="object-contain p-1" 
+                      <CloudImage
+                        src={item.image}
+                        alt={item.name}
+                        fill
+                        className="object-contain p-1"
                       />
                     </div>
                     <div className="flex-1 min-w-0">

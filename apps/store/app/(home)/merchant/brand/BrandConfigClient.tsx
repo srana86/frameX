@@ -163,12 +163,14 @@ export function BrandConfigClient({
   const loadConfig = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/brand-config", {
-        cache: "force-cache",
-        next: { revalidate: 300 },
-      });
-      if (!res.ok) throw new Error("Failed to load config");
-      const data = await res.json();
+      const { apiRequest } = await import("@/lib/api-client");
+      // Backend route is /brand-config based on routes/index.ts
+      // Note: cache/revalidate options are not supported by apiRequest wrapper directly in the same way, 
+      // but standard GET is fine. apiRequest prevents caching by default? 
+      // Actually standard fetch in Next.js defaults to cache. apiRequest header configuration might differ.
+      // We will assume standard behavior is fine.
+      const data = await apiRequest<BrandConfig>("GET", "/brand-config");
+
       // If no config exists in database, use default
       const newConfig = data || defaultBrandConfig;
       const normalizedConfig = {
@@ -199,12 +201,9 @@ export function BrandConfigClient({
     if (!config) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/brand-config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
-      });
-      if (!res.ok) throw new Error("Failed to save config");
+      const { apiRequest } = await import("@/lib/api-client");
+      await apiRequest("PUT", "/brand-config", config);
+
       toast.success("Brand settings saved successfully!");
       // Apply theme color immediately
       applyThemeColor(config.theme.primaryColor);
@@ -1762,9 +1761,8 @@ export function BrandConfigClient({
                         className='w-full justify-between'
                       >
                         {config.currency?.iso
-                          ? `${availableCurrencies.find((c) => c.code === config.currency?.iso)?.code || config.currency.iso} - ${
-                              availableCurrencies.find((c) => c.code === config.currency?.iso)?.name || "Currency"
-                            } (${availableCurrencies.find((c) => c.code === config.currency?.iso)?.symbol || "$"})`
+                          ? `${availableCurrencies.find((c) => c.code === config.currency?.iso)?.code || config.currency.iso} - ${availableCurrencies.find((c) => c.code === config.currency?.iso)?.name || "Currency"
+                          } (${availableCurrencies.find((c) => c.code === config.currency?.iso)?.symbol || "$"})`
                           : "Select currency..."}
                         <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
                       </Button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCurrencySymbol } from "@/hooks/use-currency";
+import { apiRequest } from "@/lib/api-client";
 import { useSearchParams, useRouter } from "next/navigation";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
@@ -148,20 +149,28 @@ export default function ProductsClient({ initialData }: ProductsClientProps) {
     async (page: number = 1, category: string = "all") => {
       setLoading(true);
       try {
-        const params = new URLSearchParams({
+        const params: any = {
           page: page.toString(),
           limit: limit.toString(),
-        });
+        };
         if (category !== "all") {
-          params.append("category", category);
+          params.category = category;
         }
 
-        const res = await fetch(`/api/products?${params.toString()}`);
-        if (!res.ok) throw new Error("Failed to load products");
-        const data = (await res.json()) as InitialData;
-        setProducts(data.products);
-        setPagination(data.pagination);
-        setCategories(data.categories);
+        const res: any = await apiRequest("GET", "/products", undefined, params);
+
+        if (res && res.success) {
+          setProducts(res.data.products);
+          setPagination({
+            page: res.meta.page,
+            limit: res.meta.limit,
+            total: res.meta.total,
+            totalPages: res.meta.totalPage,
+            hasNextPage: res.meta.page < res.meta.totalPage,
+            hasPrevPage: res.meta.page > 1,
+          });
+          setCategories(res.data.categories || []);
+        }
       } catch (error) {
         console.error("Error fetching products:", error);
         toast.error("Failed to load products");
@@ -226,7 +235,7 @@ export default function ProductsClient({ initialData }: ProductsClientProps) {
 
   const onDelete = async (idOrSlug: string) => {
     try {
-      await fetch(`/api/products/${idOrSlug}`, { method: "DELETE" });
+      await apiRequest("DELETE", `/products/${idOrSlug}`);
       toast.success("Product deleted successfully");
       // Refresh products
       fetchProducts(currentPage, selectedCategory);
@@ -273,13 +282,11 @@ export default function ProductsClient({ initialData }: ProductsClientProps) {
 
     // Update order in database silently
     try {
-      const res = await fetch("/api/products", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ products: newProducts }),
+      const product = filteredProducts[index];
+      await apiRequest("PUT", `/products/${product.id}/order`, {
+        order: newIndex // Use the new index as the order
       });
 
-      if (!res.ok) throw new Error("Failed to update order");
       // Refresh products silently
       fetchProducts(currentPage, selectedCategory);
     } catch (error) {
@@ -491,11 +498,10 @@ export default function ProductsClient({ initialData }: ProductsClientProps) {
                 variant={viewMode === "list" ? "default" : "ghost"}
                 size='sm'
                 onClick={() => handleViewModeChange("list")}
-                className={`h-8 sm:h-9 px-2.5 sm:px-3.5 text-xs sm:text-sm font-medium transition-all ${
-                  viewMode === "list"
+                className={`h-8 sm:h-9 px-2.5 sm:px-3.5 text-xs sm:text-sm font-medium transition-all ${viewMode === "list"
                     ? "bg-primary hover:bg-primary/90 text-white shadow-sm"
                     : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
-                }`}
+                  }`}
               >
                 <List className='h-4 w-4 mr-1.5' />
                 <span className='hidden sm:inline'>List</span>
@@ -504,11 +510,10 @@ export default function ProductsClient({ initialData }: ProductsClientProps) {
                 variant={viewMode === "grid" ? "default" : "ghost"}
                 size='sm'
                 onClick={() => handleViewModeChange("grid")}
-                className={`h-8 sm:h-9 px-2.5 sm:px-3.5 text-xs sm:text-sm font-medium transition-all ${
-                  viewMode === "grid"
+                className={`h-8 sm:h-9 px-2.5 sm:px-3.5 text-xs sm:text-sm font-medium transition-all ${viewMode === "grid"
                     ? "bg-primary hover:bg-primary/90 text-white shadow-sm"
                     : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
-                }`}
+                  }`}
               >
                 <Grid3x3 className='h-4 w-4 mr-1.5' />
                 <span className='hidden sm:inline'>Grid</span>

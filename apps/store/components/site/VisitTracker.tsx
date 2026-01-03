@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { apiRequest } from "@/lib/api-client";
 
 /**
  * VisitTracker Component
@@ -16,14 +17,10 @@ export function VisitTracker() {
     // Track visit
     const trackVisit = async () => {
       try {
-        await fetch("/api/visits", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            path: pathname,
-            referrer: typeof document !== "undefined" ? document.referrer : "",
-            userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
-          }),
+        await apiRequest("POST", "/visits", {
+          path: pathname,
+          referrer: typeof document !== "undefined" ? document.referrer : "",
+          userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
         });
       } catch (error) {
         // Silently fail - don't impact user experience

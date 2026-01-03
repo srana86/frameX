@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getCollection } from "@/lib/mongodb";
+import { serverSideApiClient } from "@/lib/api-client";
 import PageForm from "@/components/admin/PageForm";
-import type { FooterPage } from "@/app/api/pages/route";
+import type { FooterPage } from "@/lib/types";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -27,14 +27,14 @@ export default async function AdminEditPagePage({ params }: Props) {
 
 async function getPage(slug: string): Promise<FooterPage | null> {
   try {
-    const col = await getCollection<FooterPage>("footer_pages");
-    const page = await col.findOne({ slug });
-    if (!page) return null;
-    const { _id, ...pageWithoutId } = page as any;
-    return pageWithoutId as FooterPage;
+    const client = serverSideApiClient();
+    const response = await client.get(`/pages/${slug}`);
+    if (response.data?.data) {
+      return response.data.data as FooterPage;
+    }
   } catch (error) {
     console.error("Failed to fetch page:", error);
-    return null;
   }
+  return null;
 }
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Eye, Users, TrendingUp, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiRequest } from "@/lib/api-client";
 
 interface ProductViewersProps {
   productSlug: string;
@@ -84,16 +85,14 @@ export function ProductViewers({ productSlug, stock, className }: ProductViewers
 
     const registerViewer = async () => {
       try {
-        const response = await fetch("/api/product-viewers", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ slug: productSlug, sessionId }),
+        const data = await apiRequest<{ sessionId: string; count: number }>("POST", "/product-viewers", {
+          slug: productSlug,
+          sessionId,
         });
 
         if (!mounted) return;
 
-        if (response.ok) {
-          const data = await response.json();
+        if (data) {
           setSessionId(data.sessionId);
           setViewerCount(data.count);
           setIsVisible(data.count > 0);
@@ -119,14 +118,12 @@ export function ProductViewers({ productSlug, stock, className }: ProductViewers
       if (!mounted || !productSlug) return;
 
       try {
-        const response = await fetch(`/api/product-viewers?slug=${encodeURIComponent(productSlug)}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (mounted) {
-            setViewerCount(data.count);
-            setIsVisible(data.count > 0);
-            setLastUpdate(Date.now());
-          }
+        const data = await apiRequest<{ count: number }>("GET", `/product-viewers?slug=${encodeURIComponent(productSlug)}`);
+
+        if (mounted && data) {
+          setViewerCount(data.count);
+          setIsVisible(data.count > 0);
+          setLastUpdate(Date.now());
         }
       } catch (error) {
         console.error("Failed to poll viewer count:", error);
@@ -141,10 +138,9 @@ export function ProductViewers({ productSlug, stock, className }: ProductViewers
 
       // Remove viewer when leaving page
       if (sessionId && productSlug) {
-        fetch("/api/product-viewers", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ slug: productSlug, sessionId }),
+        apiRequest("DELETE", "/product-viewers", {
+          slug: productSlug,
+          sessionId,
         }).catch(() => {
           // Ignore errors on cleanup
         });

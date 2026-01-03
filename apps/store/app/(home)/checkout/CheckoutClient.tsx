@@ -42,6 +42,7 @@ import { CouponInput } from "@/components/site/CouponInput";
 import type { ApplyCouponResponse } from "@/lib/coupon-types";
 import { getSourceTrackingForOrder } from "@/lib/source-tracking";
 import { storeUserData, getUserDataForTracking } from "@/lib/tracking/user-data-store";
+import apiClient, { apiRequest } from "@/lib/api-client";
 
 type FormValues = CustomerInfo & {
   paymentMethod: PaymentMethod;
@@ -75,9 +76,8 @@ export default function CheckoutClient() {
   useEffect(() => {
     const loadDeliveryConfig = async () => {
       try {
-        const res = await fetch("/api/storefront/delivery-config", { cache: "no-store" });
-        if (res.ok) {
-          const data = await res.json();
+        const data: any = await apiRequest("GET", "/delivery-config");
+        if (data) {
           if (typeof data.defaultDeliveryCharge === "number") {
             setDefaultDeliveryCharge(data.defaultDeliveryCharge);
           }
@@ -108,10 +108,10 @@ export default function CheckoutClient() {
     dynamicShipping !== null
       ? dynamicShipping
       : defaultDeliveryCharge !== null && defaultDeliveryCharge > 0
-      ? defaultDeliveryCharge
-      : baseShippingFee > 0
-      ? baseShippingFee
-      : 0;
+        ? defaultDeliveryCharge
+        : baseShippingFee > 0
+          ? baseShippingFee
+          : 0;
   // Apply free shipping threshold (if subtotal meets threshold, shipping is free)
   // Use config threshold if available, otherwise disable free shipping (use max value)
   // Only use cart provider's threshold as a fallback if config hasn't loaded yet and we need a value
@@ -128,10 +128,10 @@ export default function CheckoutClient() {
     dynamicShipping !== null
       ? dynamicShipping
       : defaultDeliveryCharge !== null && defaultDeliveryCharge > 0
-      ? defaultDeliveryCharge
-      : baseShippingFee > 0
-      ? baseShippingFee
-      : 0;
+        ? defaultDeliveryCharge
+        : baseShippingFee > 0
+          ? baseShippingFee
+          : 0;
 
   // Check for payment errors from URL
   useEffect(() => {
@@ -152,9 +152,8 @@ export default function CheckoutClient() {
   useEffect(() => {
     const checkPaymentConfig = async () => {
       try {
-        const res = await fetch("/api/sslcommerz-config");
-        if (res.ok) {
-          const config = await res.json();
+        const config: any = await apiRequest("GET", "/sslcommerz-config");
+        if (config) {
           setOnlinePaymentEnabled(config.enabled === true);
         }
       } catch (error) {
@@ -199,27 +198,22 @@ export default function CheckoutClient() {
 
       setCheckingBlockStatus(true);
       try {
-        const res = await fetch("/api/blocked-customers/check", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phone: watchedPhone,
-            email: watchedEmail,
-          }),
+        const data: any = await apiRequest("POST", "/blocked-customers/check", {
+          phone: watchedPhone,
+          email: watchedEmail,
         });
 
-        if (res.ok) {
-          const data = await res.json();
+        if (data) {
           setIsCustomerBlocked(data.isBlocked);
           if (data.isBlocked && data.customer) {
             const reasonText =
               data.customer.reason === "fraud"
                 ? "fraudulent activity"
                 : data.customer.reason === "abuse"
-                ? "policy violations"
-                : data.customer.reason === "chargeback"
-                ? "payment disputes"
-                : "policy violations";
+                  ? "policy violations"
+                  : data.customer.reason === "chargeback"
+                    ? "payment disputes"
+                    : "policy violations";
             setBlockReason(reasonText);
           } else {
             setBlockReason(null);
@@ -268,19 +262,12 @@ export default function CheckoutClient() {
 
       setCalculatingShipping(true);
       try {
-        const res = await fetch("/api/storefront/calculate-shipping", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            city: watchedCity.trim(),
-          }),
+        const data: any = await apiRequest("POST", "/delivery/storefront/calculate-shipping", {
+          city: watchedCity.trim(),
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          if (typeof data.shipping === "number") {
-            setDynamicShipping(data.shipping);
-          }
+        if (data && typeof data.shipping === "number") {
+          setDynamicShipping(data.shipping);
         }
       } catch (error) {
         console.error("Error calculating shipping:", error);
@@ -391,12 +378,8 @@ export default function CheckoutClient() {
       }
 
       // Server-side tracking - InitiateCheckout
-      fetch("/api/brand-config", {
-        cache: "force-cache",
-        next: { revalidate: 300 },
-      })
-        .then((res) => res.json())
-        .then((brandConfig) => {
+      apiRequest("GET", "/brand-config")
+        .then((brandConfig: any) => {
           const currency = brandConfig?.currency?.iso || "USD";
           return import("@/lib/tracking/server-side-tracking").then(({ trackInitiateCheckout }) => {
             trackInitiateCheckout({
@@ -404,10 +387,10 @@ export default function CheckoutClient() {
               currency: currency,
               contentIds: items.map((item) => item.productId),
               numItems: items.reduce((sum, item) => sum + item.quantity, 0),
-            }).catch(() => {}); // Fail silently
+            }).catch(() => { }); // Fail silently
           });
         })
-        .catch(() => {}); // Fail silently if module not available
+        .catch(() => { }); // Fail silently if module not available
     }
   }, []); // Only run once on mount
 
@@ -440,12 +423,8 @@ export default function CheckoutClient() {
       }
 
       // Server-side tracking - AddPaymentInfo
-      fetch("/api/brand-config", {
-        cache: "force-cache",
-        next: { revalidate: 300 },
-      })
-        .then((res) => res.json())
-        .then((brandConfig) => {
+      apiRequest("GET", "/brand-config")
+        .then((brandConfig: any) => {
           const currency = brandConfig?.currency?.iso || "USD";
           // Get stored user data for better event matching
           const storedUserData = getUserDataForTracking();
@@ -455,10 +434,10 @@ export default function CheckoutClient() {
               currency: currency,
               paymentMethod: paymentMethod === "online" ? "online" : "cash_on_delivery",
               userData: storedUserData,
-            }).catch(() => {}); // Fail silently
+            }).catch(() => { }); // Fail silently
           });
         })
-        .catch(() => {}); // Fail silently if module not available
+        .catch(() => { }); // Fail silently if module not available
     }
   }, [form.watch("paymentMethod"), items.length, total]);
 
@@ -495,21 +474,7 @@ export default function CheckoutClient() {
       const sourceTracking = getSourceTrackingForOrder();
       const orderWithSource = sourceTracking ? { ...orderWithCoupon, sourceTracking } : orderWithCoupon;
 
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // Include cookies (needed for affiliate tracking)
-        body: JSON.stringify(orderWithSource),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        const errorMessage = errorData.details ? errorData.details.join(", ") : errorData.error || "Order failed";
-        toast.dismiss("place-order");
-        throw new Error(errorMessage);
-      }
-
-      const saved = (await res.json()) as Order;
+      const saved: any = await apiRequest("POST", "/orders", orderWithSource);
 
       if (!saved || !saved.id) {
         toast.dismiss("place-order");
@@ -526,22 +491,10 @@ export default function CheckoutClient() {
           toast.loading("Initializing payment...", { id: "place-order" });
 
           try {
-            const paymentRes = await fetch("/api/payment/easy-checkout", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                orderId: saved.id,
-                customer: customerInfo,
-              }),
+            const paymentData: any = await apiRequest("POST", "/payment/easy-checkout", {
+              orderId: saved.id,
+              customer: customerInfo,
             });
-
-            if (!paymentRes.ok) {
-              const errorData = await paymentRes.json().catch(() => ({}));
-              toast.dismiss("place-order");
-              throw new Error(errorData.error || "Failed to initialize payment");
-            }
-
-            const paymentData = await paymentRes.json();
 
             if (paymentData.gatewayPageURL && paymentData.sessionkey) {
               setPaymentSession({
@@ -568,22 +521,10 @@ export default function CheckoutClient() {
           toast.loading("Redirecting to payment gateway...", { id: "place-order" });
 
           try {
-            const paymentRes = await fetch("/api/payment/init", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                orderId: saved.id,
-                customer: customerInfo,
-              }),
+            const paymentData: any = await apiRequest("POST", "/payment/init", {
+              orderId: saved.id,
+              customer: customerInfo,
             });
-
-            if (!paymentRes.ok) {
-              const errorData = await paymentRes.json().catch(() => ({}));
-              toast.dismiss("place-order");
-              throw new Error(errorData.error || "Failed to initialize payment");
-            }
-
-            const paymentData = await paymentRes.json();
 
             if (paymentData.gatewayPageURL) {
               // Set flag to prevent redirect to cart
@@ -611,19 +552,15 @@ export default function CheckoutClient() {
 
       // Record coupon usage if applied
       if (appliedCoupon?.success && appliedCoupon.coupon) {
-        fetch("/api/coupons/record-usage", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            couponId: appliedCoupon.coupon.id,
-            couponCode: appliedCoupon.coupon.code,
-            orderId: saved.id,
-            customerEmail: customerInfo.email,
-            customerPhone: customerInfo.phone,
-            discountApplied: couponDiscount,
-            orderTotal: finalTotal,
-          }),
-        }).catch(() => {}); // Silent fail
+        apiRequest("POST", "/coupons/record-usage", {
+          couponId: appliedCoupon.coupon.id,
+          couponCode: appliedCoupon.coupon.code,
+          orderId: saved.id,
+          customerEmail: customerInfo.email,
+          customerPhone: customerInfo.phone,
+          discountApplied: couponDiscount,
+          orderTotal: finalTotal,
+        }).catch(() => { }); // Silent fail
       }
 
       // Use setTimeout to ensure state updates before navigation
@@ -1070,11 +1007,10 @@ export default function CheckoutClient() {
                                         <p className='text-sm font-medium text-muted-foreground'>Choose how to pay:</p>
                                         <div className='space-y-2'>
                                           <label
-                                            className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                                              paymentMode === "redirect"
-                                                ? "border-primary bg-primary/5"
-                                                : "border-border hover:bg-accent/40"
-                                            }`}
+                                            className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${paymentMode === "redirect"
+                                              ? "border-primary bg-primary/5"
+                                              : "border-border hover:bg-accent/40"
+                                              }`}
                                           >
                                             <input
                                               type='radio'
@@ -1099,9 +1035,8 @@ export default function CheckoutClient() {
                                           </label>
 
                                           <label
-                                            className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                                              paymentMode === "inline" ? "border-primary bg-primary/5" : "border-border hover:bg-accent/40"
-                                            }`}
+                                            className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${paymentMode === "inline" ? "border-primary bg-primary/5" : "border-border hover:bg-accent/40"
+                                              }`}
                                           >
                                             <input
                                               type='radio'

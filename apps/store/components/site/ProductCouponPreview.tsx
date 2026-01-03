@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Tag, Copy, Check, Percent, DollarSign, Truck, Gift, ChevronDown, ChevronUp, X } from "lucide-react";
 import type { Coupon, CouponType, ApplyCouponResponse } from "@/lib/coupon-types";
 import { useCurrencySymbol } from "@/hooks/use-currency";
+import { apiRequest } from "@/lib/api-client";
 
 interface ProductCouponPreviewProps {
   productPrice: number;
@@ -34,12 +35,9 @@ export function ProductCouponPreview({ productPrice, productId, categoryId }: Pr
 
   const loadCoupons = async () => {
     try {
-      const res = await fetch("/api/coupons?status=active&limit=10", {
-        cache: "force-cache",
-        next: { revalidate: 30 },
-      });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await apiRequest<any>("GET", "/coupons?status=active&limit=10");
+
+      if (data) {
         const activeCoupons = (data.coupons || []).filter((coupon: Coupon) => {
           if (coupon.status !== "active") return false;
           const now = new Date();
@@ -73,17 +71,11 @@ export function ProductCouponPreview({ productPrice, productId, categoryId }: Pr
 
     setValidating(true);
     try {
-      const res = await fetch("/api/coupons/apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: inputCode.trim(),
-          cartSubtotal: productPrice,
-          cartItems: [{ productId: productId || "", quantity: 1, price: productPrice }],
-        }),
+      const data: ApplyCouponResponse = await apiRequest("POST", "/coupons/apply", {
+        code: inputCode.trim(),
+        cartSubtotal: productPrice,
+        cartItems: [{ productId: productId || "", quantity: 1, price: productPrice }],
       });
-
-      const data: ApplyCouponResponse = await res.json();
 
       if (data.success) {
         setValidatedCoupon(data);
@@ -94,8 +86,8 @@ export function ProductCouponPreview({ productPrice, productId, categoryId }: Pr
         toast.error(data.message || "Invalid coupon code");
         setValidatedCoupon(null);
       }
-    } catch (error) {
-      toast.error("Failed to validate coupon");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to validate coupon");
       setValidatedCoupon(null);
     } finally {
       setValidating(false);
