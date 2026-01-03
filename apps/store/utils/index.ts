@@ -1,0 +1,1 @@
+export { generateReceiptHTML } from "./receipt";
