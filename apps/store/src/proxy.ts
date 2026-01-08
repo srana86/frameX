@@ -5,9 +5,9 @@ import type { NextRequest } from "next/server";
  * Middleware to detect merchant from domain/subdomain
  * Adds merchant context to request headers
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+
   // Skip middleware for API routes that don't need merchant context
   if (pathname.startsWith("/api/auth") || pathname.startsWith("/_next")) {
     return NextResponse.next();

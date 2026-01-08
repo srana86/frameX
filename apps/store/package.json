@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "NODE_OPTIONS='--max-old-space-size=4096' PORT=3000 tsx server.ts",
-    "dev:next": "NODE_OPTIONS='--max-old-space-size=4096' next dev -p 3000",
-    "dev:custom": "NODE_OPTIONS='--max-old-space-size=4096' PORT=3000 tsx server.ts",
-    "build": "NODE_OPTIONS='--max-old-space-size=4096' next build",
+    "dev": "next dev -p 3000",
+    "dev:next": "next dev -p 3000",
+    "dev:custom": "PORT=3000 tsx server.ts",
+    "build": "next build",
     "start": "next start -p 3000",
-    "start:custom": "NODE_ENV=production PORT=3000 tsx server.ts",
+    "start:custom": "PORT=3000 tsx server.ts",
     "lint": "eslint"
   },
   "dependencies": {

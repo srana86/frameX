@@ -5,8 +5,8 @@
   "main": "./dist/server.js",
   "scripts": {
     "build": "tsc",
-    "start": "PORT=5000 node ./dist/server.js",
-    "dev": "PORT=5000 ts-node-dev --respawn --transpile-only ./src/server.ts",
+    "start": "PORT=8082 node ./dist/server.js",
+    "dev": "PORT=8082 ts-node-dev --respawn --transpile-only ./src/server.ts",
     "lint": "npm eslint .",
     "lint:fix": "npx eslint src --fix",
     "prettier": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
