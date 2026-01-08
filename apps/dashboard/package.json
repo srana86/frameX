@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "eslint",
-    "postinstall": "npm rebuild lightningcss || true"
+    "postinstall": "pnpm rebuild lightningcss || true"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
