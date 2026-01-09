@@ -5,7 +5,8 @@ import sendResponse from "../../utils/sendResponse";
 import httpStatus from "http-status";
 
 const getAIData = catchAsync(async (req: Request, res: Response) => {
-    const result = await AIServices.getAIDataFromDB();
+    const user = (req as any).user;
+    const result = await AIServices.getAIDataFromDB(user.tenantId);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,

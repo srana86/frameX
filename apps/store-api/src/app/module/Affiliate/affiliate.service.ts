@@ -498,6 +498,16 @@ const assignCouponToAffiliateFromDB = async (tenantId: string, affiliateId: stri
   });
 };
 
+// Get affiliate by promo code
+const getAffiliateByPromoCodeFromDB = async (promoCode: string) => {
+  return prisma.affiliate.findFirst({
+    where: {
+      promoCode: promoCode.toUpperCase(),
+      status: "ACTIVE"
+    }
+  });
+};
+
 export const AffiliateServices = {
   getAffiliateSettingsFromDB,
   getMyAffiliateFromDB,
@@ -510,4 +520,5 @@ export const AffiliateServices = {
   updateWithdrawalFromDB,
   updateAffiliateSettingsFromDB,
   assignCouponToAffiliateFromDB,
+  getAffiliateByPromoCodeFromDB,
 };

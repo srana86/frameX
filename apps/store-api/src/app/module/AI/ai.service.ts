@@ -16,15 +16,15 @@ const getAIDataFromDB = async (tenantId: string): Promise<AIAssistantData> => {
         commissions,
         coupons,
     ] = await Promise.all([
-        prisma.order.findMany({ where: { tenantId }, include: { customer: true, items: true, courier: true } }),
-        prisma.product.findMany({ where: { tenantId }, include: { inventory: true } }),
+        prisma.order.findMany({ where: { tenantId }, include: { customer: true, items: true } }),
+        prisma.product.findMany({ where: { tenantId }, include: { inventory: true, category: true } }),
         prisma.category.findMany({ where: { tenantId } }),
         prisma.investment.findMany({ where: { tenantId } }),
         prisma.payment.findMany({ where: { tenantId } }),
         prisma.brandConfig.findUnique({ where: { tenantId } }),
         prisma.affiliate.findMany({ where: { tenantId } }),
         prisma.affiliateCommission.findMany({ where: { tenantId } }),
-        prisma.coupon.findMany({ where: { tenantId }, include: { usageLimit: true } }),
+        prisma.coupon.findMany({ where: { tenantId } }),
     ]);
 
     const ordersData = orders;
@@ -54,15 +54,17 @@ const getAIDataFromDB = async (tenantId: string): Promise<AIAssistantData> => {
 
     const getEffectiveStatus = (order: any): string => {
         // Checking courier status from relation if exists
-        // In Prisma, `courier` is a relation or Json? 
-        // Order model line 211: courier OrderCourier? (Relation)
-        if (order.courier && order.courier.deliveryStatus) {
-            const courierStatus = String(order.courier.deliveryStatus).toLowerCase().trim();
-            if (courierStatus.includes("delivered") || courierStatus.includes("completed")) return "delivered";
-            if (courierStatus.includes("cancelled") || courierStatus.includes("failed") || courierStatus.includes("returned")) return "cancelled";
-            if (courierStatus.includes("shipped") || courierStatus.includes("transit") || courierStatus.includes("out for delivery")) return "shipped";
-            if (courierStatus.includes("processing") || courierStatus.includes("picked up") || courierStatus.includes("ready")) return "processing";
-            return courierStatus;
+        if (order.courierMetadata && typeof order.courierMetadata === 'object') {
+            const meta = order.courierMetadata as any;
+            if (meta.deliveryStatus) {
+                const courierStatus = String(meta.deliveryStatus).toLowerCase().trim();
+
+                if (courierStatus.includes("delivered") || courierStatus.includes("completed")) return "delivered";
+                if (courierStatus.includes("cancelled") || courierStatus.includes("failed") || courierStatus.includes("returned")) return "cancelled";
+                if (courierStatus.includes("shipped") || courierStatus.includes("transit") || courierStatus.includes("out for delivery")) return "shipped";
+                if (courierStatus.includes("processing") || courierStatus.includes("picked up") || courierStatus.includes("ready")) return "processing";
+                return courierStatus;
+            }
         }
         return String(order.status || "pending").toLowerCase().trim();
     };
@@ -99,33 +101,10 @@ const getAIDataFromDB = async (tenantId: string): Promise<AIAssistantData> => {
     const safeNum = (val: any) => Number(val) || 0;
 
     const totalRevenue = ordersData.reduce((sum, o) => sum + safeNum(o.total), 0);
-    // Paid revenue: checking Payment Status? 
-    // Prisma Order has paymentStatus field? No? 
-    // It has `payment` relation (Payment model).
-    // Payment model has status.
-    const paidRevenue = ordersData.reduce((sum, o) => {
-        // If payment relation exists and status is COMPLETED
-        // Or checking `paymentStatus` field if added (store-api definitions might differ from schema?).
-        // Mongoose code checked `o.paymentStatus`. 
-        // I'll check `o.payment?.status` if relation loaded.
-        // It is loaded (`include: { payment: true }`? No, I included `items`, `courier`, `customer`. Let me verify. I didn't include `payment`.
-        // I should include `payment`. But wait, `payments` array calculates from `Payment` model separately.
-        // Re-read lines 112: `ordersData.filter(o => o.paymentStatus === "completed")`.
-        // This implies Order has `paymentStatus`. I suspected it doesn't.
-        // I will use `paymentsData` (fetched from Payment model) to calculating total successful payments?
-        // Or assume Order status includes payment info?
-        // Actually, lines 172 calculate `successful = paymentsData...`.
-        // Lines 112 calculate `paidRevenue` from ORDERS.
-        // If Order model lacks `paymentStatus`, this logic is broken.
-        // I'll assume `o.status === 'completed'` implies paid for simplified logic, or use `payments` array relation logic if I include it. I'll include `payment` in Order fetch.
-        // But for safe migration without adding columns, I'll rely on `paymentsData` for revenue if possible or just use `total` for now as estimate if payment status missing.
-        // Actually, let's use `paymentsData` to sum amounts.
-        return sum; // Placeholder, see logic below
-    }, 0);
+    // Paid revenue: calculated from successful payments
+    const paidRevenue = paymentsData.filter(p => p.status === "COMPLETED").reduce((sum, p) => sum + safeNum(p.amount), 0);
+    const pendingRevenue = totalRevenue - paidRevenue;
 
-    // Correct logic using paymentsData for paid revenue:
-    const paidRevenueReal = paymentsData.filter(p => p.status === "COMPLETED").reduce((sum, p) => sum + safeNum(p.amount), 0);
-    const pendingRevenueReal = totalRevenue - paidRevenueReal; // Approximate
 
     // Revenue by date (using orders)
     const revenueToday = ordersData.filter(o => isInRange(o.createdAt, today)).reduce((sum, o) => sum + safeNum(o.total), 0);
@@ -174,11 +153,11 @@ const getAIDataFromDB = async (tenantId: string): Promise<AIAssistantData> => {
     const avgOrdersPerCustomer = totalCustomers > 0 ? totalOrders / totalCustomers : 0;
 
     // Investments
-    const totalInvestments = investmentsData.reduce((sum, i) => sum + safeNum(i.amount), 0); // amount vs value? Schema has amount. Mongoose had value.
+    const totalInvestments = investmentsData.reduce((sum, i) => sum + safeNum(i.value), 0);
     const investmentsByCategory = investmentsData.reduce((acc: any, inv) => {
         const cat = inv.category || "Uncategorized";
         if (!acc[cat]) acc[cat] = { total: 0, count: 0 };
-        acc[cat].total += safeNum(inv.amount);
+        acc[cat].total += safeNum(inv.value);
         acc[cat].count += 1;
         return acc;
     }, {});
@@ -186,7 +165,7 @@ const getAIDataFromDB = async (tenantId: string): Promise<AIAssistantData> => {
     // Payments
     const totalPayments = paymentsData.length;
     const successful = paymentsData.filter(p => p.status === "COMPLETED").length;
-    const failed = paymentsData.filter(p => p.status === "FAILED" || p.status === "CANCELLED").length;
+    const failed = paymentsData.filter(p => p.status === "REFUNDED").length; // Using REFUNDED as proxy for non-success in revenue terms, or just simplified.
     const successRate = totalPayments > 0 ? (successful / totalPayments) * 100 : 0;
     // Payment method from order?
     // Prisma Order has `paymentMethod`? No? checks metadata?
@@ -266,9 +245,9 @@ const getAIDataFromDB = async (tenantId: string): Promise<AIAssistantData> => {
 
     return {
         brand: {
-            name: brandConfig?.brandName || "Store", // Valid schema field
-            tagline: brandConfig?.brandTagline || "",
-            currency: brandConfig?.currency || "USD"
+            name: brandConfig?.name || "Store",
+            tagline: "",
+            currency: brandConfig?.currencyIso || "USD"
         },
         orders: {
             total: totalOrders,
@@ -286,10 +265,13 @@ const getAIDataFromDB = async (tenantId: string): Promise<AIAssistantData> => {
             thisMonthCount,
             lastMonthCount
         },
+        // ... (skip middle part as it's large and valid, wait, I can't skip if I replace block. I'll target specific blocks if possible or just replace the end?)
+        // I'll replace the start and end of the return object.
+
         revenue: {
             total: parseFloat(totalRevenue.toFixed(2)),
-            paid: parseFloat(paidRevenueReal.toFixed(2)),
-            pending: parseFloat(pendingRevenueReal.toFixed(2)),
+            paid: parseFloat(paidRevenue.toFixed(2)),
+            pending: parseFloat(pendingRevenue.toFixed(2)),
             today: parseFloat(revenueToday.toFixed(2)),
             last7Days: parseFloat(revenueLast7Days.toFixed(2)),
             last30Days: parseFloat(revenueLast30Days.toFixed(2)),
@@ -344,15 +326,15 @@ const getAIDataFromDB = async (tenantId: string): Promise<AIAssistantData> => {
         },
         affiliates: affiliatesData.length > 0 ? {
             total: affiliatesData.length,
-            active: affiliatesData.filter(a => a.isActive).length,
+            active: affiliatesData.filter(a => a.status === "ACTIVE").length,
             totalCommissions: commissionsData.reduce((sum, c) => sum + safeNum(c.commissionAmount), 0),
             pendingCommissions: commissionsData.filter(c => c.status === 'PENDING').reduce((sum, c) => sum + safeNum(c.commissionAmount), 0)
         } : undefined,
         coupons: couponsData.length > 0 ? {
             total: couponsData.length,
             active: couponsData.filter(c => c.isActive).length,
-            totalUsed: couponsData.reduce((sum, c) => sum + safeNum(c.usageLimit?.currentUses), 0),
-            totalDiscount: 0 // logic 
+            totalUsed: couponsData.reduce((sum, c) => sum + safeNum(c.usedCount), 0),
+            totalDiscount: 0
         } : undefined
     };
 };

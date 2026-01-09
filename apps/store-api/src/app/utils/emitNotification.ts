@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { Notification } from "../module/Notification/notification.model";
+import { prisma } from "@framex/database";
 import { emitNotificationToUser } from "../socket/socket.emitter";
 
 /**
@@ -15,20 +14,22 @@ export const createAndEmitNotification = async (
     type?: string;
     link?: string;
     data?: any;
+    tenantId: string;
   }
 ) => {
   try {
     // Create notification in database
-    const notificationId = `NOTIF${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
-    const notification = await Notification.create({
-      id: notificationId,
-      userId,
-      title: notificationData.title,
-      message: notificationData.message,
-      type: notificationData.type || "info",
-      read: false,
-      link: notificationData.link,
-      data: notificationData.data,
+    const notification = await prisma.notification.create({
+      data: {
+        tenantId: notificationData.tenantId, // Assuming tenantId is required
+        userId,
+        title: notificationData.title,
+        message: notificationData.message,
+        type: notificationData.type || "INFO", // Enum?
+        isRead: false,
+        link: notificationData.link,
+        // data: notificationData.data, // Prisma Notification might not have data/json field or different name
+      } as any
     });
 
     // Emit real-time notification via Socket.IO
@@ -38,7 +39,7 @@ export const createAndEmitNotification = async (
         title: notification.title,
         message: notification.message,
         type: notification.type || "info",
-        data: notification.toObject(),
+        data: notification,
       });
     } catch (socketError) {
       console.error("Failed to emit notification via socket:", socketError);

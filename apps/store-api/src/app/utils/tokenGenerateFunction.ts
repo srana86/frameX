@@ -7,7 +7,7 @@ export const createToken = (
 ) => {
   return jwt.sign(jwtPayload, secret, {
     expiresIn,
-  });
+  } as jwt.SignOptions);
 };
 
 export const verifyToken = (token: string, secret: string) => {
