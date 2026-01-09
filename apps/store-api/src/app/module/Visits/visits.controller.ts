@@ -13,7 +13,8 @@ const trackVisit = catchAsync(async (req: Request, res: Response) => {
     req.socket.remoteAddress ||
     "";
 
-  const result = await VisitsServices.trackVisitFromDB({
+  const tenantId = req.user?.merchantId;
+  const result = await VisitsServices.trackVisitFromDB(tenantId as string, {
     ...req.body,
     ipAddress,
   });
@@ -28,7 +29,8 @@ const trackVisit = catchAsync(async (req: Request, res: Response) => {
 
 // Get visits
 const getVisits = catchAsync(async (req: Request, res: Response) => {
-  const result = await VisitsServices.getVisitsFromDB(req.query);
+  const tenantId = req.user?.merchantId;
+  const result = await VisitsServices.getVisitsFromDB(tenantId as string, req.query);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

@@ -72,19 +72,11 @@ const getExpiringSubscriptions = catchAsync(async (req, res) => {
 });
 
 const renewSubscription = catchAsync(async (req, res) => {
-  const {
-    subscriptionId,
-    billingCycleMonths,
-    paymentAmount,
-    paymentMethod,
-    transactionId,
-  } = req.body;
+  const { subscriptionId, billingCycleMonths, paymentAmount } = req.body;
   const result = await SubscriptionServices.renewSubscription(
     subscriptionId,
     billingCycleMonths,
-    paymentAmount,
-    paymentMethod,
-    transactionId
+    paymentAmount
   );
   sendResponse(res, {
     statusCode: httpStatus.OK,

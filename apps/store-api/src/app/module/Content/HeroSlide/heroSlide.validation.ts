@@ -11,12 +11,14 @@ const createHeroSlideValidationSchema = z.object({
     description: z.string().optional(),
     buttonText: z.string().optional(),
     buttonLink: z.string().optional(),
+    link: z.string().optional(),
     textPosition: z.enum(["left", "center", "right"]).optional(),
     textColor: z.string().optional(),
     overlay: z.boolean().optional(),
     overlayOpacity: z.number().optional(),
     order: z.number().optional(),
     enabled: z.boolean().optional(),
+    isActive: z.boolean().optional(),
   }),
 });
 
@@ -30,12 +32,14 @@ const updateHeroSlideValidationSchema = z.object({
     description: z.string().optional(),
     buttonText: z.string().optional(),
     buttonLink: z.string().optional(),
+    link: z.string().optional(),
     textPosition: z.enum(["left", "center", "right"]).optional(),
     textColor: z.string().optional(),
     overlay: z.boolean().optional(),
     overlayOpacity: z.number().optional(),
     order: z.number().optional(),
     enabled: z.boolean().optional(),
+    isActive: z.boolean().optional(),
   }),
 });
 

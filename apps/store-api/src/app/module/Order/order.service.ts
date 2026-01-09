@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { prisma, PrismaQueryBuilder } from "@framex/database";
+import { prisma, PrismaQueryBuilder, Decimal } from "@framex/database";
 import { StatusCodes } from "http-status-codes";
 import AppError from "../../errors/AppError";
-import { Decimal } from "@prisma/client/runtime/library";
 
 export type TOrderItem = {
   productId: string;
@@ -336,6 +335,158 @@ const generateOrderReceiptFromDB = async (tenantId: string, orderId: string) => 
     },
   };
 };
+// Assign courier to order
+const assignCourierToOrder = async (
+  id: string,
+  payload: { serviceId: string; consignmentId?: string }
+) => {
+  const result = await prisma.order.update({
+    where: { id },
+    data: {
+      courierServiceId: payload.serviceId,
+      consignmentId: payload.consignmentId,
+      trackingNumber: payload.consignmentId,
+      courierStatus: "assigned",
+    },
+  });
+
+  return result;
+};
+
+// Remove courier from order
+const removeCourierFromOrder = async (id: string) => {
+  const result = await prisma.order.update({
+    where: { id },
+    data: {
+      courierServiceId: null,
+      consignmentId: null,
+      trackingNumber: null,
+      courierStatus: null,
+      courierMetadata: null as any,
+    },
+  });
+
+  return result;
+};
+
+// Send order to courier service
+const sendOrderToCourierService = async (
+  id: string,
+  serviceId: string,
+  deliveryDetails: any
+) => {
+  const order = await prisma.order.findUnique({
+    where: { id },
+  });
+
+  if (!order) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Order not found");
+  }
+
+  // Use DeliveryService to send order
+  const { DeliveryServices } = await import("../Delivery/delivery.service");
+
+  const courierResult = await DeliveryServices.sendOrderToCourierFromDB(
+    order.tenantId,
+    id,
+    serviceId,
+    deliveryDetails
+  );
+
+  // Update order with courier info
+  const result = await prisma.order.update({
+    where: { id },
+    data: {
+      courierServiceId: serviceId,
+      consignmentId: courierResult.consignmentId,
+      trackingNumber: courierResult.trackingNumber,
+      courierStatus: courierResult.status,
+      courierMetadata: courierResult.rawStatus,
+    },
+  });
+
+  return result;
+};
+
+// Check courier order status
+const checkCourierOrderStatus = async (id: string) => {
+  const order = await prisma.order.findUnique({
+    where: { id },
+  });
+
+  if (!order) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Order not found");
+  }
+
+  if (!order.courierServiceId || !order.consignmentId) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Order fails courier information");
+  }
+
+  // Use DeliveryService to check status
+  const { DeliveryServices } = await import("../Delivery/delivery.service");
+
+  const statusResult = await DeliveryServices.checkCourierOrderStatusFromDB(
+    order.tenantId,
+    id,
+    order.courierServiceId,
+    order.consignmentId
+  );
+
+  // Update order with latest status
+  const result = await prisma.order.update({
+    where: { id },
+    data: {
+      courierStatus: statusResult.deliveryStatus,
+      courierMetadata: statusResult.rawStatus,
+    },
+  });
+
+  return result;
+};
+
+// Sync courier status
+const syncCourierStatusFromDB = async () => {
+  const orders = await prisma.order.findMany({
+    where: {
+      courierServiceId: { not: null },
+      courierStatus: { notIn: ["delivered", "cancelled", "returned"] },
+    },
+    take: 50,
+  });
+
+  const results = [];
+  const { DeliveryServices } = await import("../Delivery/delivery.service");
+
+  for (const order of orders) {
+    try {
+      if (order.courierServiceId && order.consignmentId) {
+        const statusResult = await DeliveryServices.checkCourierOrderStatusFromDB(
+          order.tenantId,
+          order.id,
+          order.courierServiceId,
+          order.consignmentId
+        );
+
+        await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            courierStatus: statusResult.deliveryStatus,
+            courierMetadata: statusResult.rawStatus,
+          },
+        });
+        results.push({ id: order.id, status: "updated", newStatus: statusResult.deliveryStatus });
+      }
+    } catch (error) {
+      console.error(`Failed to sync order ${order.id}:`, error);
+      results.push({ id: order.id, status: "failed", error });
+    }
+  }
+
+  return {
+    message: `Synced ${results.length} orders`,
+    results,
+  };
+};
 
 export const OrderServices = {
   getAllOrdersFromDB,
@@ -345,4 +496,10 @@ export const OrderServices = {
   deleteOrderFromDB,
   getUserOrdersFromDB,
   generateOrderReceiptFromDB,
+  assignCourierToOrder,
+  removeCourierFromOrder,
+  sendOrderToCourierService,
+  checkCourierOrderStatus,
+  syncCourierStatusFromDB,
+  placeOrderFromDB: createOrderIntoDB
 };

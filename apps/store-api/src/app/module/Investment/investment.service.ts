@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { prisma, PrismaQueryBuilder } from "@framex/database";
+import { prisma, PrismaQueryBuilder, Decimal } from "@framex/database";
 import AppError from "../../errors/AppError";
 import { StatusCodes } from "http-status-codes";
-import { Decimal } from "@prisma/client/runtime/library";
 
 const getAllInvestmentsFromDB = async (tenantId: string, query: Record<string, unknown>) => {
   const builder = new PrismaQueryBuilder({

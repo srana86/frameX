@@ -35,8 +35,7 @@ const getSingleProduct = catchAsync(async (req: Request, res: Response) => {
 
 // Create product
 const createProduct = catchAsync(async (req: Request, res: Response) => {
-  const files = req.files as Express.Multer.File[];
-  const result = await ProductServices.createProductIntoDB(req.tenantId, req.body, files);
+  const result = await ProductServices.createProductIntoDB(req.tenantId, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,
@@ -49,8 +48,7 @@ const createProduct = catchAsync(async (req: Request, res: Response) => {
 // Update product
 const updateProduct = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const files = req.files as Express.Multer.File[];
-  const result = await ProductServices.updateProductIntoDB(req.tenantId, id, req.body, files);
+  const result = await ProductServices.updateProductIntoDB(req.tenantId, id, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -196,7 +194,7 @@ const getMostLovedProducts = catchAsync(async (req: Request, res: Response) => {
 const getProductReviews = catchAsync(async (req: Request, res: Response) => {
   const { ReviewServices } = await import("../Review/review.service");
   const { id } = req.params;
-  const result = await ReviewServices.getProductReviewsFromDB(id);
+  const result = await ReviewServices.getProductReviewsFromDB(req.tenantId, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -210,7 +208,7 @@ const getProductReviews = catchAsync(async (req: Request, res: Response) => {
 const createProductReview = catchAsync(async (req: Request, res: Response) => {
   const { ReviewServices } = await import("../Review/review.service");
   const { id } = req.params;
-  const result = await ReviewServices.createProductReviewIntoDB(id, req.body);
+  const result = await ReviewServices.createProductReviewIntoDB(req.tenantId, id, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,

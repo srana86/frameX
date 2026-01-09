@@ -6,8 +6,9 @@ import { ReviewServices } from "./review.service";
 
 // Get product reviews
 const getProductReviews = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = req.headers["x-tenant-id"] as string;
   const { id } = req.params;
-  const result = await ReviewServices.getProductReviewsFromDB(id);
+  const result = await ReviewServices.getProductReviewsFromDB(tenantId, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -19,8 +20,9 @@ const getProductReviews = catchAsync(async (req: Request, res: Response) => {
 
 // Create product review
 const createProductReview = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = req.headers["x-tenant-id"] as string;
   const { id } = req.params;
-  const result = await ReviewServices.createProductReviewIntoDB(id, req.body);
+  const result = await ReviewServices.createProductReviewIntoDB(tenantId, id, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,

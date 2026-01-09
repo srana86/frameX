@@ -3,10 +3,11 @@ import { Request, Response } from "express";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { OrderServices } from "./order.service";
+import { UserServices } from "../User/user.service";
 
 // Get all orders
 const getAllOrders = catchAsync(async (req: Request, res: Response) => {
-  const result = await OrderServices.getAllOrdersFromDB(req.query);
+  const result = await OrderServices.getAllOrdersFromDB(req.tenantId, req.query);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -24,13 +25,11 @@ const getSingleOrder = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const user = req.user;
 
-  const result = await OrderServices.getSingleOrderFromDB(id);
+  const result = await OrderServices.getSingleOrderFromDB(req.tenantId, id);
 
   // If not admin/merchant, check if the order belongs to the user (by email/phone)
   if (user?.role !== "admin" && user?.role !== "merchant") {
-    const userDoc = await import("../User/user.model").then((m) =>
-      m.User.findOne({ id: user?.userId, isDeleted: false })
-    );
+    const userDoc = await UserServices.getSingleUserFromDB(req.tenantId, user?.userId);
 
     const emailMatch = userDoc?.email && result.customer?.email === userDoc.email;
     const phoneMatch = userDoc?.phone && result.customer?.phone === userDoc.phone;
@@ -55,7 +54,7 @@ const getSingleOrder = catchAsync(async (req: Request, res: Response) => {
 
 // Create order
 const createOrder = catchAsync(async (req: Request, res: Response) => {
-  const result = await OrderServices.createOrderIntoDB(req.body);
+  const result = await OrderServices.createOrderIntoDB({ ...req.body, tenantId: req.tenantId });
 
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,
@@ -68,7 +67,7 @@ const createOrder = catchAsync(async (req: Request, res: Response) => {
 // Update order
 const updateOrder = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await OrderServices.updateOrderIntoDB(id, req.body);
+  const result = await OrderServices.updateOrderIntoDB(req.tenantId, id, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -81,7 +80,7 @@ const updateOrder = catchAsync(async (req: Request, res: Response) => {
 // Delete order
 const deleteOrder = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await OrderServices.deleteOrderFromDB(id);
+  const result = await OrderServices.deleteOrderFromDB(req.tenantId, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -103,7 +102,7 @@ const getUserOrders = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
-  const result = await OrderServices.getUserOrdersFromDB(userId, req.query);
+  const result = await OrderServices.getUserOrdersFromDB(req.tenantId, userId, req.query);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -200,7 +199,7 @@ const placeOrder = catchAsync(async (req: Request, res: Response) => {
 // Get order receipt
 const getOrderReceipt = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await OrderServices.generateOrderReceiptFromDB(id);
+  const result = await OrderServices.generateOrderReceiptFromDB(req.tenantId, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

@@ -1,17 +1,17 @@
-import mongoose from 'mongoose';
 import { TErrorSources, TGenericErrorResponse } from '../interface/error';
 
+/**
+ * Handle validation errors (Prisma validation or Zod errors)
+ */
 const handleValidationError = (
-  err: mongoose.Error.ValidationError
+  err: Error & { errors?: Record<string, { message: string; path?: string }> }
 ): TGenericErrorResponse => {
-  const errorSources: TErrorSources = Object.values(err.errors).map(
-    (val: mongoose.Error.ValidatorError | mongoose.Error.CastError) => {
-      return {
-        path: val?.path,
-        message: val?.message,
-      };
-    }
-  );
+  const errorSources: TErrorSources = err.errors
+    ? Object.entries(err.errors).map(([key, val]) => ({
+      path: val?.path || key,
+      message: val?.message || 'Validation error',
+    }))
+    : [{ path: '', message: err.message || 'Validation Error' }];
 
   const statusCode = 400;
 

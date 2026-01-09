@@ -19,7 +19,7 @@ const getCurrentMerchantSubscriptionFromDB = async (merchantId: string) => {
   const result = await prisma.merchantSubscription.findFirst({
     where: {
       merchantId,
-      status: { in: ["active", "trial", "grace_period"] }
+      status: { in: ["ACTIVE", "TRIAL", "GRACE_PERIOD"] }
     },
     orderBy: { createdAt: "desc" }
   });
@@ -35,8 +35,8 @@ const getSubscriptionStatusFromDB = async (merchantId: string) => {
     subscription,
     statusDetails: {
       hasActiveSubscription: !!subscription,
-      isTrial: subscription?.status === "trial",
-      isExpired: subscription?.status === "expired",
+      isTrial: subscription?.status === "TRIAL",
+      isExpired: subscription?.status === "EXPIRED",
     },
   };
 };
@@ -62,7 +62,7 @@ const createSubscriptionIntoDB = async (
   const existing = await prisma.merchantSubscription.findFirst({
     where: {
       merchantId,
-      status: { in: ["active", "trial", "grace_period"] }
+      status: { in: ["ACTIVE", "TRIAL", "GRACE_PERIOD"] }
     }
   });
 
@@ -90,8 +90,8 @@ const createSubscriptionIntoDB = async (
       id: subscriptionId,
       merchantId,
       planId: payload.planId,
-      status: payload.trialDays ? "trial" : "active",
-      billingCycle: plan.billingCycle || "monthly",
+      status: payload.trialDays ? "TRIAL" : "ACTIVE",
+      billingCycle: plan.billingCycle || "MONTHLY",
       billingCycleMonths,
       amount: plan.price ?? plan.basePrice ?? 0,
       currency: "BDT",

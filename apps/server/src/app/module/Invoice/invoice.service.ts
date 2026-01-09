@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { prisma, PrismaQueryBuilder } from "@framex/database";
+import { prisma, PrismaQueryBuilder, InvoiceStatus, Decimal } from "@framex/database";
 import AppError from "../../errors/AppError";
 import { StatusCodes } from "http-status-codes";
-import { InvoiceStatus } from "@prisma/client";
-import { Decimal } from "@prisma/client/runtime/library";
 
 // Generate invoice number
 function generateInvoiceNumber(): string {

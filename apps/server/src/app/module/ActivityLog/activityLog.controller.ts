@@ -25,11 +25,8 @@ const getAllActivityLogs = catchAsync(async (req, res) => {
     statusCode: httpStatus.OK,
     success: true,
     message: "Activity logs retrieved successfully",
-    data: result.logs,
-    meta: {
-      ...result.pagination,
-      totalPage: result.pagination.totalPages,
-    },
+    data: result.data,
+    meta: result.meta,
   });
 });
 

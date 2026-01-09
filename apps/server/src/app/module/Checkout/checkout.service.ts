@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { prisma } from "@framex/database";
-import { CheckoutStatus } from "@prisma/client";
-import { Decimal } from "@prisma/client/runtime/library";
+import { prisma, Decimal } from "@framex/database";
 import config from "../../../config/index";
 import {
   initSSLCommerzPayment,
@@ -91,9 +89,14 @@ const initCheckout = async (payload: any) => {
     product_name: `${payload.planName || "Plan"}`,
     product_category: "SaaS Subscription",
     product_profile: "non-physical-goods",
-    cus_name: payload.customerName,
-    cus_email: payload.customerEmail,
-    // ... other params
+    cus_name: payload.customerName || "N/A",
+    cus_email: payload.customerEmail || "customer@example.com",
+    cus_add1: payload.customerAddress || "N/A",
+    cus_city: payload.customerCity || "N/A",
+    cus_state: payload.customerState || "N/A",
+    cus_postcode: payload.customerPostcode || "N/A",
+    cus_country: payload.customerCountry || "Bangladesh",
+    cus_phone: payload.customerPhone || "N/A",
   };
 
   const response = await initSSLCommerzPayment(

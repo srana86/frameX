@@ -44,7 +44,7 @@ const getMerchantFull = async (id: string) => {
     throw new Error("Merchant not found");
   }
 
-  let plan = null;
+  let plan: Awaited<ReturnType<typeof prisma.subscriptionPlan.findUnique>> = null;
   if (subscription?.planId) {
     plan = await prisma.subscriptionPlan.findUnique({
       where: { id: subscription.planId },

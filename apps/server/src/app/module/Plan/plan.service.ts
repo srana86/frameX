@@ -1,5 +1,4 @@
-import { prisma, BillingCycle } from "@framex/database";
-import { Decimal } from "@prisma/client/runtime/library";
+import { prisma, Prisma, BillingCycle, Decimal } from "@framex/database";
 
 export type IPlan = {
   id: string;
@@ -66,7 +65,7 @@ const createPlan = async (payload: Partial<IPlan>) => {
       price: new Decimal(payload.price || 0),
       billingCycle,
       billingCycleMonths,
-      features: payload.features || null,
+      features: payload.features ?? Prisma.JsonNull,
       featuresList: payload.featuresList || [],
       isActive: payload.isActive !== false,
       isPopular: payload.isPopular || false,

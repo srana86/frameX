@@ -6,7 +6,7 @@ import { CustomerServices } from "./customer.service";
 
 // Get all customers
 const getAllCustomers = catchAsync(async (req: Request, res: Response) => {
-  const result = await CustomerServices.getAllCustomersFromDB(req.query);
+  const result = await CustomerServices.getAllCustomersFromDB(req.tenantId, req.query);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

@@ -23,21 +23,22 @@ model Tenant {
   updatedAt DateTime     @updatedAt
 
   // Relations
-  domains            TenantDomain[]
-  settings           TenantSettings?
-  users              User[]
-  products           Product[]
-  categories         Category[]
-  orders             Order[]
-  customers          Customer[]
-  inventory          Inventory[]
-  coupons            Coupon[]
-  payments           Payment[]
-  pages              Page[]
-  heroSlides         HeroSlide[]
-  reviews            Review[]
-  pageCategories     PageCategory[]
-  promotionalBanners PromotionalBanner[]
+  domains               TenantDomain[]
+  settings              TenantSettings?
+  users                 User[]
+  products              Product[]
+  categories            Category[]
+  orders                Order[]
+  customers             Customer[]
+  inventory             Inventory[]
+  coupons               Coupon[]
+  payments              Payment[]
+  pages                 Page[]
+  heroSlides            HeroSlide[]
+  reviews               Review[]
+  pageCategories        PageCategory[]
+  promotionalBanners    PromotionalBanner[]
+  inventoryTransactions InventoryTransaction[]
 
   @@index([status])
   @@index([createdAt(sort: Desc)])
@@ -92,6 +93,7 @@ model User {
   role          UserRole   @default(STAFF)
   status        UserStatus @default(ACTIVE)
   emailVerified Boolean    @default(false)
+  isDeleted     Boolean    @default(false)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
@@ -140,11 +142,12 @@ model Product {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
-  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  category   Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  inventory  Inventory?
-  orderItems OrderItem[]
-  reviews    Review[]
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category              Category?              @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  inventory             Inventory?
+  orderItems            OrderItem[]
+  reviews               Review[]
+  inventoryTransactions InventoryTransaction[]
 
   @@unique([tenantId, slug])
   @@index([tenantId, status])
@@ -160,10 +163,42 @@ model Inventory {
   lowStock  Int      @default(5)
   updatedAt DateTime @updatedAt
 
-  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product               Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  inventoryTransactions InventoryTransaction[]
 
   @@index([tenantId])
+}
+
+model InventoryTransaction {
+  id            String                   @id @default(uuid())
+  tenantId      String
+  inventoryId   String
+  productId     String
+  type          InventoryTransactionType
+  quantity      Int // Amount changed (+/-)
+  previousStock Int
+  newStock      Int
+  orderId       String?
+  notes         String?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  inventory Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([productId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+enum InventoryTransactionType {
+  ORDER
+  RESTOCK
+  ADJUSTMENT
+  RETURN
 }
 
 // ============================================================
@@ -205,6 +240,14 @@ model Order {
   couponCode      String?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+  isDeleted       Boolean     @default(false)
+
+  // Courier Info
+  courierServiceId String?
+  consignmentId    String?
+  trackingNumber   String?
+  courierStatus    String?
+  courierMetadata  Json?
 
   tenant   Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   customer Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
@@ -345,14 +388,19 @@ model PromotionalBanner {
 }
 
 model Review {
-  id        String   @id @default(uuid())
-  tenantId  String
-  productId String
-  name      String
-  rating    Int
-  comment   String?
-  approved  Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  tenantId    String
+  productId   String
+  name        String
+  rating      Int
+  comment     String?
+  approved    Boolean  @default(false)
+  verified    Boolean  @default(false)
+  images      String[]
+  avatarColor String?
+  initials    String?
+  date        String?
+  createdAt   DateTime @default(now())
 
   tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -428,6 +476,7 @@ model StoreUser {
   fullName            String
   email               String?
   phone               String?
+  emailVerified       Boolean         @default(false)
   password            String?
   googleId            String?
   role                StoreUserRole   @default(CUSTOMER)

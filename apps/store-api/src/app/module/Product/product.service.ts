@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { prisma, PrismaQueryBuilder } from "@framex/database";
+import { prisma, PrismaQueryBuilder, Decimal } from "@framex/database";
 import { StatusCodes } from "http-status-codes";
 import AppError from "../../errors/AppError";
-import { Decimal } from "@prisma/client/runtime/library";
 
 // Get all products with pagination
 const getAllProductsFromDB = async (
@@ -23,7 +22,13 @@ const getAllProductsFromDB = async (
     .paginate()
     .execute();
 
-  return result;
+  // Fetch categories for the response
+  const categories = await prisma.category.findMany({
+    where: { tenantId, isActive: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+  });
+
+  return { ...result, categories };
 };
 
 // Get single product
@@ -237,6 +242,123 @@ const deleteCategoryFromDB = async (tenantId: string, id: string) => {
   return { ok: true };
 };
 
+// Search products
+const searchProductsFromDB = async (
+  tenantId: string,
+  query: Record<string, unknown>
+) => {
+  const builder = new PrismaQueryBuilder({
+    model: prisma.product,
+    query: query,
+    searchFields: ["name", "description"],
+  });
+
+  const result = await builder
+    .addBaseWhere({ tenantId, status: "ACTIVE" })
+    .search()
+    .filter()
+    .sort()
+    .paginate()
+    .execute();
+
+  return result;
+};
+
+// Update product order (bulk)
+const updateProductOrder = async (
+  tenantId: string,
+  products: { id: string; sortOrder: number }[]
+) => {
+  const updates = products.map((product) =>
+    prisma.product.update({
+      where: { id: product.id },
+      data: { sortOrder: product.sortOrder },
+    })
+  );
+
+  await prisma.$transaction(updates);
+  return { ok: true };
+};
+
+// Get brands (returns unique category names as the Product model doesn't have a brand field)
+const getBrandsFromDB = async (tenantId: string) => {
+  const categories = await prisma.category.findMany({
+    where: { tenantId, isActive: true },
+    select: { name: true },
+    distinct: ["name"],
+  });
+
+  return categories.map((c) => c.name).filter(Boolean);
+};
+
+// Get categories with pagination
+const getCategoriesFromDB = async (
+  tenantId: string,
+  query: Record<string, unknown>
+) => {
+  const builder = new PrismaQueryBuilder({
+    model: prisma.category,
+    query: query,
+    searchFields: ["name", "description"],
+  });
+
+  const result = await builder
+    .addBaseWhere({ tenantId, isActive: true })
+    .search()
+    .filter()
+    .sort()
+    .paginate()
+    .execute();
+
+  return result;
+};
+
+// Update category order (bulk)
+const updateCategoryOrder = async (
+  tenantId: string,
+  categories: { id: string; sortOrder: number }[]
+) => {
+  const updates = categories.map((category) =>
+    prisma.category.update({
+      where: { id: category.id },
+      data: { sortOrder: category.sortOrder },
+    })
+  );
+
+  await prisma.$transaction(updates);
+  return { ok: true };
+};
+
+// Get most loved products (by highest average rating or most reviews)
+const getMostLovedProductsFromDB = async (tenantId: string, limit: number) => {
+  const products = await prisma.product.findMany({
+    where: { tenantId, status: "ACTIVE" },
+    include: {
+      category: true,
+      reviews: {
+        where: { approved: true },
+        select: { rating: true },
+      },
+    },
+    take: limit * 2, // Fetch more to filter/sort by reviews
+  });
+
+  // Calculate average rating and sort by it
+  const productsWithRating = products
+    .map((product) => {
+      const reviews = product.reviews;
+      const avgRating =
+        reviews.length > 0
+          ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+          : 0;
+      return { ...product, avgRating, reviewCount: reviews.length };
+    })
+    .sort((a, b) => b.avgRating - a.avgRating || b.reviewCount - a.reviewCount)
+    .slice(0, limit);
+
+  return productsWithRating;
+};
+
 export const ProductServices = {
   getAllProductsFromDB,
   getSingleProductFromDB,
@@ -247,4 +369,10 @@ export const ProductServices = {
   createCategoryIntoDB,
   updateCategoryIntoDB,
   deleteCategoryFromDB,
+  searchProductsFromDB,
+  updateProductOrder,
+  getBrandsFromDB,
+  getCategoriesFromDB,
+  updateCategoryOrder,
+  getMostLovedProductsFromDB,
 };

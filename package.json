@@ -16,5 +16,8 @@
   "packageManager": "pnpm@10.27.0",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "http-status-codes": "^2.3.0"
   }
 }

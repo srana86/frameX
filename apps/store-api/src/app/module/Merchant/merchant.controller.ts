@@ -20,7 +20,16 @@ const getMerchantContext = catchAsync(async (req: Request, res: Response) => {
 // Get merchant data from brand config
 const getMerchantDataFromBrandConfig = catchAsync(
   async (req: Request, res: Response) => {
-    const result = await MerchantServices.getMerchantDataFromBrandConfig();
+    const merchantId = req.user?.userId;
+    if (!merchantId) {
+      return sendResponse(res, {
+        statusCode: StatusCodes.BAD_REQUEST,
+        success: false,
+        message: "Merchant ID not found",
+        data: null,
+      });
+    }
+    const result = await MerchantServices.getMerchantDataFromBrandConfig(merchantId);
 
     sendResponse(res, {
       statusCode: StatusCodes.OK,
@@ -328,7 +337,18 @@ const getSuperAdminData = catchAsync(async (req: Request, res: Response) => {
 
 // Get email settings
 const getEmailSettings = catchAsync(async (req: Request, res: Response) => {
-  const result = await MerchantServices.getEmailSettingsFromDB();
+  const merchantId = req.user?.userId;
+
+  if (!merchantId) {
+    return sendResponse(res, {
+      statusCode: StatusCodes.BAD_REQUEST,
+      success: false,
+      message: "Merchant ID not found",
+      data: null,
+    });
+  }
+
+  const result = await MerchantServices.getEmailSettingsFromDB(merchantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -340,7 +360,21 @@ const getEmailSettings = catchAsync(async (req: Request, res: Response) => {
 
 // Update email settings
 const updateEmailSettings = catchAsync(async (req: Request, res: Response) => {
-  const result = await MerchantServices.updateEmailSettingsFromDB(req.body);
+  const merchantId = req.user?.userId;
+
+  if (!merchantId) {
+    return sendResponse(res, {
+      statusCode: StatusCodes.BAD_REQUEST,
+      success: false,
+      message: "Merchant ID not found",
+      data: null,
+    });
+  }
+
+  const result = await MerchantServices.updateEmailSettingsFromDB(
+    merchantId,
+    req.body
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -364,7 +398,22 @@ const testEmailSettings = catchAsync(async (req: Request, res: Response) => {
 
 // Get email templates
 const getEmailTemplates = catchAsync(async (req: Request, res: Response) => {
-  const result = await MerchantServices.getEmailTemplatesFromDB();
+  const merchantId = req.user?.userId;
+  const event = req.query.event as string | undefined;
+
+  if (!merchantId) {
+    return sendResponse(res, {
+      statusCode: StatusCodes.BAD_REQUEST,
+      success: false,
+      message: "Merchant ID not found",
+      data: null,
+    });
+  }
+
+  const result = await MerchantServices.getEmailTemplatesFromDB(
+    merchantId,
+    event
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -376,7 +425,17 @@ const getEmailTemplates = catchAsync(async (req: Request, res: Response) => {
 
 // Update email templates (updates a single template by event)
 const updateEmailTemplates = catchAsync(async (req: Request, res: Response) => {
+  const merchantId = req.user?.userId;
   const { event, ...templateData } = req.body;
+
+  if (!merchantId) {
+    return sendResponse(res, {
+      statusCode: StatusCodes.BAD_REQUEST,
+      success: false,
+      message: "Merchant ID not found",
+      data: null,
+    });
+  }
 
   if (!event) {
     return sendResponse(res, {
@@ -387,7 +446,7 @@ const updateEmailTemplates = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
-  const result = await MerchantServices.updateEmailTemplatesFromDB({
+  const result = await MerchantServices.updateEmailTemplatesFromDB(merchantId, {
     event,
     template: templateData,
   });
@@ -402,7 +461,21 @@ const updateEmailTemplates = catchAsync(async (req: Request, res: Response) => {
 
 // Create email template
 const createEmailTemplate = catchAsync(async (req: Request, res: Response) => {
-  const result = await MerchantServices.createEmailTemplateFromDB(req.body);
+  const merchantId = req.user?.userId;
+
+  if (!merchantId) {
+    return sendResponse(res, {
+      statusCode: StatusCodes.BAD_REQUEST,
+      success: false,
+      message: "Merchant ID not found",
+      data: null,
+    });
+  }
+
+  const result = await MerchantServices.createEmailTemplateFromDB(
+    merchantId,
+    req.body
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,

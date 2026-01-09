@@ -1,17 +1,17 @@
 export type EmailEvent =
-  | "order_confirmation"
-  | "payment_confirmation"
-  | "order_shipped"
-  | "order_delivered"
-  | "order_cancelled"
-  | "order_refunded"
-  | "abandoned_cart"
-  | "password_reset"
-  | "account_welcome"
-  | "account_verification"
-  | "review_request"
-  | "low_stock_alert"
-  | "admin_new_order_alert";
+  | "ORDER_CONFIRMATION"
+  | "PAYMENT_CONFIRMATION"
+  | "ORDER_SHIPPED"
+  | "ORDER_DELIVERED"
+  | "ORDER_CANCELLED"
+  | "ORDER_REFUNDED"
+  | "ABANDONED_CART"
+  | "PASSWORD_RESET"
+  | "ACCOUNT_WELCOME"
+  | "ACCOUNT_VERIFICATION"
+  | "REVIEW_REQUEST"
+  | "LOW_STOCK_ALERT"
+  | "ADMIN_NEW_ORDER_ALERT";
 
 export type EmailTemplateDesign = Record<string, any> | null;
 

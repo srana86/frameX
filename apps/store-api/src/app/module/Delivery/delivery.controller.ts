@@ -7,7 +7,7 @@ import { DeliveryServices } from "./delivery.service";
 // Get storefront delivery config (public)
 const getStorefrontDeliveryConfig = catchAsync(
   async (req: Request, res: Response) => {
-    const result = await DeliveryServices.getStorefrontDeliveryConfigFromDB();
+    const result = await DeliveryServices.getStorefrontDeliveryConfigFromDB((req as any).tenantId);
 
     sendResponse(res, {
       statusCode: StatusCodes.OK,
@@ -20,7 +20,7 @@ const getStorefrontDeliveryConfig = catchAsync(
 
 // Calculate shipping cost (public)
 const calculateShipping = catchAsync(async (req: Request, res: Response) => {
-  const result = await DeliveryServices.calculateShippingFromDB(req.body);
+  const result = await DeliveryServices.calculateShippingFromDB((req as any).tenantId, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -33,7 +33,7 @@ const calculateShipping = catchAsync(async (req: Request, res: Response) => {
 // Get courier services config (admin/merchant)
 const getCourierServicesConfig = catchAsync(
   async (req: Request, res: Response) => {
-    const result = await DeliveryServices.getCourierServicesConfigFromDB();
+    const result = await DeliveryServices.getCourierServicesConfigFromDB((req as any).tenantId);
 
     sendResponse(res, {
       statusCode: StatusCodes.OK,

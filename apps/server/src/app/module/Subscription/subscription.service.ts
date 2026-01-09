@@ -1,5 +1,4 @@
-import { prisma, BillingCycle, SubscriptionStatus } from "@framex/database";
-import { Decimal } from "@prisma/client/runtime/library";
+import { prisma, BillingCycle, SubscriptionStatus, Decimal } from "@framex/database";
 
 // Helper functions for date calculations
 function calculatePeriodEnd(start: Date, months: number): Date {

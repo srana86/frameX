@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from "@framex/database";
-import config from "../../../config/index";
 
 const getAllDatabases = async () => {
   // If we truly migrated to Postgres, listing databases means listing schemas or using a query.
@@ -31,7 +30,7 @@ const getAllDatabases = async () => {
       empty: false, // Placeholder
       merchantId: info.merchantId,
       createdAt: info.createdAt,
-      connectionString: info.connectionString ? "***encrypted***" : null,
+      connectionString: info.databaseUrl ? "***encrypted***" : null,
     };
   });
 

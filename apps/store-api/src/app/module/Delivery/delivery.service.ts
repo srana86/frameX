@@ -10,8 +10,6 @@ import {
   CourierService,
   DeliveryDetails,
 } from "./delivery.interface";
-import { Decimal } from "@prisma/client/runtime/library";
-
 // Get delivery config for storefront
 const getStorefrontDeliveryConfigFromDB = async (tenantId: string) => {
   const config = await prisma.deliveryServiceConfig.findUnique({

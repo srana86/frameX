@@ -224,10 +224,18 @@ const googleLogin = async (
   // We need to pass tenantId to `ConfigServices.getOAuthConfigFromDB` if it supports it.
   const oauthConfig = await ConfigServices.getOAuthConfigFromDB(tenantId);
 
+  interface GoogleOAuthConfig {
+    enabled: boolean;
+    clientId: string;
+    clientSecret: string;
+  }
+
+  const googleConfig = oauthConfig.google as unknown as GoogleOAuthConfig;
+
   if (
-    !oauthConfig.google?.enabled ||
-    !oauthConfig.google?.clientId ||
-    !oauthConfig.google?.clientSecret
+    !googleConfig?.enabled ||
+    !googleConfig?.clientId ||
+    !googleConfig?.clientSecret
   ) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
@@ -241,8 +249,8 @@ const googleLogin = async (
       "https://oauth2.googleapis.com/token",
       new URLSearchParams({
         code,
-        client_id: oauthConfig.google.clientId,
-        client_secret: oauthConfig.google.clientSecret,
+        client_id: googleConfig.clientId,
+        client_secret: googleConfig.clientSecret,
         redirect_uri: redirectUri,
         grant_type: "authorization_code",
       }).toString(),

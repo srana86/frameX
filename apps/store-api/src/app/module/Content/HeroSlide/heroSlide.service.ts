@@ -75,9 +75,9 @@ const createHeroSlideIntoDB = async (
       subtitle: payload.subtitle,
       image,
       mobileImage,
-      link: payload.link,
-      isActive: payload.isActive !== undefined ? payload.isActive : true, // field is 'enabled' in payload? checks needed if interface mismatch
-      sortOrder: payload.order || 0, // payload has 'order'
+      link: payload.link ?? payload.buttonLink ?? null,
+      isActive: payload.isActive ?? payload.enabled ?? true,
+      sortOrder: payload.order || 0,
     },
   });
   return result;
@@ -123,12 +123,24 @@ const updateHeroSlideIntoDB = async (
     updateData.sortOrder = payload.order;
     delete updateData.order;
   }
-  // If payload has enabled, map to isActive?
-  // interface THeroSlide usually has enabled: boolean
-  if ((payload as any).enabled !== undefined) {
-    updateData.isActive = (payload as any).enabled;
-    delete (updateData as any).enabled;
+
+  // Handle link/buttonLink mapping
+  if (payload.link !== undefined) {
+    updateData.link = payload.link;
+  } else if (payload.buttonLink !== undefined) {
+    updateData.link = payload.buttonLink;
   }
+
+  // Handle isActive/enabled mapping
+  if (payload.isActive !== undefined) {
+    updateData.isActive = payload.isActive;
+  } else if (payload.enabled !== undefined) {
+    updateData.isActive = payload.enabled;
+  }
+
+  // Clean up non-Prisma fields
+  delete updateData.buttonLink;
+  delete updateData.enabled;
 
   const result = await prisma.heroSlide.update({
     where: { id: existing.id },

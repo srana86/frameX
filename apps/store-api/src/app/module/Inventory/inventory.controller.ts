@@ -7,7 +7,9 @@ import { InventoryServices } from "./inventory.service";
 // Get all inventory transactions
 const getAllInventoryTransactions = catchAsync(
   async (req: Request, res: Response) => {
+    const user = (req as any).user;
     const result = await InventoryServices.getAllInventoryTransactionsFromDB(
+      user.tenantId,
       req.query
     );
 
@@ -26,7 +28,9 @@ const getAllInventoryTransactions = catchAsync(
 // Create inventory transaction
 const createInventoryTransaction = catchAsync(
   async (req: Request, res: Response) => {
+    const user = (req as any).user;
     const result = await InventoryServices.createInventoryTransactionIntoDB(
+      user.tenantId,
       req.body
     );
 
@@ -41,7 +45,10 @@ const createInventoryTransaction = catchAsync(
 
 // Get inventory overview
 const getInventoryOverview = catchAsync(async (req: Request, res: Response) => {
-  const result = await InventoryServices.getInventoryOverviewFromDB();
+  const user = (req as any).user;
+  const result = await InventoryServices.getInventoryOverviewFromDB(
+    user.tenantId
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

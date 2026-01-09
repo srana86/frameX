@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { prisma } from "@framex/database";
+import { prisma, OrderStatus } from "@framex/database";
 
 // Get comprehensive statistics
 const getStatisticsFromDB = async () => {
@@ -27,11 +27,11 @@ const getStatisticsFromDB = async () => {
 
   // Orders by status
   const ordersByStatus = {
-    pending: orders.filter((o) => o.status === "pending").length,
-    processing: orders.filter((o) => o.status === "processing").length,
-    shipped: orders.filter((o) => o.status === "shipped").length,
-    delivered: orders.filter((o) => o.status === "delivered").length,
-    cancelled: orders.filter((o) => o.status === "cancelled").length,
+    pending: orders.filter((o) => o.status === OrderStatus.PENDING).length,
+    processing: orders.filter((o) => o.status === OrderStatus.PROCESSING).length,
+    shipped: orders.filter((o) => o.status === OrderStatus.SHIPPED).length,
+    delivered: orders.filter((o) => o.status === OrderStatus.DELIVERED).length,
+    cancelled: orders.filter((o) => o.status === OrderStatus.CANCELLED).length,
   };
 
   // Orders by time periods

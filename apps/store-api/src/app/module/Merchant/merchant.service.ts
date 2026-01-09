@@ -16,35 +16,26 @@ import {
 const getMerchantContextFromDB = async (merchantId?: string) => {
   if (!merchantId) throw new AppError(StatusCodes.BAD_REQUEST, "Merchant ID required");
 
-  // Retrieve merchant from Merchant table
-  // Assuming merchantId passed here corresponds to Merchant.id
-  // In the migrated system, authentication likely yields a User (or StoreUser), 
-  // but this service retrieves the Merchant Entity context.
-  // If merchantId is the ID from authentication, we might need to find which Merchant this user belongs to?
-  // But usually merchantId arg implies the Merchant Entity ID.
-  const merchant = await prisma.merchant.findUnique({
-    where: {
-      id: merchantId
-    }
+  // Retrieve merchant from User table (as merchants are Users in the platform)
+  const userMerchant = await prisma.user.findFirst({
+    where: { id: merchantId, isDeleted: false } // merchantId is guaranteed to be string here due to check above
   });
 
-  if (!merchant) {
-    // Fallback: Check if it's a User ID that maps to a Merchant?
-    // For now assuming explicit Merchant ID.
+  if (!userMerchant) {
     throw new AppError(StatusCodes.NOT_FOUND, "Merchant not found");
   }
 
   const fullData = await SuperAdminServices.getFullMerchantDataFromDB(
-    merchant.id
+    userMerchant.id
   );
 
   const context: MerchantContext = {
     merchant: {
-      id: merchant.id,
-      name: merchant.name,
-      email: merchant.email,
-      status: merchant.status || "ACTIVE", // Enum
-      settings: merchant.settings || {},
+      id: userMerchant.id,
+      name: userMerchant.name || "",
+      email: userMerchant.email,
+      status: (userMerchant.status || "ACTIVE") as any, // Cast to any or specific enum if known
+      settings: {},
     },
     database: fullData.database
       ? {
@@ -67,62 +58,11 @@ const getMerchantContextFromDB = async (merchantId?: string) => {
   };
 
   return context;
-}
-
-// If found in storeUser (unlikely for merchant role?), handle same way?
-// No, let's stick to `prisma.user` which is more standard for tenants/merchants.
-// I will assume `Merchant` service queries the platform User table.
-// If `merchant` was found in `StoreUser`, it might be a wrong assumption in my previous thought process.
-// BUT wait, `apps/store-api` User service queries `StoreUser` (customers).
-// Does `apps/store-api` have access to `prisma.user`? Yes, via `@framex/database`.
-// So I will use `prisma.user`.
-
-// Re-implementing with prisma.user logic only:
-const userMerchant = await prisma.user.findFirst({
-  where: { id: merchantId, isDeleted: false }
-});
-if (!userMerchant) {
-  throw new AppError(StatusCodes.NOT_FOUND, "Merchant not found");
-}
-
-const fullData = await SuperAdminServices.getFullMerchantDataFromDB(
-  userMerchant.id
-);
-
-const context: MerchantContext = {
-  merchant: {
-    id: userMerchant.id,
-    name: userMerchant.fullName,
-    email: userMerchant.email,
-    status: userMerchant.status || "in-progress",
-    settings: {},
-  },
-  database: fullData.database
-    ? {
-      id: fullData.database.id,
-      databaseName: fullData.database.databaseName,
-      useSharedDatabase: fullData.database.useSharedDatabase,
-      status: fullData.database.status,
-    }
-    : null,
-  deployment: fullData.deployment
-    ? {
-      id: fullData.deployment.id,
-      deploymentUrl: fullData.deployment.deploymentUrl,
-      deploymentStatus: fullData.deployment.deploymentStatus,
-      deploymentType: fullData.deployment.deploymentType,
-    }
-    : null,
-  dbName: fullData.database?.databaseName || "",
-  hasConnectionString: false,
-};
-
-return context;
 };
 
 // Get merchant data from brand config
-const getMerchantDataFromBrandConfig = async () => {
-  const brandConfig = await ConfigServices.getBrandConfigFromDB();
+const getMerchantDataFromBrandConfig = async (merchantId: string) => {
+  const brandConfig = await ConfigServices.getBrandConfigFromDB(merchantId);
   return {
     merchant: {
       name: brandConfig.name,
@@ -282,25 +222,23 @@ const getSuperAdminDataFromDB = async (merchantId: string, type?: string) => {
 };
 
 // Email settings - using EmailTemplate module
-const getEmailSettingsFromDB = async () => {
+const getEmailSettingsFromDB = async (merchantId: string) => {
   const { EmailProviderServices } = await import(
     "../EmailTemplate/emailProvider.service"
   );
-  const merchantId = undefined; // Get from context if available
-  // assuming single tenant context if merchantId is undefined, handled in service
   return await EmailProviderServices.getEmailProviderSettingsFromDB(merchantId);
 };
 
-const updateEmailSettingsFromDB = async (payload: any) => {
+const updateEmailSettingsFromDB = async (merchantId: string, payload: any) => {
   const { EmailProviderServices } = await import(
     "../EmailTemplate/emailProvider.service"
   );
-  const merchantId = undefined; // Get from context if available
   return await EmailProviderServices.updateEmailProviderSettingsFromDB(
-    payload,
-    merchantId
+    merchantId,
+    payload
   );
 };
+
 
 const testEmailSettingsFromDB = async (payload: any) => {
   // TODO: Implement email test with actual email sending service
@@ -311,26 +249,27 @@ const testEmailSettingsFromDB = async (payload: any) => {
 };
 
 // Email templates - using EmailTemplate module
-const getEmailTemplatesFromDB = async (event?: string) => {
+const getEmailTemplatesFromDB = async (merchantId: string, event?: string) => {
   const { EmailTemplateServices } = await import(
     "../EmailTemplate/emailTemplate.service"
   );
-  const merchantId = undefined; // Get from context if available
   return await EmailTemplateServices.getEmailTemplatesFromDB(
     merchantId,
     event as any
   );
 };
 
-const updateEmailTemplatesFromDB = async (payload: {
-  event: string;
-  template?: any;
-  [key: string]: any;
-}) => {
+const updateEmailTemplatesFromDB = async (
+  merchantId: string,
+  payload: {
+    event: string;
+    template?: any;
+    [key: string]: any;
+  }
+) => {
   const { EmailTemplateServices } = await import(
     "../EmailTemplate/emailTemplate.service"
   );
-  const merchantId = undefined; // Get from context if available
 
   // If template is provided, use it; otherwise use the entire payload as template data (excluding event)
   const { event, template, ...rest } = payload;
@@ -343,11 +282,10 @@ const updateEmailTemplatesFromDB = async (payload: {
   );
 };
 
-const createEmailTemplateFromDB = async (payload: any) => {
+const createEmailTemplateFromDB = async (merchantId: string, payload: any) => {
   const { EmailTemplateServices } = await import(
     "../EmailTemplate/emailTemplate.service"
   );
-  const merchantId = undefined; // Get from context if available
   return await EmailTemplateServices.createEmailTemplateFromDB(
     payload,
     merchantId

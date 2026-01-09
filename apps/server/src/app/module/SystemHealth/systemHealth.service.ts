@@ -49,8 +49,7 @@ const getSystemHealth = async () => {
     const tableStats: Record<string, number> = {};
 
     tableStats["merchants"] = await prisma.merchant.count();
-    tableStats["subscriptions"] = await prisma.subscription.count();
-    tableStats["plans"] = await prisma.plan.count();
+    tableStats["subscriptions"] = await prisma.subscriptionPlan.count();
     tableStats["deployments"] = await prisma.deployment.count();
     tableStats["databases"] = await prisma.databaseInfo.count();
 
@@ -101,7 +100,7 @@ const getSystemHealth = async () => {
 
   // 4. Subscription Health
   try {
-    const subscriptions = await prisma.subscription.findMany();
+    const subscriptions = await prisma.merchantSubscription.findMany();
 
     const active = subscriptions.filter(s => s.status === "ACTIVE").length;
     const pastDue = subscriptions.filter(s => {

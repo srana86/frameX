@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { prisma } from "@framex/database";
-import { Decimal } from "@prisma/client/runtime/library";
+import { prisma, Decimal } from "@framex/database";
 
 const getAllSales = async (
   status?: string,

@@ -6,7 +6,7 @@ import { PathaoServices } from "./pathao.service";
 
 // Get Pathao cities
 const getPathaoCities = catchAsync(async (req: Request, res: Response) => {
-  const result = await PathaoServices.getPathaoCitiesFromDB();
+  const result = await PathaoServices.getPathaoCitiesFromDB((req as any).tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -29,7 +29,7 @@ const getPathaoZones = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
-  const result = await PathaoServices.getPathaoZonesFromDB(cityId);
+  const result = await PathaoServices.getPathaoZonesFromDB((req as any).tenantId, cityId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -52,7 +52,7 @@ const getPathaoAreas = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
-  const result = await PathaoServices.getPathaoAreasFromDB(zoneId);
+  const result = await PathaoServices.getPathaoAreasFromDB((req as any).tenantId, zoneId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

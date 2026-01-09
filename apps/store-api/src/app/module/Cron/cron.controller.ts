@@ -8,32 +8,11 @@ import { getCourierOrderStatus } from "../Delivery/courier.util";
 import { CourierService } from "../Delivery/delivery.interface";
 
 // Sync delivery status for all merchants (cron job)
+// Sync delivery status for all merchants (cron job)
 const syncDeliveryStatus = catchAsync(async (req: Request, res: Response) => {
-  // Get all orders with courier info that are not in final states
-  // In Prisma, we check the relation 'courier'
-  const orders = await prisma.order.findMany({
-    where: {
-      isDeleted: false,
-      courier: {
-        isNot: null,
-        serviceId: { not: null }, // Assuming serviceId is not nullable in OrderCourier if strict, but safe to check
-        consignmentId: { not: null }
-      },
-      // Status check: 'delivered' and 'cancelled' are string values? Or Enum?
-      // OrderStatus enum usually: PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED
-      // Mongoose used lowercase strings. Prisma usually uses Uppercase Enum.
-      // We should check 'DELIVERED', 'CANCELLED'.
-      // But let's assume loose string if status is string.
-      // Schema says `status OrderStatus` (Enum).
-      status: { notIn: ["DELIVERED", "CANCELLED"] },
-    },
-    include: { courier: true },
-    take: 500
-  });
-
   const results = {
-    totalMerchants: 1, // Single tenant for now
-    totalOrders: orders.length,
+    totalTenants: 0,
+    totalOrders: 0,
     updated: 0,
     failed: 0,
     skipped: 0,
@@ -41,95 +20,123 @@ const syncDeliveryStatus = catchAsync(async (req: Request, res: Response) => {
     sampleErrors: [] as string[],
   };
 
-  // Get courier config
-  // CourierServicesConfig in Prisma (check schema)
-  // model CourierServicesConfig { id String @id, ... services Json ... }
-  const courierConfig = await prisma.courierServicesConfig.findFirst({
-    where: { id: "courier-services-config" }
-  });
-
-  if (
-    !courierConfig ||
-    !courierConfig.services ||
-    !Array.isArray(courierConfig.services) ||
-    courierConfig.services.length === 0
-  ) {
-    return sendResponse(res, {
-      statusCode: StatusCodes.OK,
-      success: true,
-      message: "No courier services configured",
-      data: {
-        success: true,
-        message: "No courier services configured",
-        results,
-        timestamp: new Date().toISOString(),
-      },
-    });
-  }
-
-  // Build map of enabled services
-  const enabledServices = new Map<string, any>();
-  courierConfig.services.forEach((service: any) => {
-    if (service.enabled) {
-      enabledServices.set(service.id, service);
+  // 1. Get configs for all tenants that have courier services set up
+  // heavily optimized to only fetch what's needed
+  const courierConfigs = await prisma.courierServicesConfig.findMany({
+    where: {
+      services: {
+        not: { equals: null }
+      }
     }
   });
 
-  for (const order of orders) {
-    try {
-      if (!order.courier?.serviceId || !order.courier?.consignmentId) {
-        results.skipped++;
-        continue;
+  results.totalTenants = courierConfigs.length;
+
+  // 2. Process each tenant independenty 
+  for (const config of courierConfigs) {
+    const tenantId = config.tenantId;
+
+    if (!config.services || !Array.isArray(config.services) || config.services.length === 0) {
+      continue;
+    }
+
+    // Build map of enabled services for this tenant
+    const enabledServices = new Map<string, any>();
+    config.services.forEach((service: any) => {
+      if (service.enabled) {
+        enabledServices.set(service.id, service);
       }
+    });
 
-      const service = enabledServices.get(order.courier.serviceId);
-      if (!service) {
-        results.skipped++;
-        continue;
-      }
+    if (enabledServices.size === 0) continue;
 
-      // Get status from courier
-      const statusResult = await getCourierOrderStatus(
-        service,
-        order.courier.consignmentId
-      );
+    // Get active orders for this tenant
+    const orders = await prisma.order.findMany({
+      where: {
+        tenantId, // Tenant Isolation
+        isDeleted: false,
+        courierServiceId: { not: null }, // Flat field check
+        consignmentId: { not: null },    // Flat field check
+        status: {
+          notIn: ["DELIVERED", "CANCELLED", "REFUNDED"] // Optimized status check
+        },
+        // Also check if we already have a final courier status to avoid API calls
+        // Assuming 'courierStatus' is a string. If it's already 'Delivered', skip?
+        // But maybe we want to double check? Let's check if courierStatus is NOT 'Delivered'
+        // courierStatus: { not: 'Delivered' } // Optional optimization
+      },
+      select: {
+        id: true,
+        tenantId: true,
+        courierServiceId: true,
+        consignmentId: true,
+        courierStatus: true,
+        status: true
+      },
+      take: 50 // Process small batches per tenant per run to avoid timeouts
+    });
 
-      // Check if status changed
-      if (statusResult.deliveryStatus !== order.courier.status) {
-        // Update Courier Info in database
-        // We update the related OrderCourier record
-        await prisma.orderCourier.update({
-          where: { orderId: order.id }, // orderId is unique
-          data: {
-            status: statusResult.deliveryStatus,
-            consignmentId: statusResult.consignmentId
+    results.totalOrders += orders.length;
+
+    // Chunking for concurrency control (VPS Optimization)
+    // Process 5 orders at a time to be nice to CPUs and APIs
+    const chunkSize = 5;
+    for (let i = 0; i < orders.length; i += chunkSize) {
+      const chunk = orders.slice(i, i + chunkSize);
+
+      await Promise.all(chunk.map(async (order) => {
+        try {
+          if (!order.courierServiceId || !order.consignmentId) {
+            results.skipped++;
+            return;
           }
-        });
 
-        // Optionally update Order status if mapped
-        // e.g. if courier says "Delivered", update Order to "DELIVERED"
-        if (String(statusResult.deliveryStatus).toLowerCase() === 'delivered') {
-          await prisma.order.update({
-            where: { id: order.id },
-            data: { status: 'DELIVERED' }
-          });
+          const service = enabledServices.get(order.courierServiceId);
+          if (!service) {
+            results.skipped++;
+            return;
+          }
+
+          // Get status from courier API
+          const statusResult = await getCourierOrderStatus(
+            service,
+            order.consignmentId
+          );
+
+          // Check if status changed
+          // statusResult.deliveryStatus vs order.courierStatus
+          if (statusResult.deliveryStatus !== order.courierStatus) {
+            const updateData: any = {
+              courierStatus: statusResult.deliveryStatus,
+              consignmentId: statusResult.consignmentId // Sometimes tracking IDs change/normalize
+            };
+
+            // Map Courier "Delivered" -> Order "DELIVERED"
+            if (String(statusResult.deliveryStatus).toLowerCase() === 'delivered') {
+              updateData.status = 'DELIVERED';
+            }
+
+            // Update Order
+            await prisma.order.update({
+              where: { id: order.id },
+              data: updateData
+            });
+
+            results.updated++;
+          } else {
+            results.skipped++;
+          }
+
+        } catch (error: any) {
+          results.failed++;
+          results.errorCount++;
+          if (results.sampleErrors.length < 10) {
+            results.sampleErrors.push(
+              `[${tenantId}] Order ${order.id}: ${error.message || String(error)}`
+            );
+          }
         }
-
-        results.updated++;
-      } else {
-        results.skipped++;
-      }
-
-      // Small delay to avoid rate limiting
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    } catch (error: any) {
-      results.failed++;
-      results.errorCount++;
-      if (results.sampleErrors.length < 10) {
-        results.sampleErrors.push(
-          `Order ${order.id}: ${error.message || String(error)}`
-        );
-      }
+      }));
     }
   }
 

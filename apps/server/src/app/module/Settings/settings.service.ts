@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from "@framex/database";
-import { ActivityLog } from "../ActivityLog/activityLog.model"; // Still referencing old model for activity log? No, use prisma.activityLog
-// But Settings service should use Prisma for Settings model.
 
 const DEFAULT_GENERAL_SETTINGS = {
   // ... defaults
@@ -79,7 +77,15 @@ const updateSSLCommerzSettings = async (payload: any) => {
 
 const testSSLCommerzConnection = async (payload: any) => {
   // Logic as before
-  return { success: true, message: "Connection test mock" };
+  return {
+    success: true,
+    message: "Connection test mock",
+    details: {
+      storeId: payload.storeId,
+      environment: payload.isLive ? "production" : "sandbox",
+      testedAt: new Date().toISOString()
+    }
+  };
 };
 
 export const SettingsServices = {

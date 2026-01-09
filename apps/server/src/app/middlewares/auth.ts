@@ -3,8 +3,7 @@ import httpStatus from 'http-status';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import config from '../../config';
 import AppError from '../errors/AppError';
-import { TUserRole } from '../module/User/user.interface';
-import { User } from '../module/User/user.model';
+import { TUserRole, isUserExistsByCustomId, isJWTIssuedBeforePasswordChanged } from '../module/User/user.utils';
 import catchAsync from '../utils/catchAsync';
 
 const auth = (...requiredRoles: TUserRole[]) => {
@@ -30,14 +29,14 @@ const auth = (...requiredRoles: TUserRole[]) => {
         const { role, userId, iat } = decoded;
 
         // checking if the user is exist
-        const user = await User.isUserExistsByCustomId(userId);
+        const user = await isUserExistsByCustomId(userId);
 
         if (!user) {
             throw new AppError(httpStatus.NOT_FOUND, 'This user is not found !');
         }
         // checking if the user is already deleted
 
-        const isDeleted = user?.isDeleted;
+        const isDeleted = (user as any)?.isDeleted;
 
         if (isDeleted) {
             throw new AppError(httpStatus.FORBIDDEN, 'This user is deleted !');
@@ -46,14 +45,14 @@ const auth = (...requiredRoles: TUserRole[]) => {
         // checking if the user is blocked
         const userStatus = user?.status;
 
-        if (userStatus === 'blocked') {
+        if (userStatus === 'BLOCKED') {
             throw new AppError(httpStatus.FORBIDDEN, 'This user is blocked ! !');
         }
 
         if (
-            user.passwordChangedAt &&
-            User.isJWTIssuedBeforePasswordChanged(
-                user.passwordChangedAt,
+            (user as any).passwordChangedAt &&
+            isJWTIssuedBeforePasswordChanged(
+                (user as any).passwordChangedAt,
                 iat as number,
             )
         ) {

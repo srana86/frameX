@@ -22,7 +22,7 @@ const getAllPayments = catchAsync(async (req, res) => {
     data: result.payments,
     meta: {
       ...result.pagination,
-      totalPage: result.pagination.totalPages,
+      totalPage: result.pagination.totalPage,
     },
   });
 });

@@ -9,7 +9,7 @@ const createStudent = catchAsync(async (req, res) => {
 
   // Below is the sample code to show you how to call the service function and pass parameter to it.
   // TODO: Implement createStudentIntoDB service method
-  const result = await UserServices.changeStatus("", { status: "in-progress" });
+  const result = await UserServices.changeStatus("", { status: "ACTIVE" });
 
   // Below you can see the use of custom sendResponse function to make the code base clean.
   sendResponse(res, {

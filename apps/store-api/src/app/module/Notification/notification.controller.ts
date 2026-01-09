@@ -17,6 +17,7 @@ const getNotifications = catchAsync(async (req: Request, res: Response) => {
   }
 
   const result = await NotificationServices.getUserNotificationsFromDB(
+    req.tenantId,
     userId,
     req.query
   );
@@ -48,6 +49,7 @@ const markNotificationAsRead = catchAsync(
 
     const { notificationId, markAllAsRead } = req.body;
     const result = await NotificationServices.markNotificationAsReadFromDB(
+      req.tenantId,
       userId,
       markAllAsRead ? undefined : notificationId
     );

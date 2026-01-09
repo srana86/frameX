@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { prisma, PrismaQueryBuilder } from "@framex/database";
+import { prisma, PrismaQueryBuilder, Decimal } from "@framex/database";
 import AppError from "../../errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { initSSLCommerzPayment, validateSSLCommerzPayment } from "./sslcommerz.utils";
 import config from "../../../config";
-import { Decimal } from "@prisma/client/runtime/library";
 
 // Get all payments
 const getAllPaymentsFromDB = async (tenantId: string, query: Record<string, unknown>) => {
@@ -206,7 +205,7 @@ const handlePaymentSuccess = async (tenantId: string, payload: any) => {
   if (!val_id || !tran_id) return `${config.frontend_url}/checkout?error=payment_validation_failed`;
 
   const sslConfig = await prisma.sSLCommerzConfig.findUnique({ where: { tenantId } });
-  if (!sslConfig || !sslConfig.enabled) return `${config.frontend_url}/checkout?error=payment_not_configured`;
+  if (!sslConfig || !sslConfig.enabled || !sslConfig.storeId || !sslConfig.storePassword) return `${config.frontend_url}/checkout?error=payment_not_configured`;
 
   const order = await prisma.order.findFirst({
     where: {

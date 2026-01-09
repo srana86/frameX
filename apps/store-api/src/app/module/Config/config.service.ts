@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { prisma } from "@framex/database";
+import { prisma, Decimal } from "@framex/database";
 import AppError from "../../errors/AppError";
 import { StatusCodes } from "http-status-codes";
 
@@ -148,7 +148,7 @@ const updateAdsConfigIntoDB = async (tenantId: string, payload: any) => {
   });
 };
 
-import { Decimal } from "@prisma/client/runtime/library";
+
 
 export const ConfigServices = {
   getBrandConfigFromDB,

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { prisma, PrismaQueryBuilder } from "@framex/database";
-import { CheckoutStatus } from "@prisma/client";
+import { prisma, PrismaQueryBuilder, CheckoutStatus } from "@framex/database";
 
 const getAllPayments = async (
   status?: string,

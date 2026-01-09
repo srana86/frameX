@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { StatusCodes } from "http-status-codes";
-import AppError from "../../errors/AppError";
 import { prisma } from "@framex/database";
 
 // Get email provider settings

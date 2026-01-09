@@ -22,23 +22,26 @@ const getProductReviewsFromDB = async (tenantId: string, productIdOrSlug: string
       // Ideally link by productId, but old logic linked by slug.
       // We should probably rely on productId if possible, or support slug.
       // Assuming Review model has productSlug field as per Mongoose schema.
-      productSlug: product.slug
+      productId: product.id,
     },
     orderBy: { createdAt: "desc" }
   });
 
-  return reviews.map((r) => ({
-    id: r.id,
-    name: r.name,
-    initials: r.initials,
-    rating: Number(r.rating),
-    date: r.date || r.createdAt.toLocaleDateString(),
-    verified: r.verified,
-    review: r.review,
-    avatarColor: r.avatarColor,
-    images: r.images,
-    createdAt: r.createdAt,
-  }));
+  return reviews.map((r) => {
+    const { initials, avatarColor } = getAvatarDetails(r.name);
+    return {
+      id: r.id,
+      name: r.name,
+      initials,
+      rating: Number(r.rating),
+      date: r.createdAt.toLocaleDateString(),
+      verified: r.approved,
+      review: r.comment,
+      avatarColor,
+      images: [], // Not supported in schema yet
+      createdAt: r.createdAt,
+    };
+  });
 };
 
 // Create review
@@ -58,7 +61,35 @@ const createProductReviewIntoDB = async (
     throw new AppError(StatusCodes.NOT_FOUND, "Product not found");
   }
 
-  const initials = (payload.name || "")
+  // Calculate for return if needed, or valid logic
+  const { initials, avatarColor } = getAvatarDetails(payload.name);
+
+  // Note: 'images', 'verified', 'date', 'initials', 'avatarColor', 'productSlug' 
+  // are not in Prisma Review model, so we omit them from the DB write.
+  const review = await prisma.review.create({
+    data: {
+      tenantId,
+      productId: product.id,
+      rating: Number(payload.rating),
+      comment: String(payload.review),
+      name: String(payload.name),
+      approved: false, // Default to false, corresponds to 'verified' logic potentially
+    }
+  });
+
+  return {
+    ...review,
+    initials,
+    avatarColor,
+    images: payload.images || [],
+    verified: false,
+    date: "Just now",
+    review: review.comment
+  };
+};
+
+const getAvatarDetails = (name: string) => {
+  const initials = (name || "")
     .split(" ")
     .map((n: string) => n[0])
     .join("")
@@ -79,26 +110,10 @@ const createProductReviewIntoDB = async (
     "from-fuchsia-500/20 to-pink-500/20",
     "from-slate-500/20 to-gray-500/20",
   ];
-  const colorIndex = (payload.name || "").charCodeAt(0) % colors.length;
+  const colorIndex = (name || "").charCodeAt(0) % colors.length;
   const avatarColor = colors[colorIndex];
 
-  const review = await prisma.review.create({
-    data: {
-      tenantId,
-      productSlug: product.slug, // Storing slug to match Mongoose logic
-      productId: product.id,     // Also storing ID for better relation
-      rating: Number(payload.rating),
-      review: String(payload.review),
-      name: String(payload.name),
-      initials,
-      avatarColor,
-      images: payload.images || [],
-      verified: false,
-      date: "Just now"
-    }
-  });
-
-  return review;
+  return { initials, avatarColor };
 };
 
 export const ReviewServices = {

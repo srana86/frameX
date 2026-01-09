@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { StatusCodes } from "http-status-codes";
-import AppError from "../../errors/AppError";
 import { prisma } from "@framex/database";
 import { EmailEvent } from "./emailTemplate.interface";
 
@@ -16,19 +13,22 @@ const getEmailTemplatesFromDB = async (
   event?: EmailEvent
 ) => {
   const query: any = { tenantId };
-  if (event) query.event = event;
+  // Normalize event to uppercase to match Prisma enum
+  const normalizedEvent = event ? (event.toUpperCase() as EmailEvent) : undefined;
 
-  if (event) {
+  if (normalizedEvent) query.event = normalizedEvent;
+
+  if (normalizedEvent) {
     let template = await prisma.emailTemplate.findUnique({
-      where: { tenantId_event: { tenantId, event } }
+      where: { tenantId_event: { tenantId, event: normalizedEvent } }
     });
 
     // Return default if not found
     if (!template) {
       // ... return default struct
       return {
-        id: `default_${event}`,
-        event,
+        id: `default_${normalizedEvent}`,
+        event: normalizedEvent,
         name: "Default Template", // Should fetch from defaults map
         subject: "Default Subject",
         description: "Default checking...",
@@ -58,15 +58,18 @@ const updateEmailTemplateFromDB = async (
   event: EmailEvent,
   payload: any
 ) => {
+  // Normalize event to uppercase
+  const normalizedEvent = event.toUpperCase() as EmailEvent;
+
   const updateData: any = { ...payload };
   delete updateData.event; // Encapsulated in key
   delete updateData.tenantId;
 
   const result = await prisma.emailTemplate.upsert({
-    where: { tenantId_event: { tenantId, event } },
+    where: { tenantId_event: { tenantId, event: normalizedEvent } },
     create: {
       tenantId,
-      event,
+      event: normalizedEvent,
       name: payload.name || "Template",
       subject: payload.subject || "Subject",
       description: payload.description,

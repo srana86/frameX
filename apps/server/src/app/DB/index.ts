@@ -1,22 +1,31 @@
-import { USER_ROLE } from "../module/User/user.constant";
-import { User } from "../module/User/user.model";
+import { prisma } from "@framex/database";
 
 const superUser = {
     id: "0001",
     email: "admin@framex.com",
     password: "admin123",
     needsPasswordChange: false,
-    role: USER_ROLE.superAdmin,
-    status: "active",
+    role: "SUPER_ADMIN" as const,
+    status: "ACTIVE" as const,
     isDeleted: false,
 };
 
 const seedSuperAdmin = async () => {
     // when database is connected, we will check is there any user who is super admin
-    const isSuperAdminExits = await User.findOne({ role: USER_ROLE.superAdmin });
+    const isSuperAdminExits = await prisma.user.findFirst({
+        where: { role: "SUPER_ADMIN" }
+    });
 
     if (!isSuperAdminExits) {
-        await User.create(superUser);
+        await prisma.user.create({
+            data: {
+                id: superUser.id,
+                email: superUser.email,
+                password: superUser.password,
+                role: superUser.role,
+                status: superUser.status,
+            }
+        });
         console.log("✅ [Database] Super Admin seeded successfully");
     }
 };

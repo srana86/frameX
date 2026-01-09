@@ -1,18 +1,14 @@
-import { Merchant } from "../Merchant/merchant.model";
-import { Subscription } from "../Subscription/subscription.model";
-import { Plan } from "../Plan/plan.model";
-import { Deployment } from "../Deployment/deployment.model";
-import { Database } from "../Database/database.model";
-import { isExpiringSoon } from "../../utils/mongodb";
+import { prisma } from "@framex/database";
+import { isExpiringSoon } from "../../utils/date-utils";
 
 const getAnalytics = async () => {
   const [merchants, subscriptions, plans, deployments, databases] =
     await Promise.all([
-      Merchant.find({}),
-      Subscription.find({}),
-      Plan.find({}),
-      Deployment.find({}),
-      Database.find({}),
+      prisma.merchant.findMany(),
+      prisma.merchantSubscription.findMany(),
+      prisma.subscriptionPlan.findMany(),
+      prisma.deployment.findMany(),
+      prisma.databaseInfo.findMany(),
     ]);
 
   const now = new Date();
@@ -22,10 +18,10 @@ const getAnalytics = async () => {
   // Merchant stats
   const merchantStats = {
     total: merchants.length,
-    active: merchants.filter((m) => m.status === "active").length,
-    trial: merchants.filter((m) => m.status === "trial").length,
-    suspended: merchants.filter((m) => m.status === "suspended").length,
-    inactive: merchants.filter((m) => m.status === "inactive").length,
+    active: merchants.filter((m) => m.status === "ACTIVE").length,
+    trial: merchants.filter((m) => m.status === "TRIAL").length,
+    suspended: merchants.filter((m) => m.status === "SUSPENDED").length,
+    inactive: merchants.filter((m) => m.status === "INACTIVE").length,
     newLast30Days: merchants.filter(
       (m) => m.createdAt && new Date(m.createdAt) >= thirtyDaysAgo
     ).length,
@@ -38,18 +34,18 @@ const getAnalytics = async () => {
 
   // Subscription stats
   const activeSubscriptions = subscriptions.filter(
-    (s) => s.status === "active"
+    (s) => s.status === "ACTIVE"
   );
-  const trialSubscriptions = subscriptions.filter((s) => s.status === "trial");
+  const trialSubscriptions = subscriptions.filter((s) => s.status === "TRIAL");
   const expiringSubscriptions = subscriptions.filter((s) => {
-    if (s.status !== "active") return false;
-    return isExpiringSoon(s.currentPeriodEnd);
+    if (s.status !== "ACTIVE") return false;
+    return s.currentPeriodEnd && isExpiringSoon(s.currentPeriodEnd);
   });
 
   // Calculate revenue
   const monthlyRevenue = activeSubscriptions.reduce((sum, sub) => {
     const plan = plans.find((p) => p.id === sub.planId);
-    return sum + (plan?.price || 0);
+    return sum + (plan?.price ? Number(plan.price) : 0);
   }, 0);
 
   const annualRevenue = monthlyRevenue * 12;
@@ -63,9 +59,9 @@ const getAnalytics = async () => {
       return {
         planId: plan.id,
         planName: plan.name,
-        price: plan.price,
+        price: plan.price ? Number(plan.price) : 0,
         subscribers: planSubscribers.length,
-        monthlyRevenue: planSubscribers.length * (plan.price || 0),
+        monthlyRevenue: planSubscribers.length * (plan.price ? Number(plan.price) : 0),
       };
     })
     .filter((p) => p.subscribers > 0);
@@ -74,9 +70,9 @@ const getAnalytics = async () => {
     total: subscriptions.length,
     active: activeSubscriptions.length,
     trial: trialSubscriptions.length,
-    pastDue: subscriptions.filter((s) => s.status === "past_due").length,
-    cancelled: subscriptions.filter((s) => s.status === "cancelled").length,
-    expired: subscriptions.filter((s) => s.status === "expired").length,
+    pastDue: subscriptions.filter((s) => s.status === "PAST_DUE").length,
+    cancelled: subscriptions.filter((s) => s.status === "CANCELLED").length,
+    expired: subscriptions.filter((s) => s.status === "EXPIRED").length,
     expiringSoon: expiringSubscriptions.length,
     monthlyRevenue,
     annualRevenue,
@@ -94,7 +90,7 @@ const getAnalytics = async () => {
     inactive: plans.filter((p) => p.isActive === false).length,
     averagePrice:
       plans.length > 0
-        ? plans.reduce((sum, p) => sum + (p.price || 0), 0) / plans.length
+        ? plans.reduce((sum, p) => sum + (p.price ? Number(p.price) : 0), 0) / plans.length
         : 0,
     mostPopular:
       revenueByPlan.sort((a, b) => b.subscribers - a.subscribers)[0] || null,
@@ -106,32 +102,25 @@ const getAnalytics = async () => {
   // Deployment stats
   const deploymentStats = {
     total: deployments.length,
-    active: deployments.filter((d) => d.deploymentStatus === "active").length,
-    pending: deployments.filter((d) => d.deploymentStatus === "pending").length,
-    failed: deployments.filter((d) => d.deploymentStatus === "failed").length,
-    inactive: deployments.filter((d) => d.deploymentStatus === "inactive")
+    active: deployments.filter((d) => d.status === "COMPLETED").length,
+    pending: deployments.filter((d) => d.status === "PENDING").length,
+    failed: deployments.filter((d) => d.status === "FAILED").length,
+    inProgress: deployments.filter((d) => d.status === "IN_PROGRESS")
       .length,
     customDomains: deployments.filter(
-      (d) => d.deploymentType === "custom_domain"
+      (d) => d.domain && d.domain.length > 0
     ).length,
-    subdomains: deployments.filter((d) => d.deploymentType === "subdomain")
-      .length,
-    byProvider: deployments.reduce((acc: any, d) => {
-      const provider = d.deploymentProvider || "unknown";
-      acc[provider] = (acc[provider] || 0) + 1;
-      return acc;
-    }, {}),
     uptimeRate:
       deployments.length > 0
-        ? (deployments.filter((d) => d.deploymentStatus === "active").length /
-            deployments.length) *
-          100
+        ? (deployments.filter((d) => d.status === "COMPLETED").length /
+          deployments.length) *
+        100
         : 0,
   };
 
   // Database stats
   const totalStorageBytes = databases.reduce(
-    (sum, db) => sum + ((db as any).sizeOnDisk || 0),
+    (sum, db) => sum + (db.size ? Number(db.size) : 0),
     0
   );
   const databaseStats = {
@@ -142,8 +131,8 @@ const getAnalytics = async () => {
     totalStorageGB: totalStorageBytes / (1024 * 1024 * 1024),
     averageSizeBytes:
       databases.length > 0 ? totalStorageBytes / databases.length : 0,
-    active: databases.filter((db) => !(db as any).empty).length,
-    empty: databases.filter((db) => (db as any).empty).length,
+    active: databases.filter((db) => db.status === "ACTIVE").length,
+    inactive: databases.filter((db) => db.status !== "ACTIVE").length,
   };
 
   // Growth trends (mock data - in production, this would come from historical data)
@@ -180,7 +169,7 @@ const getAnalytics = async () => {
       .filter((s) => s.createdAt)
       .map((s) => ({
         type: "subscription",
-        action: s.status === "active" ? "activated" : s.status,
+        action: s.status === "ACTIVE" ? "activated" : s.status,
         id: s.id,
         merchantId: s.merchantId,
         date: s.createdAt!,
@@ -189,7 +178,7 @@ const getAnalytics = async () => {
       .filter((d) => d.createdAt)
       .map((d) => ({
         type: "deployment",
-        action: d.deploymentStatus,
+        action: d.status,
         id: d.id,
         merchantId: d.merchantId,
         date: d.createdAt!,

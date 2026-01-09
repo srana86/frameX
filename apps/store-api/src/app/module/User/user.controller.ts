@@ -5,7 +5,8 @@ import { UserServices } from "./user.service";
 
 // Get all users with pagination, filter, and search
 const getAllUsers = catchAsync(async (req, res) => {
-  const result = await UserServices.getAllUsersFromDB(req.query);
+  const tenantId = req.user.tenantId;
+  const result = await UserServices.getAllUsersFromDB(tenantId, req.query);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -18,8 +19,9 @@ const getAllUsers = catchAsync(async (req, res) => {
 
 // Get single user by ID
 const getSingleUser = catchAsync(async (req, res) => {
+  const tenantId = req.user.tenantId;
   const { id } = req.params;
-  const result = await UserServices.getSingleUserFromDB(id);
+  const result = await UserServices.getSingleUserFromDB(tenantId, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -31,7 +33,8 @@ const getSingleUser = catchAsync(async (req, res) => {
 
 // Create user
 const createUser = catchAsync(async (req, res) => {
-  const result = await UserServices.createUserIntoDB(req.body);
+  const tenantId = req.user.tenantId;
+  const result = await UserServices.createUserIntoDB(tenantId, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,
@@ -43,8 +46,9 @@ const createUser = catchAsync(async (req, res) => {
 
 // Update user
 const updateUser = catchAsync(async (req, res) => {
+  const tenantId = req.user.tenantId;
   const { id } = req.params;
-  const result = await UserServices.updateUserIntoDB(id, req.body);
+  const result = await UserServices.updateUserIntoDB(tenantId, id, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -56,8 +60,9 @@ const updateUser = catchAsync(async (req, res) => {
 
 // Delete user (soft delete)
 const deleteUser = catchAsync(async (req, res) => {
+  const tenantId = req.user.tenantId;
   const { id } = req.params;
-  const result = await UserServices.deleteUserFromDB(id);
+  const result = await UserServices.deleteUserFromDB(tenantId, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -69,8 +74,9 @@ const deleteUser = catchAsync(async (req, res) => {
 
 // Change user status
 const changeStatus = catchAsync(async (req, res) => {
+  const tenantId = req.user.tenantId;
   const { id } = req.params;
-  const result = await UserServices.changeStatus(id, req.body);
+  const result = await UserServices.changeStatus(tenantId, id, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

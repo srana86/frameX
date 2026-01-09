@@ -27,7 +27,7 @@ const getMerchantSubscription = catchAsync(async (req, res) => {
         });
     }
 
-    const subscription = await prisma.subscription.findFirst({ where: { merchantId } });
+    const subscription = await prisma.merchantSubscription.findFirst({ where: { merchantId } });
 
     if (!subscription) {
         // Return merchant without subscription
@@ -44,7 +44,7 @@ const getMerchantSubscription = catchAsync(async (req, res) => {
     }
 
     const planId = subscription.planId;
-    const plan = planId ? await prisma.plan.findUnique({ where: { id: planId } }) : null;
+    const plan = planId ? await prisma.subscriptionPlan.findUnique({ where: { id: planId } }) : null;
 
     // Calculate dynamic status
     const now = new Date();
