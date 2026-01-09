@@ -6,7 +6,8 @@ import { CouponServices } from "./coupon.service";
 
 // Get all coupons
 const getAllCoupons = catchAsync(async (req: Request, res: Response) => {
-  const result = await CouponServices.getAllCouponsFromDB(req.query);
+  const tenantId = req.user?.merchantId;
+  const result = await CouponServices.getAllCouponsFromDB(tenantId as string, req.query);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -22,7 +23,8 @@ const getAllCoupons = catchAsync(async (req: Request, res: Response) => {
 // Get single coupon
 const getSingleCoupon = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await CouponServices.getSingleCouponFromDB(id);
+  const tenantId = req.user?.merchantId;
+  const result = await CouponServices.getSingleCouponFromDB(tenantId as string, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -34,7 +36,8 @@ const getSingleCoupon = catchAsync(async (req: Request, res: Response) => {
 
 // Create coupon
 const createCoupon = catchAsync(async (req: Request, res: Response) => {
-  const result = await CouponServices.createCouponIntoDB(req.body);
+  const tenantId = req.user?.merchantId;
+  const result = await CouponServices.createCouponIntoDB(tenantId as string, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,
@@ -47,7 +50,8 @@ const createCoupon = catchAsync(async (req: Request, res: Response) => {
 // Update coupon
 const updateCoupon = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await CouponServices.updateCouponIntoDB(id, req.body);
+  const tenantId = req.user?.merchantId;
+  const result = await CouponServices.updateCouponIntoDB(tenantId as string, id, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -60,7 +64,8 @@ const updateCoupon = catchAsync(async (req: Request, res: Response) => {
 // Delete coupon
 const deleteCoupon = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await CouponServices.deleteCouponFromDB(id);
+  const tenantId = req.user?.merchantId;
+  const result = await CouponServices.deleteCouponFromDB(tenantId as string, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -72,7 +77,8 @@ const deleteCoupon = catchAsync(async (req: Request, res: Response) => {
 
 // Apply coupon
 const applyCoupon = catchAsync(async (req: Request, res: Response) => {
-  const result = await CouponServices.applyCouponToCart(req.body);
+  const tenantId = req.user?.merchantId;
+  const result = await CouponServices.applyCouponToCart(tenantId as string, req.body);
 
   sendResponse(res, {
     statusCode: result.success ? StatusCodes.OK : StatusCodes.BAD_REQUEST,
@@ -84,7 +90,8 @@ const applyCoupon = catchAsync(async (req: Request, res: Response) => {
 
 // Record coupon usage
 const recordCouponUsage = catchAsync(async (req: Request, res: Response) => {
-  const result = await CouponServices.recordCouponUsage(req.body);
+  const tenantId = req.user?.merchantId;
+  const result = await CouponServices.recordCouponUsage(tenantId as string, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -97,7 +104,8 @@ const recordCouponUsage = catchAsync(async (req: Request, res: Response) => {
 // Get coupon usage records
 const getCouponUsageRecords = catchAsync(
   async (req: Request, res: Response) => {
-    const result = await CouponServices.getCouponUsageRecords(req.query);
+    const tenantId = req.user?.merchantId;
+    const result = await CouponServices.getCouponUsageRecords(tenantId as string, req.query);
 
     sendResponse(res, {
       statusCode: StatusCodes.OK,

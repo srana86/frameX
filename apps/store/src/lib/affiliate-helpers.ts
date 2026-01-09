@@ -2,7 +2,7 @@
  * Affiliate Helper Functions
  */
 
-import { ObjectId } from "mongodb";
+import { ObjectId } from "./api-helpers";
 import type { AffiliateSettings, CommissionLevel, AffiliateCookieData } from "./affiliate-types";
 
 /**

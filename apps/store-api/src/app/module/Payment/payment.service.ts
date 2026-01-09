@@ -11,18 +11,6 @@ const getAllPaymentsFromDB = async (tenantId: string, query: Record<string, unkn
     model: prisma.payment,
     query,
     searchFields: ["orderId", "transactionId", "transactionId"]
-    // valId field might not exist in Prisma schema or named differently, checking schema:
-    // Schema has 'transactionId'. 'valId' is not explicitly in Payment model in schema provided earlier?
-    // Wait, let me check schema again. Payment model has `transactionId`. It doesn't seem to have `valId` field in the schema I read.
-    // However, `metadata` Json field exists. Maybe it stores other details.
-    // Mongoose schema had `valId`. Prisma schema I read earlier:
-    // model Payment { transactionId String? ... metadata Json? ... }
-    // If valId is missing, I should stash it in metadata or update schema.
-    // For now I will assume it might be in metadata or I missed it. 
-    // Actually, looking at handlePaymentSuccess in Mongoose, it stores valId in Payment.
-    // I should check schema for Payment model again to be precise. 
-    // Line 233 in schema file: model Payment { ... transactionId String? ... }
-    // It does NOT have valId. I will store valId in metadata for now or update schema later if critical.
   });
 
   return builder

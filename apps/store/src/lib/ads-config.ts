@@ -12,12 +12,12 @@ export { defaultAdsConfig } from "./ads-config-types";
  */
 export async function getAdsConfig(): Promise<AdsConfig> {
   try {
-    const { getCollection } = await import("./mongodb");
-    const col = await getCollection<AdsConfig>("ads_config");
+    const { getMerchantCollectionForAPI } = await import("./api-helpers");
+    const col = await getMerchantCollectionForAPI<AdsConfig>("ads_config");
     const doc = await col.findOne({ id: "ads_config_v1" });
 
     if (doc) {
-      const { _id, ...config } = doc;
+      const { _id, ...config } = doc as any;
       return config as AdsConfig;
     }
   } catch (error) {
@@ -25,4 +25,3 @@ export async function getAdsConfig(): Promise<AdsConfig> {
   }
   return defaultAdsConfig;
 }
-

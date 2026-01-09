@@ -6,7 +6,8 @@ import { InvestmentServices } from "./investment.service";
 
 // Get all investments
 const getAllInvestments = catchAsync(async (req: Request, res: Response) => {
-  const result = await InvestmentServices.getAllInvestmentsFromDB(req.query);
+  const tenantId = req.headers["x-tenant-id"] as string;
+  const result = await InvestmentServices.getAllInvestmentsFromDB(tenantId, req.query);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -21,7 +22,8 @@ const getAllInvestments = catchAsync(async (req: Request, res: Response) => {
 
 // Create investment
 const createInvestment = catchAsync(async (req: Request, res: Response) => {
-  const result = await InvestmentServices.createInvestmentIntoDB(req.body);
+  const tenantId = req.headers["x-tenant-id"] as string;
+  const result = await InvestmentServices.createInvestmentIntoDB(tenantId, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,
@@ -33,8 +35,9 @@ const createInvestment = catchAsync(async (req: Request, res: Response) => {
 
 // Update investment
 const updateInvestment = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = req.headers["x-tenant-id"] as string;
   const { id } = req.params;
-  const result = await InvestmentServices.updateInvestmentIntoDB(id, req.body);
+  const result = await InvestmentServices.updateInvestmentIntoDB(tenantId, id, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -46,8 +49,9 @@ const updateInvestment = catchAsync(async (req: Request, res: Response) => {
 
 // Delete investment
 const deleteInvestment = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = req.headers["x-tenant-id"] as string;
   const { id } = req.params;
-  await InvestmentServices.deleteInvestmentFromDB(id);
+  await InvestmentServices.deleteInvestmentFromDB(tenantId, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

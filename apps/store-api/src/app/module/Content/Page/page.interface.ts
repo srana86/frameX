@@ -13,6 +13,8 @@ export interface TPage {
 export interface TPageCategory {
   id: string;
   name: string;
+  slug?: string;
+  isActive?: boolean;
   order?: number;
   createdAt?: Date;
   updatedAt?: Date;

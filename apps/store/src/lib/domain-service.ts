@@ -35,12 +35,12 @@ export function generateDNSRecords(domain: string): DNSRecord[] {
   const isApex = domainParts.length === 2; // e.g., example.com (no subdomain)
 
   if (isApex) {
-    // For apex/root domains, use A record (Vercel's new IP as of 2024)
+    // For apex/root domains, use A record (VPS IP)
     return [
       {
         type: "A",
         name: "@",
-        value: "216.150.1.1",
+        value: process.env.VPS_IP || "127.0.0.1",
         ttl: 3600,
       },
     ];
@@ -50,7 +50,7 @@ export function generateDNSRecords(domain: string): DNSRecord[] {
       {
         type: "CNAME",
         name: domainParts[0],
-        value: "cname.vercel-dns.com",
+        value: process.env.VPS_DOMAIN || "framextech.com",
         ttl: 3600,
       },
     ];
@@ -79,10 +79,10 @@ export async function getDomainConfiguration(merchantId: string): Promise<Domain
     const dnsRecords: DNSRecord[] =
       superAdminDomain.dnsRecords?.length > 0
         ? superAdminDomain.dnsRecords.map((r) => ({
-            type: r.type as "A" | "CNAME" | "TXT",
-            name: r.name,
-            value: r.value,
-          }))
+          type: r.type as "A" | "CNAME" | "TXT",
+          name: r.name,
+          value: r.value,
+        }))
         : generateDNSRecords(superAdminDomain.domain);
 
     const domainConfig: DomainConfiguration = {

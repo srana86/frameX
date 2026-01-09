@@ -134,13 +134,12 @@ function StatCard({
             )}
             {trend && trendValue && (
               <div
-                className={`flex items-center gap-1 text-xs font-medium ${
-                  trend === "up"
+                className={`flex items-center gap-1 text-xs font-medium ${trend === "up"
                     ? "text-green-600"
                     : trend === "down"
-                    ? "text-red-600"
-                    : "text-muted-foreground"
-                }`}
+                      ? "text-red-600"
+                      : "text-muted-foreground"
+                  }`}
               >
                 {trend === "up" ? (
                   <ArrowUpRight className="h-3 w-3" />
@@ -421,8 +420,8 @@ export default function PaymentsPage() {
             stats.revenueGrowth > 0
               ? "up"
               : stats.revenueGrowth < 0
-              ? "down"
-              : "neutral"
+                ? "down"
+                : "neutral"
           }
           trendValue={`${Math.abs(stats.revenueGrowth).toFixed(
             1
@@ -490,8 +489,8 @@ export default function PaymentsPage() {
                     tickFormatter={(v) => `${currencySymbol}${v}`}
                   />
                   <Tooltip
-                    formatter={(value: number) => [
-                      formatAmount(value),
+                    formatter={(value: number | undefined) => [
+                      formatAmount(value || 0),
                       "Revenue",
                     ]}
                     contentStyle={{

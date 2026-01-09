@@ -11,23 +11,6 @@ import {
 
 // Get all merchants
 const getAllMerchantsFromDB = async () => {
-  // Prisma doesn't have "role" enum unless defined.
-  // Assuming 'role' field exists on User.
-  // Mongoose used lowercase "merchant". Prisma might use "MERCHANT".
-  // I'll check if I can match generally or strict.
-  // Using casing from Mongoose "merchant" for now, usually DBs are case sensitive.
-  // If Prisma schema uses Enum Role { ADMIN, MERCHANT, ... }, I should use enum values.
-  // I will guess 'MERCHANT' or 'merchant'. 
-  // Let's assume standard "merchant" string if it's a string field.
-  // Or check against typical enum.
-  // I'll use "MERCHANT" (common convention) but fallback to string "merchant" if issues arise?
-  // Actually, typical Prisma is uppercase.
-  // But wait, `User` creation in Mongoose was "merchant".
-  // If I migrated `apps/server`, I should know.
-  // I'll use "merchant" string for safety if unsure, or check if I can see schema.
-  // Given I don't want to break, I'll filter logic later if needed.
-  // Going with case-insensitive search if possible? No.
-  // Let's assume the string "merchant" is used in DB if migrated data exists.
 
   const merchants = await prisma.merchant.findMany({
     where: {
@@ -65,20 +48,9 @@ const createMerchantFromDB = async (payload: CreateMerchantPayload) => {
     data: {
       name: payload.name,
       email: payload.email,
-      // password: payload.password, // Merchant model doesn't have password. 
-      // Password implies User creation. 
-      // If we need Auth, we should create a User/StoreUser AND a Merchant entity?
-      // For now, migrating to Merchant entity as requested.
-      // Assuming Auth is handled separately or Mongoose mixed them.
-      // If payload has password, it's likely forcing a User creation too.
-      // I'll stick to Merchant entity creation here as per SuperAdmin managing "Merchants" (Tenants).
-      status: "ACTIVE", // or IN_PROGRESS
-      // needsPasswordChange: false, // Not on Merchant
+      status: "ACTIVE",
     }
   });
-
-  // NOTE: If auth is needed, we should also create a User record.
-  // But adhering to Merchant model migration for now.
 
   return {
     id: merchant.id,

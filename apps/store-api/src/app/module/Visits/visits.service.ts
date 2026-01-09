@@ -59,10 +59,6 @@ const getVisitsFromDB = async (tenantId: string, query: Record<string, unknown>)
   const page = Number(query.page) || 1;
   const limit = Math.min(1000, Math.max(1, Number(query.limit) || 100));
 
-  // Fetch visits with geolocation populated (if we had it, but for now just fetch all unique IPs basically)
-  // Since we don't have distinct on IP easily with full stats without grouping, we'll fetch visits and process in memory for now
-  // or just fetch visits.
-  // The original logic did aggregation in memory.
 
   const visits = await prisma.visit.findMany({
     where: { tenantId },

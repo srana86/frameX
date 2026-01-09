@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/sync-delivery-status",
-      "schedule": "0 0 * * *"
-    }
-  ]
-}

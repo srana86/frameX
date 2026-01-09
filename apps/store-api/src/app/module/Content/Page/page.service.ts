@@ -58,9 +58,9 @@ const createPageIntoDB = async (tenantId: string, payload: TPage) => {
       title: payload.title,
       slug,
       content: payload.content,
-      isActive: payload.isActive !== undefined ? payload.isActive : true,
+      isActive: payload.enabled !== undefined ? payload.enabled : true,
       sortOrder: payload.order || 0, // Interface likely has 'order', schema has 'sortOrder'
-      pageCategoryId: payload.pageCategoryId, // Assuming payload has this if needed
+      // pageCategoryId: payload.pageCategoryId, // Payload (TPage) does not have pageCategoryId
     },
   });
   return result;
@@ -90,6 +90,14 @@ const updatePageIntoDB = async (
     updateData.sortOrder = payload.order;
     delete updateData.order;
   }
+
+  if (payload.enabled !== undefined) {
+    updateData.isActive = payload.enabled;
+    delete updateData.enabled;
+  }
+
+  // Remove fields that don't exist in Prisma model if they leak from TPage
+  if (updateData.category) delete updateData.category;
 
   const result = await prisma.page.update({
     where: { id: existing.id },

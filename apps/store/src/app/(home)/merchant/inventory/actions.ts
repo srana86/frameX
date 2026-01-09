@@ -1,7 +1,7 @@
 "use server";
 
 import { getMerchantCollectionForAPI, buildMerchantQuery } from "@/lib/api-helpers";
-import { ObjectId } from "mongodb";
+import { ObjectId } from "@/lib/api-helpers";
 import type { Product } from "@/lib/types";
 import type { InventoryTransaction, InventoryOverview } from "@/lib/types";
 

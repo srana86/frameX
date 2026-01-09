@@ -6,7 +6,9 @@ import { apiRequest } from "@/lib/api-client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-export default function GoogleCallbackPage() {
+import { Suspense } from "react";
+
+function GoogleCallbackContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [error, setError] = useState<string | null>(null);
@@ -24,6 +26,9 @@ export default function GoogleCallbackPage() {
             }
 
             if (!code) {
+                // Ensure we don't redirect if just loading or if params aren't ready? 
+                // Actually if no code and no error, it might be just hitting the page directly.
+                // But let's keep original logic.
                 setError("No authorization code found");
                 router.push("/login");
                 return;
@@ -79,5 +84,13 @@ export default function GoogleCallbackPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function GoogleCallbackPage() {
+    return (
+        <Suspense fallback={<div className='min-h-screen flex items-center justify-center'><Loader2 className='w-8 h-8 animate-spin' /></div>}>
+            <GoogleCallbackContent />
+        </Suspense>
     );
 }

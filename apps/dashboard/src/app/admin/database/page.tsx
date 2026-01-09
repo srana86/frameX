@@ -392,7 +392,7 @@ export default function DatabasePage() {
                     width={100}
                   />
                   <Tooltip
-                    formatter={(value: number) => [formatBytes(value), "Size"]}
+                    formatter={(value) => [formatBytes(Number(value) || 0), "Size"]}
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",
                       border: "1px solid hsl(var(--border))",

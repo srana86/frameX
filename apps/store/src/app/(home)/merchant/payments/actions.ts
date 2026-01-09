@@ -1,7 +1,7 @@
 "use server";
 
 import { getMerchantCollectionForAPI, buildMerchantQuery } from "@/lib/api-helpers";
-import { ObjectId } from "mongodb";
+import { ObjectId } from "@/lib/api-helpers";
 
 export interface PaymentTransaction {
   _id?: string;

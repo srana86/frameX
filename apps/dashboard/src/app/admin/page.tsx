@@ -140,13 +140,12 @@ function StatCard({
           <p className="text-xs text-muted-foreground">{description}</p>
           {trend && trendValue && (
             <div
-              className={`flex items-center gap-1 text-xs font-medium ${
-                trend === "up"
+              className={`flex items-center gap-1 text-xs font-medium ${trend === "up"
                   ? "text-green-600"
                   : trend === "down"
-                  ? "text-red-600"
-                  : "text-muted-foreground"
-              }`}
+                    ? "text-red-600"
+                    : "text-muted-foreground"
+                }`}
             >
               {trend === "up" ? (
                 <TrendingUp className="h-3 w-3" />
@@ -192,9 +191,8 @@ function ActivityItem({
   return (
     <div className="flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-muted/50">
       <div
-        className={`rounded-full p-2 ${
-          status ? statusColors[status] : "bg-muted"
-        }`}
+        className={`rounded-full p-2 ${status ? statusColors[status] : "bg-muted"
+          }`}
       >
         <Icon className="h-4 w-4" />
       </div>
@@ -367,8 +365,8 @@ export default function DashboardPage() {
           s.status === "active"
             ? "success"
             : s.status === "cancelled"
-            ? "error"
-            : "info",
+              ? "error"
+              : "info",
       });
     });
 
@@ -383,8 +381,8 @@ export default function DashboardPage() {
           d.deploymentStatus === "active"
             ? "success"
             : d.deploymentStatus === "failed"
-            ? "error"
-            : "warning",
+              ? "error"
+              : "warning",
       });
     });
 
@@ -548,8 +546,8 @@ export default function DashboardPage() {
               {loading
                 ? "..."
                 : data.deployments.filter(
-                    (d) => d.deploymentStatus === "pending"
-                  ).length}
+                  (d) => d.deploymentStatus === "pending"
+                ).length}
             </div>
             <p className="text-xs text-muted-foreground">Deployments pending</p>
             <Link
@@ -644,8 +642,8 @@ export default function DashboardPage() {
                     tickFormatter={(v) => `${currencySymbol}${v}`}
                   />
                   <Tooltip
-                    formatter={(value: number) => [
-                      formatAmount(value),
+                    formatter={(value: number | undefined) => [
+                      formatAmount(value || 0),
                       "Revenue",
                     ]}
                     contentStyle={{
@@ -861,8 +859,8 @@ export default function DashboardPage() {
                           item.name === "active"
                             ? "default"
                             : item.name === "failed"
-                            ? "destructive"
-                            : "secondary"
+                              ? "destructive"
+                              : "secondary"
                         }
                       >
                         {item.value}

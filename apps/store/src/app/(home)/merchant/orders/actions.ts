@@ -132,7 +132,7 @@ export async function getOrders(
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus) {
   try {
-    const { ObjectId } = await import("mongodb");
+    const { ObjectId } = await import("@/lib/api-helpers");
     const col = await getMerchantCollectionForAPI("orders");
     const baseQuery = await buildMerchantQuery();
     const query = { ...baseQuery, _id: new ObjectId(orderId) };

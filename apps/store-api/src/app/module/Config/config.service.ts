@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma, Decimal } from "@framex/database";
-import AppError from "../../errors/AppError";
-import { StatusCodes } from "http-status-codes";
 
 // Brand Config
 const getBrandConfigFromDB = async (tenantId: string) => {

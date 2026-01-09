@@ -6,7 +6,9 @@ import { ConfigServices } from "./config.service";
 
 // Brand Config
 const getBrandConfig = catchAsync(async (req: Request, res: Response) => {
-  const result = await ConfigServices.getBrandConfigFromDB();
+  const result = await ConfigServices.getBrandConfigFromDB(
+    req.user?.merchantId as string
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -17,7 +19,10 @@ const getBrandConfig = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateBrandConfig = catchAsync(async (req: Request, res: Response) => {
-  const result = await ConfigServices.updateBrandConfigIntoDB(req.body);
+  const result = await ConfigServices.updateBrandConfigIntoDB(
+    req.user?.merchantId as string,
+    req.body
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -30,7 +35,10 @@ const updateBrandConfig = catchAsync(async (req: Request, res: Response) => {
 // Delivery Config
 const getDeliveryConfig = catchAsync(async (req: Request, res: Response) => {
   const type = req.query.type as string;
-  const result = await ConfigServices.getDeliveryConfigFromDB(type);
+  const result = await ConfigServices.getDeliveryConfigFromDB(
+    req.user?.merchantId as string,
+    type
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -43,6 +51,7 @@ const getDeliveryConfig = catchAsync(async (req: Request, res: Response) => {
 const updateDeliveryConfig = catchAsync(async (req: Request, res: Response) => {
   const type = req.query.type as string;
   const result = await ConfigServices.updateDeliveryConfigIntoDB(
+    req.user?.merchantId as string,
     req.body,
     type
   );
@@ -57,7 +66,9 @@ const updateDeliveryConfig = catchAsync(async (req: Request, res: Response) => {
 
 // SSLCommerz Config
 const getSSLCommerzConfig = catchAsync(async (req: Request, res: Response) => {
-  const result = await ConfigServices.getSSLCommerzConfigFromDB();
+  const result = await ConfigServices.getSSLCommerzConfigFromDB(
+    req.user?.merchantId as string
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -69,7 +80,10 @@ const getSSLCommerzConfig = catchAsync(async (req: Request, res: Response) => {
 
 const updateSSLCommerzConfig = catchAsync(
   async (req: Request, res: Response) => {
-    const result = await ConfigServices.updateSSLCommerzConfigIntoDB(req.body);
+    const result = await ConfigServices.updateSSLCommerzConfigIntoDB(
+      req.user?.merchantId as string,
+      req.body
+    );
 
     sendResponse(res, {
       statusCode: StatusCodes.OK,
@@ -82,7 +96,9 @@ const updateSSLCommerzConfig = catchAsync(
 
 // OAuth Config
 const getOAuthConfig = catchAsync(async (req: Request, res: Response) => {
-  const result = await ConfigServices.getOAuthConfigFromDB();
+  const result = await ConfigServices.getOAuthConfigFromDB(
+    req.user?.merchantId as string
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -93,7 +109,10 @@ const getOAuthConfig = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateOAuthConfig = catchAsync(async (req: Request, res: Response) => {
-  const result = await ConfigServices.updateOAuthConfigIntoDB(req.body);
+  const result = await ConfigServices.updateOAuthConfigIntoDB(
+    req.user?.merchantId as string,
+    req.body
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -105,7 +124,9 @@ const updateOAuthConfig = catchAsync(async (req: Request, res: Response) => {
 
 // Ads Config
 const getAdsConfig = catchAsync(async (req: Request, res: Response) => {
-  const result = await ConfigServices.getAdsConfigFromDB();
+  const result = await ConfigServices.getAdsConfigFromDB(
+    req.user?.merchantId as string
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -116,7 +137,10 @@ const getAdsConfig = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateAdsConfig = catchAsync(async (req: Request, res: Response) => {
-  const result = await ConfigServices.updateAdsConfigIntoDB(req.body);
+  const result = await ConfigServices.updateAdsConfigIntoDB(
+    req.user?.merchantId as string,
+    req.body
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

@@ -15,7 +15,7 @@ import { defaultBrandConfig, type BrandConfig } from "@/lib/brand-config";
 import { loadMerchantDocument } from "@/lib/merchant-data-loader";
 import { getAdsConfig } from "@/lib/ads-config";
 import { hexToOklch } from "@/lib/utils";
-import { Analytics } from "@vercel/analytics/next";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -156,24 +156,24 @@ export default async function RootLayout({
     ? brandConfig.favicon.path.startsWith("http")
       ? brandConfig.favicon.path
       : brandConfig.favicon.path.startsWith("/")
-      ? new URL(brandConfig.favicon.path, metadataBaseUrl).toString()
-      : brandConfig.favicon.path
+        ? new URL(brandConfig.favicon.path, metadataBaseUrl).toString()
+        : brandConfig.favicon.path
     : "/favicon.ico";
 
   const appleTouchIcon = brandConfig.favicon.appleTouchIcon
     ? brandConfig.favicon.appleTouchIcon.startsWith("http")
       ? brandConfig.favicon.appleTouchIcon
       : brandConfig.favicon.appleTouchIcon.startsWith("/")
-      ? new URL(brandConfig.favicon.appleTouchIcon, metadataBaseUrl).toString()
-      : brandConfig.favicon.appleTouchIcon
+        ? new URL(brandConfig.favicon.appleTouchIcon, metadataBaseUrl).toString()
+        : brandConfig.favicon.appleTouchIcon
     : faviconPath;
 
   const manifestIcon = brandConfig.favicon.manifestIcon
     ? brandConfig.favicon.manifestIcon.startsWith("http")
       ? brandConfig.favicon.manifestIcon
       : brandConfig.favicon.manifestIcon.startsWith("/")
-      ? new URL(brandConfig.favicon.manifestIcon, metadataBaseUrl).toString()
-      : brandConfig.favicon.manifestIcon
+        ? new URL(brandConfig.favicon.manifestIcon, metadataBaseUrl).toString()
+        : brandConfig.favicon.manifestIcon
     : null;
 
   return (
@@ -237,9 +237,8 @@ export default async function RootLayout({
                 appleLink.href = appleUrl;
                 head.appendChild(appleLink);
                 
-                ${
-                  manifestIcon
-                    ? `
+                ${manifestIcon
+                ? `
                 // Remove existing manifest icon
                 var existingManifest = document.querySelector('link[rel="icon"][sizes="192x192"]');
                 if (existingManifest) existingManifest.remove();
@@ -252,8 +251,8 @@ export default async function RootLayout({
                 manifestLink.href = manifestUrl;
                 head.appendChild(manifestLink);
                 `
-                    : ""
-                }
+                : ""
+              }
                 
                 // Update theme-color meta tag
                 var meta = document.querySelector('meta[name="theme-color"]');
@@ -276,8 +275,8 @@ export default async function RootLayout({
         <ThemeProvider primaryColor={brandConfig.theme.primaryColor} />
         <CartProvider>
           <WishlistProvider>
-            <Analytics />
             {children}
+
             <Toaster richColors closeButton position='top-right' />
           </WishlistProvider>
         </CartProvider>

@@ -42,8 +42,8 @@ export interface MerchantDeployment {
   customDomain?: string; // e.g., "shop.example.com"
   deploymentStatus: DeploymentStatus;
   deploymentUrl: string; // Full URL
-  deploymentProvider?: "vercel" | "netlify" | "custom";
-  projectId?: string; // Vercel project ID (prj_xxx or project name) - used for domain configuration
+  deploymentProvider?: "custom";
+
   deploymentId?: string; // Provider's deployment ID (dpl_xxx)
   environmentVariables: Record<string, string>;
   lastDeployedAt?: string;

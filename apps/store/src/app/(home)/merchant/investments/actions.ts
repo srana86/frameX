@@ -157,7 +157,7 @@ export async function updateInvestment(
 ): Promise<Investment> {
   try {
     const { getMerchantCollectionForAPI } = await import("@/lib/api-helpers");
-    const { ObjectId } = await import("mongodb");
+    const { ObjectId } = await import("@/lib/api-helpers");
     const investmentsCol = await getMerchantCollectionForAPI<Investment>("investments");
     const { buildMerchantQuery } = await import("@/lib/api-helpers");
     const baseQuery = await buildMerchantQuery();
@@ -194,7 +194,7 @@ export async function updateInvestment(
 export async function deleteInvestment(id: string): Promise<void> {
   try {
     const { getMerchantCollectionForAPI } = await import("@/lib/api-helpers");
-    const { ObjectId } = await import("mongodb");
+    const { ObjectId } = await import("@/lib/api-helpers");
     const investmentsCol = await getMerchantCollectionForAPI<Investment>("investments");
     const { buildMerchantQuery } = await import("@/lib/api-helpers");
     const baseQuery = await buildMerchantQuery();
@@ -407,7 +407,7 @@ export async function updateBudget(
 ): Promise<Budget> {
   try {
     const { getMerchantCollectionForAPI } = await import("@/lib/api-helpers");
-    const { ObjectId } = await import("mongodb");
+    const { ObjectId } = await import("@/lib/api-helpers");
     const budgetsCol = await getMerchantCollectionForAPI<Budget>("budgets");
     const { buildMerchantQuery } = await import("@/lib/api-helpers");
     const baseQuery = await buildMerchantQuery();
@@ -461,7 +461,7 @@ export async function updateBudget(
 export async function deleteBudget(id: string): Promise<void> {
   try {
     const { getMerchantCollectionForAPI } = await import("@/lib/api-helpers");
-    const { ObjectId } = await import("mongodb");
+    const { ObjectId } = await import("@/lib/api-helpers");
     const budgetsCol = await getMerchantCollectionForAPI<Budget>("budgets");
     const { buildMerchantQuery } = await import("@/lib/api-helpers");
     const baseQuery = await buildMerchantQuery();

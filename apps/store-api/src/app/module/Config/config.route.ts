@@ -1,5 +1,4 @@
 import express from "express";
-import validateRequest from "../../middlewares/validateRequest";
 import auth from "../../middlewares/auth";
 import { ConfigControllers } from "./config.controller";
 

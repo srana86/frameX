@@ -21,14 +21,14 @@ export default async function OrderDetailsPage({ params }: Props) {
 
   // Import API helpers for server-side data fetching
   const { getMerchantCollectionForAPI, buildMerchantQuery } = await import("@/lib/api-helpers");
-  const { ObjectId } = await import("mongodb");
+  const { ObjectId } = await import("@/lib/api-helpers");
   const { loadMerchantCollectionData } = await import("@/lib/merchant-data-loader");
 
   // Fetch order data and adjacent order IDs
   let order;
   let prevOrderId: string | null = null;
   let nextOrderId: string | null = null;
-  
+
   try {
     const orders = await loadMerchantCollectionData<any>("orders", {}, { sort: { _id: -1 } });
     const currentIndex = orders.findIndex((o: any) => String(o._id) === id || o.id === id);
@@ -103,9 +103,9 @@ export default async function OrderDetailsPage({ params }: Props) {
   }
 
   return (
-    <OrderDetailsClient 
-      initialOrder={order} 
-      products={products} 
+    <OrderDetailsClient
+      initialOrder={order}
+      products={products}
       prevOrderId={prevOrderId}
       nextOrderId={nextOrderId}
     />

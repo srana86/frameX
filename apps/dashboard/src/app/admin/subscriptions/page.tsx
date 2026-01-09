@@ -147,13 +147,12 @@ function StatCard({
             )}
             {trend && trendValue && (
               <div
-                className={`flex items-center gap-1 text-xs font-medium ${
-                  trend === "up"
+                className={`flex items-center gap-1 text-xs font-medium ${trend === "up"
                     ? "text-green-600"
                     : trend === "down"
-                    ? "text-red-600"
-                    : "text-muted-foreground"
-                }`}
+                      ? "text-red-600"
+                      : "text-muted-foreground"
+                  }`}
               >
                 {trend === "up" ? (
                   <TrendingUp className="h-3 w-3" />
@@ -630,11 +629,10 @@ export default function SubscriptionsPage() {
           value={stats.active}
           icon={CheckCircle2}
           color="bg-blue-500"
-          description={`${
-            stats.total > 0
+          description={`${stats.total > 0
               ? ((stats.active / stats.total) * 100).toFixed(0)
               : 0
-          }% of total`}
+            }% of total`}
         />
         <StatCard
           title="Trial Users"
@@ -732,8 +730,8 @@ export default function SubscriptionsPage() {
                     tickFormatter={(v) => `${currencySymbol}${v}`}
                   />
                   <Tooltip
-                    formatter={(value: number) => [
-                      formatAmount(value),
+                    formatter={(value: number | undefined) => [
+                      formatAmount(value || 0),
                       "Revenue",
                     ]}
                     contentStyle={{
@@ -915,13 +913,12 @@ export default function SubscriptionsPage() {
                         <TableCell>
                           {sub.status === "active" && (
                             <div
-                              className={`flex items-center gap-1 text-sm ${
-                                daysLeft <= 7
+                              className={`flex items-center gap-1 text-sm ${daysLeft <= 7
                                   ? "text-yellow-600"
                                   : daysLeft <= 0
-                                  ? "text-red-600"
-                                  : "text-muted-foreground"
-                              }`}
+                                    ? "text-red-600"
+                                    : "text-muted-foreground"
+                                }`}
                             >
                               {daysLeft <= 7 && daysLeft > 0 && (
                                 <AlertTriangle className="h-3 w-3" />

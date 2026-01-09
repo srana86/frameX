@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma, PrismaQueryBuilder } from "@framex/database";
-import AppError from "../../errors/AppError";
-import { StatusCodes } from "http-status-codes";
 
 // Get notifications for user
 const getUserNotificationsFromDB = async (

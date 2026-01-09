@@ -1,54 +1,60 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { prisma } from "@framex/database";
-import crypto from "crypto";
+import { prisma, DeploymentStatus } from "@framex/database";
 import config from "../../../config/index";
 
-const ENCRYPTION_KEY = config.encryption_key || "";
-
-function encrypt(text: string): string {
-  if (!ENCRYPTION_KEY) {
-    return text;
-  }
-  const algorithm = "aes-256-cbc";
-  const key = crypto.createHash("sha256").update(ENCRYPTION_KEY).digest();
-  const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv(algorithm, key, iv);
-  let encrypted = cipher.update(text, "utf8", "hex");
-  encrypted += cipher.final("hex");
-  return iv.toString("hex") + ":" + encrypted;
-}
-
+// Skip physical DB creation as we use single-DB multi-tenant architecture.
+// We only need to register the merchant database metadata for potential future use or reference.
 const createDatabase = async (merchantId: string) => {
   if (!merchantId) throw new Error("Merchant ID is required");
 
-  const databaseName = `merchant_${merchantId}_db`;
+  // In single-DB architecture, the databaseUrl is the shared connection string.
+  // We don't encrypt it here as it's just the reference to the main DB.
 
-  // In Postgres migration, we might create a schema or separate DB. 
-  // For simplicity, we assume we are using a shared DB with tenantId isolation (Column-based multi-tenancy) 
-  // which we implemented in the migration (adding tenantId to all tables).
-  // So "creating a database" is metadata-only or creating a user?
-  // The Simulate service implies creating a dedicated environment.
-  // We will store the metadata. Physical creation is skipped as we switched strategy.
+  const connectionString = config.database_url;
+  const databaseName = `merchant_${merchantId}`; // conceptual name
 
-  const connectionString = config.database_url; // Shared DB
-  const encryptedConnectionString = encrypt(connectionString || "");
+  // Check if config exists
+  const existing = await prisma.databaseInfo.findUnique({ where: { merchantId } });
 
-  const databaseRecord = await prisma.databaseInfo.create({
+  if (existing) {
+    return {
+      success: true,
+      databaseName,
+      message: `Database config already exists for ${merchantId}`,
+    };
+  }
+
+  await prisma.databaseInfo.create({
     data: {
       merchantId,
       databaseName,
       status: "active",
-      // useSharedDatabase: true, // Schema doesn't have this field? database.model.ts had it. 
-      // Schema lines 991-1000: id, merchantId, databaseName, databaseUrl, status, size
-      databaseUrl: encryptedConnectionString,
+      databaseUrl: connectionString, // Storing raw for internal use, though typically we shouldn't expose.
     }
   });
+
+  // Initialize BrandConfig (Tenant Settings)
+  // This replaces the old brand_config initialization from create-database route
+
+  // Check/Create BrandConfig
+  const existingBrand = await prisma.brandConfig.findUnique({ where: { tenantId: merchantId } });
+  if (!existingBrand) {
+    const merchant = await prisma.merchant.findUnique({ where: { id: merchantId } });
+    await prisma.brandConfig.create({
+      data: {
+        tenantId: merchantId,
+        name: merchant?.name || "My Store",
+        // Default values
+        currencyIso: "BDT",
+        currencySymbol: "৳"
+      }
+    });
+  }
 
   return {
     success: true,
     databaseName,
-    collectionsCreated: 0,
-    message: `Database ${databaseName} registered successfully (Shared Tenant)`,
+    message: `Tenant resources initialized successfully for ${merchantId}`,
   };
 };
 
@@ -65,71 +71,62 @@ const createDeployment = async (payload: {
     throw new Error("Merchant ID, name, and database name are required");
   }
 
-  const skipVercelDeployment = process.env.SKIP_VERCEL_DEPLOYMENT === "true";
+  // VPS Deployment Strategy:
+  // In a VPS single-DB setup, "deployment" essentially means:
+  // 1. The tenant data is initialized (BrandConfig, User, etc - mostly handled).
+  // 2. The tenant can access the system via their subdomain/domain mapping.
+  // 3. We create a Deployment record to track this "activation".
 
-  const subdomain = customSubdomain || `${merchantId}-store`;
-  const deploymentUrl = skipVercelDeployment
-    ? `http://localhost:3000`
-    : `https://${subdomain}.vercel.app`;
-
-  // Prisma Deployment model: id, merchantId, templateId, status, domain, deploymentUrl, logs, startedAt, completedAt...
-  // Mapping fields:
-  // deploymentStatus -> status (Enum)
-  // deploymentUrl -> deploymentUrl
-  // subdomain -> domain
-  // logs -> used to store extra fields like projectId, deploymentId since they are missing in schema explicit columns
+  const subdomainToUse = customSubdomain || `${merchantId}-store`;
+  const mainDomain = process.env.BASE_DOMAIN || "framextech.com";
+  const developedUrl = `https://${subdomainToUse}.${mainDomain}`;
+  const status: DeploymentStatus = "COMPLETED";
 
   const logs = {
-    projectId: skipVercelDeployment ? `mock_project_${merchantId}` : undefined,
-    deploymentId: skipVercelDeployment ? `mock_deployment_${Date.now()}` : undefined,
-    deploymentProvider: skipVercelDeployment ? "local" : "vercel"
+    projectId: `vps_${merchantId}`,
+    deploymentId: `vps_deploy_${Date.now()}`,
+    provider: "vps",
+    url: developedUrl
   };
 
-  const deployment = await prisma.deployment.create({
+  console.log(`[Simulate] VPS Deployment record created for ${merchantId} at ${developedUrl}`);
+
+  // Create Deployment Record
+  const newDeployment = await prisma.deployment.create({
     data: {
       merchantId,
-      // templateId?
-      status: skipVercelDeployment ? "COMPLETED" : "PENDING", // Mapping 'active' to COMPLETED? Or use IN_PROGRESS?
-      // Enum: PENDING, IN_PROGRESS, COMPLETED, FAILED.
-      // previous code used 'active'/'pending'. 
-      domain: subdomain,
-      deploymentUrl,
+      status, // COMPLETED
+      domain: subdomainToUse,
+      deploymentUrl: developedUrl,
       logs,
       startedAt: new Date(),
-      completedAt: skipVercelDeployment ? new Date() : undefined
+      completedAt: new Date()
     }
   });
 
   return {
     success: true,
-    deployment,
-    message: "Deployment created successfully",
+    deployment: newDeployment,
+    message: "Deployment active (VPS Mode)",
   };
 };
 
 const getDeploymentStatus = async (deploymentId: string) => {
   if (!deploymentId) throw new Error("Deployment ID required");
 
-  // Since deploymentId is not the primary key (id is uuid), we search logs? 
-  // OR we assume deploymentId arg refers to our internal uuid 'id' or the external 'deploymentId' from logs.
-  // previous code searched `findOne({ deploymentId })`.
-  // I will search by `logs` field? No, specific json lookup is hard.
-  // I will search by `id` (primary key). The caller should pass the correct ID.
-
-  const deployment = await prisma.deployment.findFirst({
+  const deployment = await prisma.deployment.findUnique({
     where: { id: deploymentId }
   });
 
   if (!deployment) throw new Error("Deployment not found");
 
-  // Extract external deploymentId from logs
-  const logs: any = deployment.logs || {};
+  // For VPS mode, status is managed internally, no external API check needed usually.
 
   return {
     success: true,
     status: deployment.status,
     url: deployment.deploymentUrl,
-    deploymentId: logs.deploymentId,
+    deploymentId: (deployment.logs as any)?.deploymentId,
   };
 };
 
@@ -138,3 +135,4 @@ export const SimulateServices = {
   createDeployment,
   getDeploymentStatus,
 };
+

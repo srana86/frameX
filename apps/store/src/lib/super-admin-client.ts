@@ -54,7 +54,7 @@ export interface SuperAdminMerchantDeployment {
   deploymentStatus: string;
   deploymentUrl: string;
   deploymentProvider?: string;
-  projectId?: string; // Vercel project ID - used for domain configuration
+
   deploymentId?: string;
   environmentVariables: Record<string, string>;
   lastDeployedAt?: string;
@@ -340,7 +340,7 @@ export interface SuperAdminDomainConfig {
   id: string;
   merchantId: string;
   domain: string;
-  projectId: string;
+
   redirect?: string | null;
   redirectStatusCode?: number | null;
   verified: boolean;
@@ -363,8 +363,7 @@ export interface SuperAdminDomainResponse {
  */
 export async function getDomainConfigFromSuperAdmin(merchantId: string): Promise<{
   domain: SuperAdminDomainConfig | null;
-  vercelDomains: any[];
-  projectId: string;
+
 } | null> {
   try {
     const url = buildUrl(`/api/merchants/${merchantId}/domain`);

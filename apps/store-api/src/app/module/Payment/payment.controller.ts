@@ -6,7 +6,7 @@ import { PaymentServices } from "./payment.service";
 
 // Get all payments
 const getAllPayments = catchAsync(async (req: Request, res: Response) => {
-  const result = await PaymentServices.getAllPaymentsFromDB(req.query);
+  const result = await PaymentServices.getAllPaymentsFromDB(req.tenantId, req.query);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -22,7 +22,7 @@ const getAllPayments = catchAsync(async (req: Request, res: Response) => {
 // Get single payment
 const getSinglePayment = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await PaymentServices.getSinglePaymentFromDB(id);
+  const result = await PaymentServices.getSinglePaymentFromDB(req.tenantId, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -34,7 +34,7 @@ const getSinglePayment = catchAsync(async (req: Request, res: Response) => {
 
 // Initialize payment
 const initPayment = catchAsync(async (req: Request, res: Response) => {
-  const result = await PaymentServices.initPayment(req.body);
+  const result = await PaymentServices.initPayment(req.tenantId, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -46,7 +46,7 @@ const initPayment = catchAsync(async (req: Request, res: Response) => {
 
 // Easy checkout
 const easyCheckout = catchAsync(async (req: Request, res: Response) => {
-  const result = await PaymentServices.easyCheckout(req.body);
+  const result = await PaymentServices.easyCheckout(req.tenantId, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -58,25 +58,25 @@ const easyCheckout = catchAsync(async (req: Request, res: Response) => {
 
 // Handle payment success
 const handleSuccess = catchAsync(async (req: Request, res: Response) => {
-  const result = await PaymentServices.handlePaymentSuccess({ ...req.query, ...req.body });
+  const result = await PaymentServices.handlePaymentSuccess(req.tenantId, { ...req.query, ...req.body });
   res.redirect(result);
 });
 
 // Handle payment fail
 const handleFail = catchAsync(async (req: Request, res: Response) => {
-  const result = await PaymentServices.handlePaymentFail({ ...req.query, ...req.body });
+  const result = await PaymentServices.handlePaymentFail(req.tenantId, { ...req.query, ...req.body });
   res.redirect(result);
 });
 
 // Handle payment cancel
 const handleCancel = catchAsync(async (req: Request, res: Response) => {
-  const result = await PaymentServices.handlePaymentCancel({ ...req.query, ...req.body });
+  const result = await PaymentServices.handlePaymentCancel(req.tenantId, { ...req.query, ...req.body });
   res.redirect(result);
 });
 
 // Handle payment IPN
 const handleIPN = catchAsync(async (req: Request, res: Response) => {
-  const result = await PaymentServices.handlePaymentIPN(req.body);
+  const result = await PaymentServices.handlePaymentIPN(req.tenantId, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

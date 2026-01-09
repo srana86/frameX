@@ -27,7 +27,7 @@ interface DomainClientProps {
   deployment: MerchantDeployment | null;
 }
 
-interface VercelStatus {
+interface DomainStatus {
   verified: boolean;
   configuredCorrectly: boolean;
 }
@@ -39,9 +39,9 @@ export function DomainClient({ domainConfig: initialConfig, deployment }: Domain
   const [checking, setChecking] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [vercelStatus, setVercelStatus] = useState<VercelStatus | null>(null);
+  const [dnsStatus, setDnsStatus] = useState<DomainStatus | null>(null);
 
-  // Fetch real-time status from Vercel
+  // Fetch real-time status from server
   const refreshStatus = async () => {
     setRefreshing(true);
     try {
@@ -55,13 +55,13 @@ export function DomainClient({ domainConfig: initialConfig, deployment }: Domain
         if (data.domain) {
           setDomainConfig(data.domain);
         }
-        if (data.vercelStatus) {
-          setVercelStatus(data.vercelStatus);
+        if (data.dnsStatus) {
+          setDnsStatus(data.dnsStatus);
         }
 
         if (data.domain?.verified) {
           toast.success("Domain is connected!");
-        } else if (data.vercelStatus?.configuredCorrectly === false) {
+        } else if (data.dnsStatus?.configuredCorrectly === false) {
           toast.error("DNS not configured correctly. Check your records.");
         } else {
           toast.info("DNS not propagated yet. Try again in a few minutes.");
@@ -226,7 +226,7 @@ export function DomainClient({ domainConfig: initialConfig, deployment }: Domain
             </div>
             <div className='flex items-center gap-2'>
               {/* Refresh button */}
-              <Button variant='ghost' size='icon' onClick={refreshStatus} disabled={refreshing} title='Refresh status from Vercel'>
+              <Button variant='ghost' size='icon' onClick={refreshStatus} disabled={refreshing} title='Refresh status'>
                 <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
               </Button>
 
@@ -236,7 +236,7 @@ export function DomainClient({ domainConfig: initialConfig, deployment }: Domain
                   <CheckCircle2 className='h-3 w-3 mr-1' />
                   Connected
                 </Badge>
-              ) : vercelStatus?.configuredCorrectly === false ? (
+              ) : dnsStatus?.configuredCorrectly === false ? (
                 <Badge variant='destructive'>
                   <XCircle className='h-3 w-3 mr-1' />
                   Invalid DNS
@@ -289,7 +289,7 @@ export function DomainClient({ domainConfig: initialConfig, deployment }: Domain
           )}
 
           {/* Invalid DNS warning */}
-          {!domainConfig.verified && vercelStatus?.configuredCorrectly === false && (
+          {!domainConfig.verified && dnsStatus?.configuredCorrectly === false && (
             <div className='flex items-center gap-2 p-3 bg-red-50 dark:bg-red-950/30 rounded-lg'>
               <XCircle className='h-5 w-5 text-red-600' />
               <span className='text-sm text-red-700 dark:text-red-300'>
@@ -301,8 +301,8 @@ export function DomainClient({ domainConfig: initialConfig, deployment }: Domain
           {/* Vercel Status Info */}
           <div className='flex items-center justify-between text-xs text-muted-foreground pt-2 border-t'>
             <span>
-              Vercel Status:{" "}
-              {domainConfig.verified ? "Verified ✓" : vercelStatus?.configuredCorrectly === false ? "Misconfigured ✗" : "Pending..."}
+              Status:{" "}
+              {domainConfig.verified ? "Verified ✓" : dnsStatus?.configuredCorrectly === false ? "Misconfigured ✗" : "Pending..."}
             </span>
             <Button variant='link' size='sm' className='h-auto p-0 text-xs' onClick={refreshStatus} disabled={refreshing}>
               {refreshing ? "Checking..." : "Recheck now"}

@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { prisma, PrismaQueryBuilder } from "@framex/database";
+import { prisma, PrismaQueryBuilder, Decimal } from "@framex/database";
 import AppError from "../../errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { TCoupon } from "./coupon.interface";
 import { isCouponActive, calculateDiscount } from "./coupon.helper";
-import { Decimal } from "@prisma/client/runtime/library";
 
 // Get all coupons
 const getAllCouponsFromDB = async (tenantId: string, query: Record<string, unknown>) => {
@@ -161,11 +160,20 @@ const applyCouponToCart = async (tenantId: string, payload: any) => {
   // Ideally helpers should be updated to use Prisma types
   const couponAny: TCoupon = {
     ...coupon,
-    usageLimit: coupon.usageLimit as any,
-    conditions: coupon.conditions as any,
-    buyXGetY: coupon.buyXGetY as any,
-    startDate: coupon.startDate || new Date().toISOString(), // Fallback if missing
-    endDate: coupon.endDate || new Date().toISOString()
+    name: coupon.code,
+    type: coupon.discountType as any,
+    status: coupon.isActive ? "active" : "inactive",
+    discountValue: coupon.discountValue.toNumber(),
+    startDate: coupon.createdAt.toISOString(),
+    endDate: coupon.expiresAt?.toISOString() || new Date().toISOString(),
+    usageLimit: {
+      totalUses: coupon.maxUses ?? undefined,
+      currentUses: coupon.usedCount,
+    },
+    conditions: {
+      minPurchaseAmount: coupon.minOrderValue?.toNumber(),
+    },
+    buyXGetY: undefined
   } as unknown as TCoupon;
 
   // Check active status using helper
@@ -220,16 +228,18 @@ const applyCouponToCart = async (tenantId: string, payload: any) => {
 const recordCouponUsage = async (tenantId: string, payload: any) => {
   const { couponId, orderId, customerId } = payload;
 
-  if (!couponId || !orderId) return;
+  if (!couponId || !orderId) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Missing couponId or orderId");
+  }
 
   const existing = await prisma.couponUsage.findFirst({
     where: { orderId, couponId }
   });
 
-  if (existing) return { success: true, message: "Already recorded" };
+  if (existing) return { success: true, message: "Already recorded", usageRecord: existing };
 
-  await prisma.$transaction(async (tx) => {
-    await tx.couponUsage.create({
+  const usageRecord = await prisma.$transaction(async (tx) => {
+    const created = await tx.couponUsage.create({
       data: {
         tenantId,
         couponId,
@@ -249,9 +259,33 @@ const recordCouponUsage = async (tenantId: string, payload: any) => {
         usedCount: { increment: 1 }
       }
     });
+
+    return created;
   });
 
-  return { success: true };
+  return { success: true, message: "Coupon usage recorded successfully", usageRecord };
+};
+
+// Get coupon usage records
+const getCouponUsageRecords = async (tenantId: string, query: Record<string, unknown>) => {
+  const builder = new PrismaQueryBuilder({
+    model: prisma.couponUsage,
+    query,
+    searchFields: ["couponCode", "customerEmail"]
+  });
+
+  const result = await builder
+    .addBaseWhere({ tenantId })
+    .search()
+    .filter()
+    .sort()
+    .paginate()
+    .execute();
+
+  return {
+    records: result.data,
+    pagination: result.meta
+  };
 };
 
 export const CouponServices = {
@@ -262,4 +296,5 @@ export const CouponServices = {
   deleteCouponFromDB,
   applyCouponToCart,
   recordCouponUsage,
+  getCouponUsageRecords,
 };

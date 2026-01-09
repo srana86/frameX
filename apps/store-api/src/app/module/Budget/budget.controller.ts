@@ -6,7 +6,7 @@ import { BudgetServices } from "./budget.service";
 
 // Get all budgets
 const getAllBudgets = catchAsync(async (req: Request, res: Response) => {
-  const result = await BudgetServices.getAllBudgetsFromDB(req.query);
+  const result = await BudgetServices.getAllBudgetsFromDB(req.tenantId, req.query);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -21,7 +21,7 @@ const getAllBudgets = catchAsync(async (req: Request, res: Response) => {
 
 // Create budget
 const createBudget = catchAsync(async (req: Request, res: Response) => {
-  const result = await BudgetServices.createBudgetIntoDB(req.body);
+  const result = await BudgetServices.createBudgetIntoDB(req.tenantId, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,
@@ -34,7 +34,7 @@ const createBudget = catchAsync(async (req: Request, res: Response) => {
 // Update budget
 const updateBudget = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await BudgetServices.updateBudgetIntoDB(id, req.body);
+  const result = await BudgetServices.updateBudgetIntoDB(req.tenantId, id, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -47,7 +47,7 @@ const updateBudget = catchAsync(async (req: Request, res: Response) => {
 // Delete budget
 const deleteBudget = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  await BudgetServices.deleteBudgetFromDB(id);
+  await BudgetServices.deleteBudgetFromDB(req.tenantId, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

@@ -105,7 +105,7 @@ export async function initSSLCommerzPayment(config: SSLCommerzConfig, paymentDat
                 ...formData.getHeaders(),
             },
             maxRedirects: 0,
-        });
+        } as any);
 
         if (response.data && typeof response.data === "object") {
             return response.data;
