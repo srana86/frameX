@@ -1,0 +1,44 @@
+{
+    "name": "@framex/database",
+    "version": "1.0.0",
+    "description": "Shared Prisma database client for FrameX",
+    "main": "./dist/src/index.js",
+    "types": "./dist/src/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/src/index.js",
+            "require": "./dist/src/index.js",
+            "types": "./dist/src/index.d.ts"
+        },
+        "./client": {
+            "import": "./dist/src/client.js",
+            "require": "./dist/src/client.js",
+            "types": "./dist/src/client.d.ts"
+        }
+    },
+    "scripts": {
+        "build": "tsc",
+        "db:generate": "prisma generate",
+        "db:push": "prisma db push",
+        "db:migrate": "prisma migrate dev",
+        "db:migrate:prod": "prisma migrate deploy",
+        "db:studio": "prisma studio",
+        "db:seed": "ts-node prisma/seed.ts"
+    },
+    "dependencies": {
+        "@prisma/client": "^7.0.0",
+        "@prisma/adapter-pg": "^7.0.0",
+        "bcryptjs": "^3.0.3"
+    },
+    "devDependencies": {
+        "@types/bcryptjs": "^2.4.6",
+        "@types/node": "^20.14.0",
+        "dotenv": "^16.0.0",
+        "prisma": "^7.0.0",
+        "ts-node": "^10.9.0",
+        "typescript": "^5.3.0"
+    },
+    "peerDependencies": {
+        "@prisma/client": "^7.0.0"
+    }
+}

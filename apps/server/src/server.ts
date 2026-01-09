@@ -1,60 +1,28 @@
 import { Server } from "http";
-import mongoose from "mongoose";
 import app from "./app";
 import config from "./config";
+import { prisma } from "@framex/database";
 
 let server: Server;
-
-// Database connection event listeners
-mongoose.connection.on("connecting", () => {
-  console.log("🔄 [Database] Connecting to MongoDB...");
-});
-
-mongoose.connection.on("connected", () => {
-  console.log("✅ [Database] MongoDB connected successfully");
-  console.log(`   Database: ${mongoose.connection.db?.databaseName || "N/A"}`);
-  console.log(`   Host: ${mongoose.connection.host || "N/A"}`);
-  console.log(`   Port: ${mongoose.connection.port || "N/A"}`);
-});
-
-mongoose.connection.on("error", (err) => {
-  console.error("❌ [Database] MongoDB connection error:", err.message);
-});
-
-mongoose.connection.on("disconnected", () => {
-  console.log("⚠️  [Database] MongoDB disconnected");
-});
-
-mongoose.connection.on("reconnected", () => {
-  console.log("🔄 [Database] MongoDB reconnected");
-});
 
 async function main() {
   try {
     // Check if database URL is configured
-    if (!config.database_url) {
+    if (!process.env.DATABASE_URL) {
       console.error(
-        "❌ [Database] MONGODB_URI is not configured in environment variables"
+        "❌ [Database] DATABASE_URL is not configured in environment variables"
       );
-      console.error("   Please set MONGODB_URI in your .env file");
+      console.error("   Please set DATABASE_URL in your .env file");
       process.exit(1);
     }
 
-    console.log("🔄 [Database] Attempting to connect to MongoDB...");
-    // Mask credentials in connection string for logging
-    const maskedUri = config.database_url.replace(
-      /\/\/[^:]+:[^@]+@/,
-      "//***:***@"
-    );
-    console.log(`   URI: ${maskedUri}`);
-
+    console.log("🔄 [Database] Connecting to PostgreSQL...");
     const startTime = Date.now();
-    await mongoose.connect(config.database_url as string, {
-      dbName: config.mongodb_db,
-    });
-    const connectionTime = Date.now() - startTime;
 
-    console.log(`✅ [Database] Connection established in ${connectionTime}ms`);
+    // Test database connection
+    await prisma.$connect();
+    const connectionTime = Date.now() - startTime;
+    console.log(`✅ [Database] PostgreSQL connected in ${connectionTime}ms`);
 
     // Seed super admin
     try {
@@ -71,22 +39,17 @@ async function main() {
       );
     });
   } catch (err: any) {
-    console.error("❌ [Database] Failed to connect to MongoDB:");
+    console.error("❌ [Database] Failed to connect to PostgreSQL:");
     console.error(`   Error: ${err.message || err}`);
-    if (err.name === "MongoServerSelectionError") {
-      console.error("   This usually means:");
-      console.error("   - MongoDB server is not running");
-      console.error("   - Incorrect connection string");
-      console.error("   - Network connectivity issues");
-    }
     process.exit(1);
   }
 }
 
 main();
 
-process.on("unhandledRejection", (err) => {
-  console.log(`😈 unhandledRejection is detected , shutting down ...`, err);
+process.on("unhandledRejection", async (err) => {
+  console.log(`😈 unhandledRejection is detected, shutting down...`, err);
+  await prisma.$disconnect();
   if (server) {
     server.close(() => {
       process.exit(1);
@@ -95,7 +58,29 @@ process.on("unhandledRejection", (err) => {
   process.exit(1);
 });
 
-process.on("uncaughtException", () => {
-  console.log(`😈 uncaughtException is detected , shutting down ...`);
+process.on("uncaughtException", async () => {
+  console.log(`😈 uncaughtException is detected, shutting down...`);
+  await prisma.$disconnect();
   process.exit(1);
+});
+
+// Graceful shutdown
+process.on("SIGTERM", async () => {
+  console.log("SIGTERM received, shutting down gracefully");
+  await prisma.$disconnect();
+  if (server) {
+    server.close(() => {
+      process.exit(0);
+    });
+  }
+});
+
+process.on("SIGINT", async () => {
+  console.log("SIGINT received, shutting down gracefully");
+  await prisma.$disconnect();
+  if (server) {
+    server.close(() => {
+      process.exit(0);
+    });
+  }
 });

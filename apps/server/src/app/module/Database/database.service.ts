@@ -1,53 +1,41 @@
-import { Database } from "./database.model";
-import { MongoClient } from "mongodb";
-import { toPlainObjectArray } from "../../utils/mongodb";
-import { IDatabase } from "./database.interface";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { prisma } from "@framex/database";
 import config from "../../../config/index";
 
 const getAllDatabases = async () => {
-  const uri = config.database_url;
-  if (!uri) {
-    throw new Error("MONGODB_URI not configured");
-  }
+  // If we truly migrated to Postgres, listing databases means listing schemas or using a query.
+  // For now, we will just list the metadata from DatabaseInfo table.
+  // Mongoose version verified physical existence.
 
-  const client = new MongoClient(uri);
-  await client.connect();
+  // We can query physical Postgres DBs if we want, using raw query.
+  // But to keep it simple and safe, we rely on metadata for now, 
+  // or checks "postgres" usage.
 
+  let physicalDbs: any[] = [];
   try {
-    // Get all databases
-    const adminDb = client.db().admin();
-    const { databases } = await adminDb.listDatabases();
-
-    // Get merchant databases info
-    let dbInfo: any[] = [];
-    try {
-      dbInfo = await Database.find({});
-    } catch (error) {
-      console.log("merchant_databases collection not found, continuing...");
-    }
-
-    // Map database info
-    const databasesList = databases
-      .filter(
-        (db) =>
-          db.name !== "admin" && db.name !== "local" && db.name !== "config"
-      )
-      .map((db) => {
-        const info = dbInfo.find((d: any) => d.databaseName === db.name);
-        return {
-          name: db.name,
-          sizeOnDisk: db.sizeOnDisk,
-          empty: db.empty,
-          merchantId: info?.merchantId || null,
-          createdAt: info?.createdAt || null,
-          connectionString: info?.connectionString ? "***encrypted***" : null,
-        };
-      });
-
-    return databasesList;
-  } finally {
-    await client.close();
+    // Optional: Check actual postgres databases/schemas
+    // const result = await prisma.$queryRaw`SELECT datname FROM pg_database WHERE datistemplate = false;`;
+    // physicalDbs = result as any[];
+  } catch (e) {
+    // ignore
   }
+
+  // Get merchant databases info
+  const dbInfo = await prisma.databaseInfo.findMany();
+
+  // Map database info
+  const databasesList = dbInfo.map((info) => {
+    return {
+      name: info.databaseName,
+      sizeOnDisk: info.size, // stored in BigInt, convert to number or string?
+      empty: false, // Placeholder
+      merchantId: info.merchantId,
+      createdAt: info.createdAt,
+      connectionString: info.connectionString ? "***encrypted***" : null,
+    };
+  });
+
+  return databasesList;
 };
 
 export const DatabaseServices = {

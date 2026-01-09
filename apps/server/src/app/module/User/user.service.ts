@@ -1,19 +1,28 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { User } from './user.model';
+import { prisma } from "@framex/database";
+import { changeUserStatus } from "./user.utils";
 
-// Todo. Create your own service function to write the business logic. 
-
-//You can read my following blog to get deeper understanding about creating different types of service function https://dev.to/md_enayeturrahman_2560e3/how-to-create-api-in-an-industry-standard-app-44ck
-
-
-const changeStatus = async (id: string, payload: { status: string }) => {
-  const result = await User.findByIdAndUpdate(id, payload, {
-    new: true,
-  });
+const changeStatus = async (id: string, payload: { status: "ACTIVE" | "INACTIVE" | "BLOCKED" }) => {
+  const result = await changeUserStatus(id, payload.status);
   return result;
+};
+
+const getAllUsers = async (tenantId?: string) => {
+  return prisma.user.findMany({
+    where: tenantId ? { tenantId } : undefined,
+    orderBy: { createdAt: "desc" },
+  });
+};
+
+const getUserById = async (id: string) => {
+  return prisma.user.findUnique({
+    where: { id },
+  });
 };
 
 export const UserServices = {
   changeStatus,
+  getAllUsers,
+  getUserById,
 };

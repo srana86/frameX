@@ -1,28 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { prisma } from "@framex/database";
 import AppError from "../../errors/AppError";
 import { StatusCodes } from "http-status-codes";
-import { SubscriptionPlan, MerchantSubscription } from "./subscription.model";
-import {
-  TSubscriptionPlan,
-  TMerchantSubscription,
-} from "./subscription.interface";
 
 // Get active subscription plans
 const getActiveSubscriptionPlansFromDB = async () => {
-  const result = await SubscriptionPlan.find({ isActive: true }).sort({
-    sortOrder: 1,
+  const result = await prisma.subscriptionPlan.findMany({
+    where: { isActive: true },
+    orderBy: { sortOrder: "asc" }
   });
   return result;
 };
 
 // Get current merchant subscription
 const getCurrentMerchantSubscriptionFromDB = async (merchantId: string) => {
-  const result = await MerchantSubscription.findOne({
-    merchantId,
-    status: { $in: ["active", "trial", "grace_period"] },
-  })
-    .sort({ createdAt: -1 })
-    .limit(1);
+  // Status check: 'active', 'trial', 'grace_period'
+  // using findFirst with sort desc by createdAt to get latest
+  const result = await prisma.merchantSubscription.findFirst({
+    where: {
+      merchantId,
+      status: { in: ["active", "trial", "grace_period"] }
+    },
+    orderBy: { createdAt: "desc" }
+  });
 
   return result;
 };
@@ -47,9 +47,11 @@ const createSubscriptionIntoDB = async (
   payload: { planId: string; trialDays?: number }
 ) => {
   // Verify plan exists and is active
-  const plan = await SubscriptionPlan.findOne({
-    id: payload.planId,
-    isActive: true,
+  const plan = await prisma.subscriptionPlan.findFirst({
+    where: {
+      id: payload.planId,
+      isActive: true
+    }
   });
 
   if (!plan) {
@@ -57,9 +59,11 @@ const createSubscriptionIntoDB = async (
   }
 
   // Check if merchant already has an active subscription
-  const existing = await MerchantSubscription.findOne({
-    merchantId,
-    status: { $in: ["active", "trial", "grace_period"] },
+  const existing = await prisma.merchantSubscription.findFirst({
+    where: {
+      merchantId,
+      status: { in: ["active", "trial", "grace_period"] }
+    }
   });
 
   if (existing) {
@@ -76,23 +80,29 @@ const createSubscriptionIntoDB = async (
   periodEnd.setMonth(periodEnd.getMonth() + billingCycleMonths);
 
   // Create subscription
+  // Generating ID manually or letting Prisma/DB handle it? 
+  // Mongoose version generated `SUB...`
+  // If ID is string @id, we can generate it.
   const subscriptionId = `SUB${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
-  const subscription = await MerchantSubscription.create({
-    id: subscriptionId,
-    merchantId,
-    planId: payload.planId,
-    status: payload.trialDays ? "trial" : "active",
-    billingCycle: plan.billingCycle || "monthly",
-    billingCycleMonths,
-    amount: plan.price ?? plan.basePrice ?? 0,
-    currency: "BDT",
-    currentPeriodStart: now,
-    currentPeriodEnd: periodEnd,
-    trialEndsAt: payload.trialDays
-      ? new Date(now.getTime() + payload.trialDays * 24 * 60 * 60 * 1000)
-      : undefined,
-    cancelAtPeriodEnd: false,
-    autoRenew: true,
+
+  const subscription = await prisma.merchantSubscription.create({
+    data: {
+      id: subscriptionId,
+      merchantId,
+      planId: payload.planId,
+      status: payload.trialDays ? "trial" : "active",
+      billingCycle: plan.billingCycle || "monthly",
+      billingCycleMonths,
+      amount: plan.price ?? plan.basePrice ?? 0,
+      currency: "BDT",
+      currentPeriodStart: now,
+      currentPeriodEnd: periodEnd,
+      trialEndsAt: payload.trialDays
+        ? new Date(now.getTime() + payload.trialDays * 24 * 60 * 60 * 1000)
+        : null, // Prisma uses null for optional dates usually
+      cancelAtPeriodEnd: false,
+      autoRenew: true,
+    }
   });
 
   return subscription;

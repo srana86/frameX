@@ -1,20 +1,18 @@
-import { CourierServicesConfig } from "../Config/config.model";
+import { prisma } from "@framex/database";
 import { getPathaoAccessToken } from "./courier.util";
 import { CourierService } from "./delivery.interface";
 
-// Get Pathao cities
-const getPathaoCitiesFromDB = async () => {
-  const courierConfig = await CourierServicesConfig.findOne({
-    id: "courier-services-config",
+const getPathaoCitiesFromDB = async (tenantId: string) => {
+  const courierConfig = await prisma.courierServicesConfig.findUnique({
+    where: { tenantId }
   });
 
-  if (!courierConfig) {
-    throw new Error("Courier services config not found");
-  }
+  if (!courierConfig) throw new Error("Courier services config not found");
 
-  const pathaoService = courierConfig.services.find(
+  const services: any[] = (courierConfig.services as any) || [];
+  const pathaoService = services.find(
     (s: any) => s.id === "pathao" && s.enabled
-  ) as CourierService | undefined;
+  );
 
   if (!pathaoService || !pathaoService.credentials) {
     throw new Error("Pathao service is not configured or enabled");
@@ -33,38 +31,28 @@ const getPathaoCitiesFromDB = async () => {
 
   if (!res.ok) {
     const errorText = await res.text().catch(() => "");
-    throw new Error(
-      `Failed to fetch Pathao cities: ${errorText || res.statusText}`
-    );
+    throw new Error(`Failed to fetch Pathao cities: ${errorText || res.statusText}`);
   }
 
   const data = await res.json();
-  const cities = data?.data?.data || [];
-
-  return cities;
+  return data?.data?.data || [];
 };
 
-// Get Pathao zones
-const getPathaoZonesFromDB = async (cityId: string) => {
-  if (!cityId) {
-    throw new Error("city_id parameter is required");
-  }
+const getPathaoZonesFromDB = async (tenantId: string, cityId: string) => {
+  if (!cityId) throw new Error("city_id parameter is required");
 
-  const courierConfig = await CourierServicesConfig.findOne({
-    id: "courier-services-config",
+  const courierConfig = await prisma.courierServicesConfig.findUnique({
+    where: { tenantId }
   });
 
-  if (!courierConfig) {
-    throw new Error("Courier services config not found");
-  }
+  if (!courierConfig) throw new Error("Courier services config not found");
 
-  const pathaoService = courierConfig.services.find(
+  const services: any[] = (courierConfig.services as any) || [];
+  const pathaoService = services.find(
     (s: any) => s.id === "pathao" && s.enabled
-  ) as CourierService | undefined;
+  );
 
-  if (!pathaoService || !pathaoService.credentials) {
-    throw new Error("Pathao service is not configured or enabled");
-  }
+  if (!pathaoService || !pathaoService.credentials) throw new Error("Pathao service not configured");
 
   const accessToken = await getPathaoAccessToken(pathaoService);
   const baseUrl = "https://api-hermes.pathao.com";
@@ -82,38 +70,28 @@ const getPathaoZonesFromDB = async (cityId: string) => {
 
   if (!res.ok) {
     const errorText = await res.text().catch(() => "");
-    throw new Error(
-      `Failed to fetch Pathao zones: ${errorText || res.statusText}`
-    );
+    throw new Error(`Failed to fetch Pathao zones: ${errorText}`);
   }
 
   const data = await res.json();
-  const zones = data?.data?.data || [];
-
-  return zones;
+  return data?.data?.data || [];
 };
 
-// Get Pathao areas
-const getPathaoAreasFromDB = async (zoneId: string) => {
-  if (!zoneId) {
-    throw new Error("zone_id parameter is required");
-  }
+const getPathaoAreasFromDB = async (tenantId: string, zoneId: string) => {
+  if (!zoneId) throw new Error("zone_id parameter is required");
 
-  const courierConfig = await CourierServicesConfig.findOne({
-    id: "courier-services-config",
+  const courierConfig = await prisma.courierServicesConfig.findUnique({
+    where: { tenantId }
   });
 
-  if (!courierConfig) {
-    throw new Error("Courier services config not found");
-  }
+  if (!courierConfig) throw new Error("Courier services config not found");
 
-  const pathaoService = courierConfig.services.find(
+  const services: any[] = (courierConfig.services as any) || [];
+  const pathaoService = services.find(
     (s: any) => s.id === "pathao" && s.enabled
-  ) as CourierService | undefined;
+  );
 
-  if (!pathaoService || !pathaoService.credentials) {
-    throw new Error("Pathao service is not configured or enabled");
-  }
+  if (!pathaoService || !pathaoService.credentials) throw new Error("Pathao service not configured");
 
   const accessToken = await getPathaoAccessToken(pathaoService);
   const baseUrl = "https://api-hermes.pathao.com";
@@ -131,15 +109,11 @@ const getPathaoAreasFromDB = async (zoneId: string) => {
 
   if (!res.ok) {
     const errorText = await res.text().catch(() => "");
-    throw new Error(
-      `Failed to fetch Pathao areas: ${errorText || res.statusText}`
-    );
+    throw new Error(`Failed to fetch Pathao areas: ${errorText}`);
   }
 
   const data = await res.json();
-  const areas = data?.data?.data || [];
-
-  return areas;
+  return data?.data?.data || [];
 };
 
 export const PathaoServices = {

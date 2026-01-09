@@ -1,38 +1,36 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import AppError from "../../errors/AppError";
+import { prisma, PrismaQueryBuilder } from "@framex/database";
 import { StatusCodes } from "http-status-codes";
-import { User } from "./user.model";
-import QueryBuilder from "../../builder/QueryBuilder";
-import { TUser } from "./user.interface";
+import AppError from "../../errors/AppError";
 
 // Get all users with pagination, filter, and search
-const getAllUsersFromDB = async (query: Record<string, unknown>) => {
-  // Query users where isDeleted is false or doesn't exist (for backward compatibility)
-  const userQuery = new QueryBuilder(
-    User.find({
-      $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
-    }),
-    query
-  )
-    .search(["fullName", "email", "phone"])
+const getAllUsersFromDB = async (
+  tenantId: string,
+  query: Record<string, unknown>
+) => {
+  const builder = new PrismaQueryBuilder({
+    model: prisma.storeUser,
+    query: query,
+    searchFields: ["fullName", "email", "phone"],
+  });
+
+  const result = await builder
+    .addBaseWhere({ tenantId, isDeleted: false })
+    .search()
     .filter()
     .sort()
     .paginate()
-    .fields();
+    .execute();
 
-  const result = await userQuery.modelQuery;
-  const meta = await userQuery.countTotal();
-
-  return {
-    meta,
-    data: result,
-  };
+  return result;
 };
 
 // Get single user by ID
-const getSingleUserFromDB = async (id: string) => {
-  const result = await User.findOne({ id, isDeleted: false });
+const getSingleUserFromDB = async (tenantId: string, id: string) => {
+  const result = await prisma.storeUser.findFirst({
+    where: { id, tenantId, isDeleted: false },
+  });
 
   if (!result) {
     throw new AppError(StatusCodes.NOT_FOUND, "User not found");
@@ -42,62 +40,82 @@ const getSingleUserFromDB = async (id: string) => {
 };
 
 // Create user
-const createUserIntoDB = async (payload: TUser) => {
-  const result = await User.create(payload);
+const createUserIntoDB = async (
+  tenantId: string,
+  payload: {
+    fullName: string;
+    email?: string;
+    phone?: string;
+    password?: string;
+    role?: "CUSTOMER" | "MERCHANT" | "ADMIN";
+  }
+) => {
+  const result = await prisma.storeUser.create({
+    data: {
+      tenantId,
+      fullName: payload.fullName,
+      email: payload.email,
+      phone: payload.phone,
+      password: payload.password,
+      role: payload.role || "CUSTOMER",
+    },
+  });
   return result;
 };
 
 // Update user
-const updateUserIntoDB = async (id: string, payload: Partial<TUser>) => {
-  const result = await User.findOneAndUpdate(
-    { id, isDeleted: false },
-    payload,
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
+const updateUserIntoDB = async (
+  tenantId: string,
+  id: string,
+  payload: Partial<{
+    fullName: string;
+    email: string;
+    phone: string;
+    status: "IN_PROGRESS" | "BLOCKED";
+  }>
+) => {
+  const result = await prisma.storeUser.updateMany({
+    where: { id, tenantId, isDeleted: false },
+    data: payload,
+  });
 
-  if (!result) {
+  if (result.count === 0) {
     throw new AppError(StatusCodes.NOT_FOUND, "User not found");
   }
 
-  return result;
+  return prisma.storeUser.findFirst({ where: { id, tenantId } });
 };
 
 // Delete user (soft delete)
-const deleteUserFromDB = async (id: string) => {
-  const result = await User.findOneAndUpdate(
-    { id, isDeleted: false },
-    { isDeleted: true },
-    {
-      new: true,
-    }
-  );
+const deleteUserFromDB = async (tenantId: string, id: string) => {
+  const result = await prisma.storeUser.updateMany({
+    where: { id, tenantId, isDeleted: false },
+    data: { isDeleted: true },
+  });
 
-  if (!result) {
+  if (result.count === 0) {
     throw new AppError(StatusCodes.NOT_FOUND, "User not found");
   }
 
   return result;
 };
 
-// Change user status (for future use if needed)
-const changeStatus = async (id: string, payload: Partial<TUser>) => {
-  const result = await User.findOneAndUpdate(
-    { id, isDeleted: false },
-    payload,
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
+// Change user status
+const changeStatus = async (
+  tenantId: string,
+  id: string,
+  payload: { status: "IN_PROGRESS" | "BLOCKED" }
+) => {
+  const result = await prisma.storeUser.updateMany({
+    where: { id, tenantId, isDeleted: false },
+    data: { status: payload.status },
+  });
 
-  if (!result) {
+  if (result.count === 0) {
     throw new AppError(StatusCodes.NOT_FOUND, "User not found");
   }
 
-  return result;
+  return prisma.storeUser.findFirst({ where: { id, tenantId } });
 };
 
 export const UserServices = {

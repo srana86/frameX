@@ -1,71 +1,61 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { prisma, PrismaQueryBuilder } from "@framex/database";
 import AppError from "../../errors/AppError";
 import { StatusCodes } from "http-status-codes";
-import { Budget } from "./budget.model";
-import { TBudget } from "./budget.interface";
-import QueryBuilder from "../../builder/QueryBuilder";
+import { Decimal } from "@prisma/client/runtime/library";
 
-// Get all budgets
-const getAllBudgetsFromDB = async (query: Record<string, unknown>) => {
-  const budgetQuery = new QueryBuilder(Budget.find(), query)
-    .search(["name", "category"])
+const getAllBudgetsFromDB = async (tenantId: string, query: Record<string, unknown>) => {
+  const builder = new PrismaQueryBuilder({
+    model: prisma.budget,
+    query,
+    searchFields: ["name", "category"]
+  });
+
+  return builder
+    .addBaseWhere({ tenantId })
+    .search()
     .filter()
     .sort()
     .paginate()
-    .fields();
-
-  const budgets = await budgetQuery.modelQuery;
-  const meta = await budgetQuery.countTotal();
-
-  return {
-    meta,
-    data: budgets,
-  };
+    .execute();
 };
 
-// Create budget
-const createBudgetIntoDB = async (payload: Partial<TBudget>) => {
-  const budgetId = `BGT${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
-
-  const budget = await Budget.create({
-    id: budgetId,
-    name: payload.name!,
-    category: payload.category,
-    amount: payload.amount!,
-    spent: payload.spent || 0,
-    period: payload.period!,
-    startDate: payload.startDate,
-    endDate: payload.endDate,
-    isActive: payload.isActive ?? true,
-    notes: payload.notes,
+const createBudgetIntoDB = async (tenantId: string, payload: any) => {
+  return prisma.budget.create({
+    data: {
+      tenantId,
+      name: payload.name,
+      category: payload.category,
+      amount: new Decimal(payload.amount),
+      spent: new Decimal(payload.spent || 0),
+      period: payload.period,
+      startDate: payload.startDate,
+      endDate: payload.endDate,
+      isActive: payload.isActive ?? true,
+      notes: payload.notes
+    }
   });
-
-  return budget;
 };
 
-// Update budget
-const updateBudgetIntoDB = async (id: string, payload: Partial<TBudget>) => {
-  const budget = await Budget.findOneAndUpdate(
-    { id },
-    { $set: payload },
-    { new: true, runValidators: true }
-  );
+const updateBudgetIntoDB = async (tenantId: string, id: string, payload: any) => {
+  const budget = await prisma.budget.findFirst({ where: { tenantId, id } });
+  if (!budget) throw new AppError(StatusCodes.NOT_FOUND, "Budget not found");
 
-  if (!budget) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Budget not found");
-  }
+  const data: any = { ...payload };
+  if (payload.amount) data.amount = new Decimal(payload.amount);
+  if (payload.spent) data.spent = new Decimal(payload.spent);
 
-  return budget;
+  return prisma.budget.update({
+    where: { id },
+    data
+  });
 };
 
-// Delete budget
-const deleteBudgetFromDB = async (id: string) => {
-  const budget = await Budget.findOneAndDelete({ id });
+const deleteBudgetFromDB = async (tenantId: string, id: string) => {
+  const budget = await prisma.budget.findFirst({ where: { tenantId, id } });
+  if (!budget) throw new AppError(StatusCodes.NOT_FOUND, "Budget not found");
 
-  if (!budget) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Budget not found");
-  }
-
+  await prisma.budget.delete({ where: { id } });
   return budget;
 };
 

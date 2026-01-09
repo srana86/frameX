@@ -6,7 +6,7 @@ import { ProductServices } from "./product.service";
 
 // Get all products
 const getAllProducts = catchAsync(async (req: Request, res: Response) => {
-  const result = await ProductServices.getAllProductsFromDB(req.query);
+  const result = await ProductServices.getAllProductsFromDB(req.tenantId, req.query);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -23,7 +23,7 @@ const getAllProducts = catchAsync(async (req: Request, res: Response) => {
 // Get single product
 const getSingleProduct = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await ProductServices.getSingleProductFromDB(id);
+  const result = await ProductServices.getSingleProductFromDB(req.tenantId, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -36,7 +36,7 @@ const getSingleProduct = catchAsync(async (req: Request, res: Response) => {
 // Create product
 const createProduct = catchAsync(async (req: Request, res: Response) => {
   const files = req.files as Express.Multer.File[];
-  const result = await ProductServices.createProductIntoDB(req.body, files);
+  const result = await ProductServices.createProductIntoDB(req.tenantId, req.body, files);
 
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,
@@ -50,7 +50,7 @@ const createProduct = catchAsync(async (req: Request, res: Response) => {
 const updateProduct = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const files = req.files as Express.Multer.File[];
-  const result = await ProductServices.updateProductIntoDB(id, req.body, files);
+  const result = await ProductServices.updateProductIntoDB(req.tenantId, id, req.body, files);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -63,7 +63,7 @@ const updateProduct = catchAsync(async (req: Request, res: Response) => {
 // Delete product
 const deleteProduct = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await ProductServices.deleteProductFromDB(id);
+  const result = await ProductServices.deleteProductFromDB(req.tenantId, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -76,7 +76,7 @@ const deleteProduct = catchAsync(async (req: Request, res: Response) => {
 // Update product order (bulk)
 const updateProductOrder = catchAsync(async (req: Request, res: Response) => {
   const { products } = req.body;
-  const result = await ProductServices.updateProductOrder(products);
+  const result = await ProductServices.updateProductOrder(req.tenantId, products);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -88,7 +88,7 @@ const updateProductOrder = catchAsync(async (req: Request, res: Response) => {
 
 // Search products
 const searchProducts = catchAsync(async (req: Request, res: Response) => {
-  const result = await ProductServices.searchProductsFromDB(req.query);
+  const result = await ProductServices.searchProductsFromDB(req.tenantId, req.query);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -103,7 +103,7 @@ const searchProducts = catchAsync(async (req: Request, res: Response) => {
 
 // Get brands
 const getBrands = catchAsync(async (req: Request, res: Response) => {
-  const result = await ProductServices.getBrandsFromDB();
+  const result = await ProductServices.getBrandsFromDB(req.tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -115,7 +115,7 @@ const getBrands = catchAsync(async (req: Request, res: Response) => {
 
 // Get categories
 const getCategories = catchAsync(async (req: Request, res: Response) => {
-  const result = await ProductServices.getCategoriesFromDB(req.query);
+  const result = await ProductServices.getCategoriesFromDB(req.tenantId, req.query);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -130,7 +130,7 @@ const getCategories = catchAsync(async (req: Request, res: Response) => {
 
 // Create category
 const createCategory = catchAsync(async (req: Request, res: Response) => {
-  const result = await ProductServices.createCategoryIntoDB(req.body);
+  const result = await ProductServices.createCategoryIntoDB(req.tenantId, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,
@@ -143,7 +143,7 @@ const createCategory = catchAsync(async (req: Request, res: Response) => {
 // Update category order (bulk)
 const updateCategoryOrder = catchAsync(async (req: Request, res: Response) => {
   const { categories } = req.body;
-  const result = await ProductServices.updateCategoryOrder(categories);
+  const result = await ProductServices.updateCategoryOrder(req.tenantId, categories);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -156,7 +156,7 @@ const updateCategoryOrder = catchAsync(async (req: Request, res: Response) => {
 // Update category
 const updateCategory = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await ProductServices.updateCategoryIntoDB(id, req.body);
+  const result = await ProductServices.updateCategoryIntoDB(req.tenantId, id, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -169,7 +169,7 @@ const updateCategory = catchAsync(async (req: Request, res: Response) => {
 // Delete category
 const deleteCategory = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  await ProductServices.deleteCategoryFromDB(id);
+  await ProductServices.deleteCategoryFromDB(req.tenantId, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -182,7 +182,7 @@ const deleteCategory = catchAsync(async (req: Request, res: Response) => {
 // Get most loved products
 const getMostLovedProducts = catchAsync(async (req: Request, res: Response) => {
   const limit = Number(req.query.limit) || 10;
-  const result = await ProductServices.getMostLovedProductsFromDB(limit);
+  const result = await ProductServices.getMostLovedProductsFromDB(req.tenantId, limit);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

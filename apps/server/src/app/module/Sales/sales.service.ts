@@ -1,7 +1,6 @@
-import { Sale } from "./sales.model";
-import { ActivityLog } from "../ActivityLog/activityLog.model";
-import { toPlainObjectArray, toPlainObject } from "../../utils/mongodb";
-import { ISale } from "./sales.interface";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { prisma } from "@framex/database";
+import { Decimal } from "@prisma/client/runtime/library";
 
 const getAllSales = async (
   status?: string,
@@ -11,89 +10,68 @@ const getAllSales = async (
   endDate?: string,
   limit: number = 100
 ) => {
-  const query: any = {};
-  if (status) query.status = status;
-  if (type) query.type = type;
-  if (merchantId) query.merchantId = merchantId;
+  const where: any = {};
+  // Ignoring status and type as they don't exist in Prisma Sales model
+  if (merchantId) where.merchantId = merchantId;
   if (startDate || endDate) {
-    query.createdAt = {};
-    if (startDate) query.createdAt.$gte = startDate;
-    if (endDate) query.createdAt.$lte = endDate;
+    where.createdAt = {};
+    if (startDate) where.createdAt.gte = new Date(startDate);
+    if (endDate) where.createdAt.lte = new Date(endDate);
   }
 
-  const sales = await Sale.find(query).sort({ createdAt: -1 }).limit(limit);
+  const sales = await prisma.sales.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    take: limit
+  });
 
-  // Calculate stats
-  const completedSales = sales.filter((s) => s.status === "completed");
-  const totalRevenue = completedSales.reduce(
-    (sum, s) => sum + (s.amount || 0),
-    0
-  );
+  const completedSales = sales;
+  const totalRevenue = completedSales.reduce((sum, s) => sum + Number(s.amount), 0);
   const totalSales = completedSales.length;
 
-  const byType = completedSales.reduce((acc: any, sale) => {
-    acc[sale.type] = (acc[sale.type] || 0) + 1;
-    return acc;
-  }, {});
-
   return {
-    sales: toPlainObjectArray<ISale>(sales),
+    sales: completedSales.map(s => ({
+      ...s,
+      amount: Number(s.amount),
+      type: "sale",
+      status: "completed"
+    })),
     stats: {
       totalRevenue,
       totalSales,
-      byType,
+      byType: {},
       currency: "BDT",
     },
   };
 };
 
-const createSale = async (payload: Partial<ISale>) => {
-  if (!payload.merchantId || !payload.planId || !payload.amount) {
-    throw new Error("merchantId, planId, and amount are required");
-  }
-
-  const saleData: ISale = {
-    id: payload.id || `sale_${Date.now()}`,
-    merchantId: payload.merchantId,
-    merchantName: payload.merchantName,
-    merchantEmail: payload.merchantEmail,
-    subscriptionId: payload.subscriptionId,
-    planId: payload.planId,
-    planName: payload.planName || "Unknown Plan",
-    amount: payload.amount,
-    currency: payload.currency || "BDT",
-    billingCycleMonths: payload.billingCycleMonths || 1,
-    paymentMethod: payload.paymentMethod || "sslcommerz",
-    transactionId: payload.transactionId,
-    status: payload.status || "completed",
-    type: payload.type || "new",
-    metadata: payload.metadata || {},
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  const sale = await Sale.create(saleData);
-
-  // Log activity
-  await ActivityLog.create({
-    id: `log_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    type: "system",
-    action: "sale_recorded",
-    entityId: sale.id,
-    entityName: `${sale.planName} - ৳${sale.amount}`,
-    details: {
-      saleId: sale.id,
-      merchantId: sale.merchantId,
-      merchantName: sale.merchantName,
-      planId: sale.planId,
-      planName: sale.planName,
-      amount: sale.amount,
-      type: sale.type,
-    },
-    createdAt: new Date().toISOString(),
+const createSale = async (payload: any) => {
+  const sale = await prisma.sales.create({
+    data: {
+      merchantId: payload.merchantId,
+      orderId: payload.transactionId || payload.orderId,
+      amount: new Decimal(payload.amount),
+      productName: payload.planName || payload.productName,
+      productId: payload.planId || payload.productId,
+      quantity: 1,
+      saleDate: new Date()
+    }
   });
 
-  return toPlainObject<ISale>(sale);
+  await prisma.activityLog.create({
+    data: {
+      action: "sale_recorded",
+      resource: "sale",
+      resourceId: sale.id,
+      details: {
+        saleId: sale.id,
+        merchantId: sale.merchantId,
+        amount: Number(sale.amount)
+      }
+    }
+  });
+
+  return { ...sale, amount: Number(sale.amount) };
 };
 
 export const SalesServices = {

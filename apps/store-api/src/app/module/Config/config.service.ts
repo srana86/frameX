@@ -1,175 +1,154 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { prisma } from "@framex/database";
 import AppError from "../../errors/AppError";
 import { StatusCodes } from "http-status-codes";
-import {
-  BrandConfig,
-  DeliveryServiceConfig,
-  CourierServicesConfig,
-  SSLCommerzConfig,
-  OAuthConfig,
-  AdsConfig,
-} from "./config.model";
-import {
-  TBrandConfig,
-  TDeliveryServiceConfig,
-  TCourierServicesConfig,
-  TSSLCommerzConfig,
-  TOAuthConfig,
-  TAdsConfig,
-} from "./config.interface";
 
 // Brand Config
-const getBrandConfigFromDB = async () => {
-  let config = await BrandConfig.findOne({ id: "brand_config_v1" });
+const getBrandConfigFromDB = async (tenantId: string) => {
+  let config = await prisma.brandConfig.findUnique({ where: { tenantId } });
   if (!config) {
-    config = await BrandConfig.create({
-      id: "brand_config_v1",
-      name: "My Store",
-      currency: { iso: "BDT", symbol: "৳" },
+    config = await prisma.brandConfig.create({
+      data: {
+        tenantId,
+        name: "My Store",
+        currencyIso: "BDT",
+        currencySymbol: "৳",
+      },
     });
   }
   return config;
 };
 
-const updateBrandConfigIntoDB = async (payload: Partial<TBrandConfig>) => {
-  const result = await BrandConfig.findOneAndUpdate(
-    { id: "brand_config_v1" },
-    payload,
-    { new: true, upsert: true, runValidators: true }
-  );
-  return result;
+const updateBrandConfigIntoDB = async (tenantId: string, payload: any) => {
+  return prisma.brandConfig.upsert({
+    where: { tenantId },
+    update: payload,
+    create: {
+      tenantId,
+      ...payload
+    },
+  });
 };
 
 // Delivery Config
-const getDeliveryConfigFromDB = async (type?: string) => {
+const getDeliveryConfigFromDB = async (tenantId: string, type?: string) => {
   if (type === "courier") {
-    let config = await CourierServicesConfig.findOne({
-      id: "courier_services_config_v1",
+    let config = await prisma.courierServicesConfig.findUnique({
+      where: { tenantId },
     });
     if (!config) {
-      config = await CourierServicesConfig.create({
-        id: "courier_services_config_v1",
-        services: [],
+      config = await prisma.courierServicesConfig.create({
+        data: { tenantId, services: [] },
       });
     }
     return config;
   }
 
-  let config = await DeliveryServiceConfig.findOne({
-    id: "delivery_service_config_v1",
+  let config = await prisma.deliveryServiceConfig.findUnique({
+    where: { tenantId },
   });
   if (!config) {
-    config = await DeliveryServiceConfig.create({
-      id: "delivery_service_config_v1",
-      defaultDeliveryCharge: 100,
-      enableCODForDefault: true,
-      deliveryChargeNotRefundable: false,
-      weightBasedCharges: [],
-      deliveryOption: "districts",
-      specificDeliveryCharges: [],
+    config = await prisma.deliveryServiceConfig.create({
+      data: {
+        tenantId,
+        defaultDeliveryCharge: new Decimal(100),
+        enableCODForDefault: true,
+        deliveryOption: "districts",
+      },
     });
   }
   return config;
 };
 
 const updateDeliveryConfigIntoDB = async (
-  payload: Partial<TDeliveryServiceConfig | TCourierServicesConfig>,
+  tenantId: string,
+  payload: any,
   type?: string
 ) => {
   if (type === "courier") {
-    const result = await CourierServicesConfig.findOneAndUpdate(
-      { id: "courier_services_config_v1" },
-      payload,
-      { new: true, upsert: true, runValidators: true }
-    );
-    return result;
+    return prisma.courierServicesConfig.upsert({
+      where: { tenantId },
+      update: payload,
+      create: { tenantId, ...payload },
+    });
   }
 
-  const result = await DeliveryServiceConfig.findOneAndUpdate(
-    { id: "delivery_service_config_v1" },
-    payload,
-    { new: true, upsert: true, runValidators: true }
-  );
-  return result;
+  if (payload.defaultDeliveryCharge) {
+    payload.defaultDeliveryCharge = new Decimal(payload.defaultDeliveryCharge);
+  }
+
+  return prisma.deliveryServiceConfig.upsert({
+    where: { tenantId },
+    update: payload,
+    create: { tenantId, ...payload },
+  });
 };
 
 // SSLCommerz Config
-const getSSLCommerzConfigFromDB = async () => {
-  let config = await SSLCommerzConfig.findOne({ id: "sslcommerz_config_v1" });
+const getSSLCommerzConfigFromDB = async (tenantId: string) => {
+  let config = await prisma.sSLCommerzConfig.findUnique({ where: { tenantId } });
   if (!config) {
-    config = await SSLCommerzConfig.create({
-      id: "sslcommerz_config_v1",
-      enabled: false,
-      isLive: false,
+    config = await prisma.sSLCommerzConfig.create({
+      data: { tenantId, enabled: false, isLive: false },
     });
   }
   return config;
 };
 
-const updateSSLCommerzConfigIntoDB = async (
-  payload: Partial<TSSLCommerzConfig>
-) => {
-  const result = await SSLCommerzConfig.findOneAndUpdate(
-    { id: "sslcommerz_config_v1" },
-    payload,
-    { new: true, upsert: true, runValidators: true }
-  );
-  return result;
+const updateSSLCommerzConfigIntoDB = async (tenantId: string, payload: any) => {
+  return prisma.sSLCommerzConfig.upsert({
+    where: { tenantId },
+    update: payload,
+    create: { tenantId, ...payload },
+  });
 };
 
 // OAuth Config
-const getOAuthConfigFromDB = async () => {
-  let config = await OAuthConfig.findOne({ id: "oauth_config_v1" });
+const getOAuthConfigFromDB = async (tenantId: string) => {
+  let config = await prisma.oAuthConfig.findUnique({ where: { tenantId } });
   if (!config) {
-    config = await OAuthConfig.create({
-      id: "oauth_config_v1",
-      google: { enabled: false },
+    config = await prisma.oAuthConfig.create({
+      data: { tenantId, google: { enabled: false } },
     });
   }
   return config;
 };
 
-const updateOAuthConfigIntoDB = async (payload: Partial<TOAuthConfig>) => {
-  const result = await OAuthConfig.findOneAndUpdate(
-    { id: "oauth_config_v1" },
-    payload,
-    { new: true, upsert: true, runValidators: true }
-  );
-  return result;
+const updateOAuthConfigIntoDB = async (tenantId: string, payload: any) => {
+  return prisma.oAuthConfig.upsert({
+    where: { tenantId },
+    update: payload,
+    create: { tenantId, ...payload },
+  });
 };
 
 // Ads Config
-const getAdsConfigFromDB = async () => {
-  let config = await AdsConfig.findOne({ id: "ads_config_v1" });
+const getAdsConfigFromDB = async (tenantId: string) => {
+  let config = await prisma.adsConfig.findUnique({ where: { tenantId } });
   if (!config) {
-    config = await AdsConfig.create({
-      id: "ads_config_v1",
-      metaPixel: {
-        enabled: false,
-        pixelId: "",
-        serverSideTracking: {
+    config = await prisma.adsConfig.create({
+      data: {
+        tenantId,
+        metaPixel: {
           enabled: false,
-          accessToken: "",
-          testEventCode: "",
+          serverSideTracking: { enabled: false }
         },
-      },
-      googleTagManager: {
-        enabled: false,
-        containerId: "",
+        googleTagManager: { enabled: false }
       },
     });
   }
   return config;
 };
 
-const updateAdsConfigIntoDB = async (payload: Partial<TAdsConfig>) => {
-  const result = await AdsConfig.findOneAndUpdate(
-    { id: "ads_config_v1" },
-    payload,
-    { new: true, upsert: true, runValidators: true }
-  );
-  return result;
+const updateAdsConfigIntoDB = async (tenantId: string, payload: any) => {
+  return prisma.adsConfig.upsert({
+    where: { tenantId },
+    update: payload,
+    create: { tenantId, ...payload },
+  });
 };
+
+import { Decimal } from "@prisma/client/runtime/library";
 
 export const ConfigServices = {
   getBrandConfigFromDB,

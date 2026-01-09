@@ -1,69 +1,55 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { prisma, PrismaQueryBuilder } from "@framex/database";
 import AppError from "../../errors/AppError";
 import { StatusCodes } from "http-status-codes";
-import { Investment } from "./investment.model";
-import { TInvestment } from "./investment.interface";
-import QueryBuilder from "../../builder/QueryBuilder";
+import { Decimal } from "@prisma/client/runtime/library";
 
-// Get all investments
-const getAllInvestmentsFromDB = async (query: Record<string, unknown>) => {
-  const investmentQuery = new QueryBuilder(Investment.find(), query)
-    .search(["key", "category"])
+const getAllInvestmentsFromDB = async (tenantId: string, query: Record<string, unknown>) => {
+  const builder = new PrismaQueryBuilder({
+    model: prisma.investment,
+    query,
+    searchFields: ["key", "category"]
+  });
+
+  return builder
+    .addBaseWhere({ tenantId })
+    .search()
     .filter()
     .sort()
     .paginate()
-    .fields();
-
-  const investments = await investmentQuery.modelQuery;
-  const meta = await investmentQuery.countTotal();
-
-  return {
-    meta,
-    data: investments,
-  };
+    .execute();
 };
 
-// Create investment
-const createInvestmentIntoDB = async (payload: Partial<TInvestment>) => {
-  const investmentId = `INV${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
-
-  const investment = await Investment.create({
-    id: investmentId,
-    key: payload.key!,
-    value: payload.value!,
-    category: payload.category,
-    notes: payload.notes,
+const createInvestmentIntoDB = async (tenantId: string, payload: any) => {
+  return prisma.investment.create({
+    data: {
+      tenantId,
+      key: payload.key,
+      value: new Decimal(payload.value),
+      category: payload.category,
+      notes: payload.notes
+    }
   });
-
-  return investment;
 };
 
-// Update investment
-const updateInvestmentIntoDB = async (
-  id: string,
-  payload: Partial<TInvestment>
-) => {
-  const investment = await Investment.findOneAndUpdate(
-    { id },
-    { $set: payload },
-    { new: true, runValidators: true }
-  );
+const updateInvestmentIntoDB = async (tenantId: string, id: string, payload: any) => {
+  const investment = await prisma.investment.findFirst({ where: { tenantId, id } });
+  if (!investment) throw new AppError(StatusCodes.NOT_FOUND, "Investment not found");
 
-  if (!investment) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Investment not found");
-  }
+  const data: any = { ...payload };
+  if (payload.value) data.value = new Decimal(payload.value);
 
-  return investment;
+  return prisma.investment.update({
+    where: { id },
+    data
+  });
 };
 
-// Delete investment
-const deleteInvestmentFromDB = async (id: string) => {
-  const investment = await Investment.findOneAndDelete({ id });
+const deleteInvestmentFromDB = async (tenantId: string, id: string) => {
+  const investment = await prisma.investment.findFirst({ where: { tenantId, id } });
+  if (!investment) throw new AppError(StatusCodes.NOT_FOUND, "Investment not found");
 
-  if (!investment) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Investment not found");
-  }
-
+  await prisma.investment.delete({ where: { id } });
   return investment;
 };
 

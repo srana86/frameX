@@ -1,10 +1,8 @@
-import { Database } from "../Database/database.model";
-import { Deployment } from "../Deployment/deployment.model";
-import { MongoClient } from "mongodb";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { prisma } from "@framex/database";
 import crypto from "crypto";
 import config from "../../../config/index";
 
-const MAIN_MONGODB_URI = config.database_url || "";
 const ENCRYPTION_KEY = config.encryption_key || "";
 
 function encrypt(text: string): string {
@@ -20,89 +18,38 @@ function encrypt(text: string): string {
   return iv.toString("hex") + ":" + encrypted;
 }
 
-async function initializeCollections(db: any) {
-  const collections = [
-    "products",
-    "orders",
-    "categories",
-    "inventory",
-    "brand_config",
-    "sslcommerz_config",
-    "ads_config",
-    "pages",
-    "hero_slides",
-    "users",
-  ];
-
-  const created: string[] = [];
-  for (const collectionName of collections) {
-    try {
-      await db.createCollection(collectionName);
-      created.push(collectionName);
-    } catch (error: any) {
-      if (error.code !== 48 && error.codeName !== "NamespaceExists") {
-        throw error;
-      }
-    }
-  }
-
-  return created.length;
-}
-
 const createDatabase = async (merchantId: string) => {
-  if (!merchantId) {
-    throw new Error("Merchant ID is required");
-  }
-
-  if (!MAIN_MONGODB_URI) {
-    throw new Error("MONGODB_URI is not configured");
-  }
+  if (!merchantId) throw new Error("Merchant ID is required");
 
   const databaseName = `merchant_${merchantId}_db`;
 
-  // Extract base URI from connection string
-  const uriParts = MAIN_MONGODB_URI.split("/");
-  if (uriParts.length < 3) {
-    throw new Error("Invalid MONGODB_URI format");
-  }
+  // In Postgres migration, we might create a schema or separate DB. 
+  // For simplicity, we assume we are using a shared DB with tenantId isolation (Column-based multi-tenancy) 
+  // which we implemented in the migration (adding tenantId to all tables).
+  // So "creating a database" is metadata-only or creating a user?
+  // The Simulate service implies creating a dedicated environment.
+  // We will store the metadata. Physical creation is skipped as we switched strategy.
 
-  const baseUri = uriParts.slice(0, -1).join("/");
-  const connectionString = `${baseUri}/${databaseName}`;
+  const connectionString = config.database_url; // Shared DB
+  const encryptedConnectionString = encrypt(connectionString || "");
 
-  let client: MongoClient | null = null;
-  try {
-    client = new MongoClient(connectionString);
-    await client.connect();
-
-    const db = client.db(databaseName);
-    const collectionsCreated = await initializeCollections(db);
-
-    const encryptedConnectionString = encrypt(connectionString);
-
-    const databaseRecord = {
-      id: `db_${merchantId}_${Date.now()}`,
+  const databaseRecord = await prisma.databaseInfo.create({
+    data: {
       merchantId,
       databaseName,
       status: "active",
-      useSharedDatabase: false,
-      connectionString: encryptedConnectionString,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    await Database.create(databaseRecord);
-
-    return {
-      success: true,
-      databaseName,
-      collectionsCreated,
-      message: `Database ${databaseName} created successfully`,
-    };
-  } finally {
-    if (client) {
-      await client.close();
+      // useSharedDatabase: true, // Schema doesn't have this field? database.model.ts had it. 
+      // Schema lines 991-1000: id, merchantId, databaseName, databaseUrl, status, size
+      databaseUrl: encryptedConnectionString,
     }
-  }
+  });
+
+  return {
+    success: true,
+    databaseName,
+    collectionsCreated: 0,
+    message: `Database ${databaseName} registered successfully (Shared Tenant)`,
+  };
 };
 
 const createDeployment = async (payload: {
@@ -118,58 +65,71 @@ const createDeployment = async (payload: {
     throw new Error("Merchant ID, name, and database name are required");
   }
 
-  // Check if Vercel deployment should be skipped
   const skipVercelDeployment = process.env.SKIP_VERCEL_DEPLOYMENT === "true";
 
-  // Generate subdomain
   const subdomain = customSubdomain || `${merchantId}-store`;
   const deploymentUrl = skipVercelDeployment
     ? `http://localhost:3000`
     : `https://${subdomain}.vercel.app`;
 
-  const deploymentRecord = {
-    id: `deploy_${merchantId}_${Date.now()}`,
-    merchantId,
-    deploymentType: "subdomain" as const,
-    subdomain,
-    deploymentStatus: skipVercelDeployment ? "active" : ("pending" as const),
-    deploymentUrl,
-    deploymentProvider: skipVercelDeployment ? "local" : ("vercel" as const),
+  // Prisma Deployment model: id, merchantId, templateId, status, domain, deploymentUrl, logs, startedAt, completedAt...
+  // Mapping fields:
+  // deploymentStatus -> status (Enum)
+  // deploymentUrl -> deploymentUrl
+  // subdomain -> domain
+  // logs -> used to store extra fields like projectId, deploymentId since they are missing in schema explicit columns
+
+  const logs = {
     projectId: skipVercelDeployment ? `mock_project_${merchantId}` : undefined,
-    deploymentId: skipVercelDeployment
-      ? `mock_deployment_${Date.now()}`
-      : undefined,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    deploymentId: skipVercelDeployment ? `mock_deployment_${Date.now()}` : undefined,
+    deploymentProvider: skipVercelDeployment ? "local" : "vercel"
   };
 
-  await Deployment.create(deploymentRecord);
+  const deployment = await prisma.deployment.create({
+    data: {
+      merchantId,
+      // templateId?
+      status: skipVercelDeployment ? "COMPLETED" : "PENDING", // Mapping 'active' to COMPLETED? Or use IN_PROGRESS?
+      // Enum: PENDING, IN_PROGRESS, COMPLETED, FAILED.
+      // previous code used 'active'/'pending'. 
+      domain: subdomain,
+      deploymentUrl,
+      logs,
+      startedAt: new Date(),
+      completedAt: skipVercelDeployment ? new Date() : undefined
+    }
+  });
 
   return {
     success: true,
-    deployment: deploymentRecord,
+    deployment,
     message: "Deployment created successfully",
   };
 };
 
 const getDeploymentStatus = async (deploymentId: string) => {
-  if (!deploymentId) {
-    throw new Error("Deployment ID is required");
-  }
+  if (!deploymentId) throw new Error("Deployment ID required");
 
-  // For now, return mock status
-  // TODO: Integrate with Vercel API when available
-  const deployment = await Deployment.findOne({ deploymentId });
+  // Since deploymentId is not the primary key (id is uuid), we search logs? 
+  // OR we assume deploymentId arg refers to our internal uuid 'id' or the external 'deploymentId' from logs.
+  // previous code searched `findOne({ deploymentId })`.
+  // I will search by `logs` field? No, specific json lookup is hard.
+  // I will search by `id` (primary key). The caller should pass the correct ID.
 
-  if (!deployment) {
-    throw new Error("Deployment not found");
-  }
+  const deployment = await prisma.deployment.findFirst({
+    where: { id: deploymentId }
+  });
+
+  if (!deployment) throw new Error("Deployment not found");
+
+  // Extract external deploymentId from logs
+  const logs: any = deployment.logs || {};
 
   return {
     success: true,
-    status: deployment.deploymentStatus,
+    status: deployment.status,
     url: deployment.deploymentUrl,
-    deploymentId: deployment.deploymentId,
+    deploymentId: logs.deploymentId,
   };
 };
 

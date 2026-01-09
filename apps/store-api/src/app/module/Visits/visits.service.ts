@@ -1,10 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Visit } from "./visits.model";
-import { TVisit } from "./visits.interface";
-import { Order } from "../Order/order.model";
+import { prisma } from "@framex/database";
 
 // Track page visit
-const trackVisitFromDB = async (payload: {
+const trackVisitFromDB = async (tenantId: string, payload: {
   path?: string;
   referrer?: string;
   userAgent?: string;
@@ -13,141 +11,100 @@ const trackVisitFromDB = async (payload: {
   const ipAddress = payload.ipAddress;
 
   if (!ipAddress) {
-    // Still record visit but without IP
-    return {
-      success: true,
-      message: "Visit recorded (no IP)",
-    };
+    return { success: true, message: "Visit recorded (no IP)" };
   }
 
   const path = payload.path || "/";
   const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
 
-  // Check for recent visit from same IP and path
-  const recentVisit = await Visit.findOne({
-    ipAddress,
-    path,
-    createdAt: { $gte: oneMinuteAgo },
+  // Check for recent visit
+  const recentVisit = await prisma.visit.findFirst({
+    where: {
+      tenantId,
+      ipAddress,
+      path,
+      createdAt: { gte: oneMinuteAgo }
+    }
   });
 
   if (recentVisit) {
-    // Update existing visit count
-    await Visit.findByIdAndUpdate(recentVisit._id, {
-      $inc: { visitCount: 1 },
-      $set: { lastVisitedAt: new Date() },
+    await prisma.visit.update({
+      where: { id: recentVisit.id },
+      data: {
+        visitCount: { increment: 1 },
+        lastVisitedAt: new Date()
+      }
     });
 
-    return {
-      success: true,
-      message: "Visit count updated",
-    };
+    return { success: true, message: "Visit count updated" };
   }
 
-  // Create new visit
-  const visitData: TVisit = {
-    ipAddress,
-    path,
-    referrer: payload.referrer || "",
-    userAgent: payload.userAgent || "",
-    visitCount: 1,
-    lastVisitedAt: new Date(),
-  };
-
-  await Visit.create(visitData);
-
-  // Note: IP geolocation can be fetched asynchronously and updated later
-  // For now, we'll just record the visit
-
-  return {
-    success: true,
-    message: "Visit recorded",
-  };
-};
-
-// Get visit statistics
-const getVisitsFromDB = async (query: Record<string, unknown>) => {
-  const page = Number(query.page) || 1;
-  const limit = Math.min(1000, Math.max(1, Number(query.limit) || 100));
-
-  // Get visits with geolocation
-  const visits = await Visit.find({
-    ipGeolocation: { $exists: true, $ne: null },
-  })
-    .sort({ createdAt: -1 })
-    .limit(limit);
-
-  // Get orders to count orders per IP
-  const orders = await Order.find({
-    isDeleted: false,
-  }).select("customer");
-
-  // Count orders per IP (if IP is stored in orders)
-  const ordersByIp = new Map<string, number>();
-  // Note: IP might not be stored in orders, this is a placeholder
-
-  // Aggregate by IP
-  const ipStats = new Map<
-    string,
-    {
-      ip: string;
-      count: number;
-      orders: number;
-      geolocation?: any;
-      paths: Set<string>;
-      firstVisit: string;
-      lastVisit: string;
-    }
-  >();
-
-  visits.forEach((visit: any) => {
-    const ip = visit.ipAddress;
-    if (!ip) return;
-
-    const existing = ipStats.get(ip);
-    if (existing) {
-      existing.count += visit.visitCount || 1;
-      if (visit.path) existing.paths.add(visit.path);
-      if (visit.lastVisitedAt > existing.lastVisit) {
-        existing.lastVisit = visit.lastVisitedAt.toISOString();
-      }
-      if (visit.createdAt < new Date(existing.firstVisit)) {
-        existing.firstVisit = visit.createdAt.toISOString();
-      }
-    } else {
-      ipStats.set(ip, {
-        ip,
-        count: visit.visitCount || 1,
-        orders: ordersByIp.get(ip) || 0,
-        geolocation: visit.ipGeolocation,
-        paths: new Set(visit.path ? [visit.path] : []),
-        firstVisit: visit.createdAt.toISOString(),
-        lastVisit: (visit.lastVisitedAt || visit.createdAt).toISOString(),
-      });
+  await prisma.visit.create({
+    data: {
+      tenantId,
+      ipAddress,
+      path,
+      referrer: payload.referrer || "",
+      userAgent: payload.userAgent || "",
+      visitCount: 1,
+      lastVisitedAt: new Date(),
     }
   });
 
-  // Convert to array
-  const stats = Array.from(ipStats.values()).map((stat) => ({
-    ip: stat.ip,
-    visitCount: stat.count,
-    orderCount: stat.orders,
-    geolocation: stat.geolocation,
-    paths: Array.from(stat.paths),
-    firstVisit: stat.firstVisit,
-    lastVisit: stat.lastVisit,
-  }));
+  return { success: true, message: "Visit recorded" };
+};
 
-  const total = stats.length;
-  const totalPage = Math.ceil(total / limit);
+// Get visit statistics
+const getVisitsFromDB = async (tenantId: string, query: Record<string, unknown>) => {
+  const page = Number(query.page) || 1;
+  const limit = Math.min(1000, Math.max(1, Number(query.limit) || 100));
+
+  // Fetch visits with geolocation populated (if we had it, but for now just fetch all unique IPs basically)
+  // Since we don't have distinct on IP easily with full stats without grouping, we'll fetch visits and process in memory for now
+  // or just fetch visits.
+  // The original logic did aggregation in memory.
+
+  const visits = await prisma.visit.findMany({
+    where: { tenantId },
+    orderBy: { createdAt: "desc" },
+    take: limit * 5 // Fetch more to aggregate
+  });
+
+  // Reuse the aggregation logic
+  const ipStats = new Map<string, any>();
+
+  visits.forEach((visit) => {
+    const ip = visit.ipAddress;
+    if (!ipStats.has(ip)) {
+      ipStats.set(ip, {
+        ip,
+        visitCount: 0,
+        paths: new Set(),
+        firstVisit: visit.createdAt,
+        lastVisit: visit.lastVisitedAt || visit.createdAt,
+        geolocation: (visit as any).ipGeolocation // If field exists
+      });
+    }
+    const stat = ipStats.get(ip);
+    stat.visitCount += visit.visitCount;
+    stat.paths.add(visit.path);
+    if (visit.createdAt < stat.firstVisit) stat.firstVisit = visit.createdAt;
+    if ((visit.lastVisitedAt || visit.createdAt) > stat.lastVisit) stat.lastVisit = (visit.lastVisitedAt || visit.createdAt);
+  });
+
+  const stats = Array.from(ipStats.values()).map(s => ({
+    ...s,
+    paths: Array.from(s.paths)
+  })).slice(0, limit);
 
   return {
     data: stats,
     meta: {
       page,
       limit,
-      total,
-      totalPage,
-    },
+      total: stats.length,
+      totalPage: Math.ceil(stats.length / limit)
+    }
   };
 };
 

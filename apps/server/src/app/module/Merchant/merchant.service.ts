@@ -1,27 +1,43 @@
-import { Merchant } from "./merchant.model";
-import { Subscription } from "../Subscription/subscription.model";
-import { Plan } from "../Plan/plan.model";
-import { Deployment } from "../Deployment/deployment.model";
-import { Database } from "../Database/database.model";
-import { toPlainObjectArray, toPlainObject } from "../../utils/mongodb";
-import { IMerchant } from "./merchant.interface";
+import { prisma, TenantStatus } from "@framex/database";
+
+export type IMerchant = {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  status: TenantStatus;
+  customDomain?: string | null;
+  deploymentUrl?: string | null;
+  subscriptionId?: string | null;
+  settings?: {
+    brandName?: string;
+    logo?: string;
+    theme?: { primaryColor?: string };
+    currency?: string;
+    timezone?: string;
+  } | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 const getAllMerchants = async () => {
-  const merchants = await Merchant.find({}).sort({ createdAt: -1 });
-  return toPlainObjectArray<IMerchant>(merchants);
+  return prisma.merchant.findMany({
+    orderBy: { createdAt: "desc" },
+  });
 };
 
 const getMerchantById = async (id: string) => {
-  const merchant = await Merchant.findOne({ id });
-  return toPlainObject<IMerchant>(merchant);
+  return prisma.merchant.findUnique({
+    where: { id },
+  });
 };
 
 const getMerchantFull = async (id: string) => {
   const [merchant, subscription, deployment, database] = await Promise.all([
-    Merchant.findOne({ id }),
-    Subscription.findOne({ merchantId: id }),
-    Deployment.findOne({ $or: [{ merchantId: id }, { id }] }),
-    Database.findOne({ $or: [{ merchantId: id }, { id }] }),
+    prisma.merchant.findUnique({ where: { id } }),
+    prisma.merchantSubscription.findFirst({ where: { merchantId: id } }),
+    prisma.deployment.findFirst({ where: { merchantId: id } }),
+    prisma.databaseInfo.findUnique({ where: { merchantId: id } }),
   ]);
 
   if (!merchant) {
@@ -29,146 +45,126 @@ const getMerchantFull = async (id: string) => {
   }
 
   let plan = null;
-  if (subscription && subscription.planId) {
-    plan = await Plan.findOne({ id: subscription.planId });
+  if (subscription?.planId) {
+    plan = await prisma.subscriptionPlan.findUnique({
+      where: { id: subscription.planId },
+    });
   }
 
   return {
-    merchant: toPlainObject<IMerchant>(merchant),
-    subscription: subscription ? toPlainObject(subscription) : null,
-    plan: plan ? toPlainObject(plan) : null,
+    merchant,
+    subscription,
+    plan,
     deployment: deployment
       ? {
-          ...(toPlainObject(deployment) || {}),
-          connectionString: (deployment as any).connectionString
-            ? "***encrypted***"
-            : undefined,
-        }
+        ...deployment,
+        // Mask sensitive data
+      }
       : null,
     database: database
       ? {
-          ...(toPlainObject(database) || {}),
-          connectionString: (database as any).connectionString
-            ? "***encrypted***"
-            : undefined,
-        }
+        ...database,
+        databaseUrl: database.databaseUrl ? "***encrypted***" : undefined,
+      }
       : null,
   };
 };
 
 const createMerchant = async (payload: Partial<IMerchant>) => {
-  const merchantData: IMerchant = {
-    id: payload.id || `merchant_${Date.now()}`,
-    name: payload.name!,
-    email: payload.email!,
-    phone: payload.phone || "",
-    status: payload.status || "active",
-    customDomain: payload.customDomain || "",
-    deploymentUrl: payload.deploymentUrl || "",
-    subscriptionId: payload.subscriptionId || "",
-    settings: payload.settings || {
-      brandName: payload.name,
-      currency: "USD",
-      timezone: "UTC",
+  return prisma.merchant.create({
+    data: {
+      name: payload.name!,
+      email: payload.email!,
+      phone: payload.phone || null,
+      status: payload.status || "ACTIVE",
+      customDomain: payload.customDomain || null,
+      deploymentUrl: payload.deploymentUrl || null,
+      subscriptionId: payload.subscriptionId || null,
+      settings: payload.settings || {
+        brandName: payload.name,
+        currency: "USD",
+        timezone: "UTC",
+      },
     },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  const merchant = await Merchant.create(merchantData);
-  return toPlainObject<IMerchant>(merchant);
+  });
 };
 
 const updateMerchant = async (id: string, payload: Partial<IMerchant>) => {
-  const updateData: any = {
-    ...payload,
-    updatedAt: new Date().toISOString(),
-  };
+  const { id: _, ...updateData } = payload as any;
 
-  // Don't allow updating the id
-  delete updateData.id;
+  const merchant = await prisma.merchant.update({
+    where: { id },
+    data: updateData,
+  });
 
-  const merchant = await Merchant.findOneAndUpdate(
-    { id },
-    { $set: updateData },
-    { new: true }
-  );
   if (!merchant) {
     throw new Error("Merchant not found");
   }
-  return toPlainObject<IMerchant>(merchant);
+
+  return merchant;
 };
 
 const getMerchantSubscription = async (id: string) => {
-  const subscription = await Subscription.findOne({ merchantId: id });
+  const subscription = await prisma.merchantSubscription.findFirst({
+    where: { merchantId: id },
+    include: { plan: true },
+  });
+
   if (!subscription) {
     throw new Error("Subscription not found");
   }
 
-  let plan = null;
-  if (subscription.planId) {
-    plan = await Plan.findOne({ id: subscription.planId });
-  }
-
-  const subData = toPlainObject(subscription);
-  return {
-    ...(subData || {}),
-    plan: plan ? toPlainObject(plan) : null,
-  };
+  return subscription;
 };
 
 const getMerchantDeployment = async (id: string) => {
-  const deployment = await Deployment.findOne({
-    $or: [{ merchantId: id }, { id }],
+  const deployment = await prisma.deployment.findFirst({
+    where: { merchantId: id },
   });
+
   if (!deployment) {
     throw new Error("Deployment not found");
   }
-  return toPlainObject(deployment);
+
+  return deployment;
 };
 
 const getMerchantDatabase = async (id: string) => {
-  const database = await Database.findOne({
-    $or: [{ merchantId: id }, { id }],
+  const database = await prisma.databaseInfo.findUnique({
+    where: { merchantId: id },
   });
+
   if (!database) {
     throw new Error("Database not found");
   }
-  const dbData = toPlainObject(database);
+
   return {
-    ...(dbData || {}),
-    connectionString: (database as any).connectionString
-      ? "***encrypted***"
-      : undefined,
+    ...database,
+    databaseUrl: database.databaseUrl ? "***encrypted***" : undefined,
   };
 };
 
 const updateMerchantDomain = async (id: string, customDomain: string) => {
-  const merchant = await Merchant.findOneAndUpdate(
-    { id },
-    { $set: { customDomain, updatedAt: new Date().toISOString() } },
-    { new: true }
-  );
-  if (!merchant) {
-    throw new Error("Merchant not found");
-  }
-  return toPlainObject<IMerchant>(merchant);
+  return prisma.merchant.update({
+    where: { id },
+    data: { customDomain },
+  });
 };
 
 const deleteMerchant = async (id: string) => {
-  const merchant = await Merchant.findOne({ id });
+  const merchant = await prisma.merchant.findUnique({ where: { id } });
+
   if (!merchant) {
     throw new Error("Merchant not found");
   }
 
-  // Cascade deletion - delete related data
-  await Promise.all([
-    Subscription.deleteMany({ merchantId: id }),
-    Deployment.deleteMany({ $or: [{ merchantId: id }, { id }] }),
-    Database.deleteMany({ $or: [{ merchantId: id }, { id }] }),
+  // Use transaction for cascade deletion
+  await prisma.$transaction([
+    prisma.merchantSubscription.deleteMany({ where: { merchantId: id } }),
+    prisma.deployment.deleteMany({ where: { merchantId: id } }),
+    prisma.databaseInfo.deleteMany({ where: { merchantId: id } }),
+    prisma.merchant.delete({ where: { id } }),
   ]);
-
-  await Merchant.deleteOne({ id });
 
   return {
     success: true,

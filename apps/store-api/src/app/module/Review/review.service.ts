@@ -1,83 +1,63 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import AppError from "../../errors/AppError";
+import { prisma } from "@framex/database";
 import { StatusCodes } from "http-status-codes";
-import { Review } from "./review.model";
-import { Product } from "../Product/product.model";
-import { TReview } from "./review.interface";
+import AppError from "../../errors/AppError";
 
-// Get product reviews (matching FrameX-Store format)
-const getProductReviewsFromDB = async (productIdOrSlug: string) => {
-  // First, try to find product by slug or id
-  const product = await Product.findOne({
-    $or: [{ id: productIdOrSlug }, { slug: productIdOrSlug }],
-    isDeleted: false,
+// Get product reviews
+const getProductReviewsFromDB = async (tenantId: string, productIdOrSlug: string) => {
+  const product = await prisma.product.findFirst({
+    where: {
+      tenantId,
+      OR: [{ id: productIdOrSlug }, { slug: productIdOrSlug }]
+    }
   });
 
   if (!product) {
     throw new AppError(StatusCodes.NOT_FOUND, "Product not found");
   }
 
-  const productSlug = product.slug || productIdOrSlug;
+  const reviews = await prisma.review.findMany({
+    where: {
+      tenantId,
+      // Ideally link by productId, but old logic linked by slug.
+      // We should probably rely on productId if possible, or support slug.
+      // Assuming Review model has productSlug field as per Mongoose schema.
+      productSlug: product.slug
+    },
+    orderBy: { createdAt: "desc" }
+  });
 
-  const reviews = await Review.find({ productSlug })
-    .sort({ createdAt: -1 })
-    .lean();
-
-  // Format reviews to match FrameX-Store response format
-  const formattedReviews = reviews.map((r: any) => ({
-    id: String(r._id || r.id || `REV${Date.now()}`),
+  return reviews.map((r) => ({
+    id: r.id,
     name: r.name,
-    initials:
-      r.initials ||
-      (r.name || "")
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2),
-    rating: Number(r.rating ?? 5),
-    date:
-      r.date ||
-      (r.createdAt
-        ? new Date(r.createdAt).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })
-        : "Just now"),
-    verified: Boolean(r.verified ?? false),
-    review: r.review || r.text || "",
-    avatarColor: r.avatarColor || "from-primary/20 to-accent/20",
-    images: Array.isArray(r.images) ? r.images : [],
+    initials: r.initials,
+    rating: Number(r.rating),
+    date: r.date || r.createdAt.toLocaleDateString(),
+    verified: r.verified,
+    review: r.review,
+    avatarColor: r.avatarColor,
+    images: r.images,
     createdAt: r.createdAt,
   }));
-
-  return formattedReviews;
 };
 
-// Create product review (matching FrameX-Store format)
+// Create review
 const createProductReviewIntoDB = async (
+  tenantId: string,
   productIdOrSlug: string,
-  payload: {
-    rating: number;
-    review: string;
-    name: string;
-    images?: string[];
-  }
+  payload: any
 ) => {
-  // Find product by id or slug
-  const product = await Product.findOne({
-    $or: [{ id: productIdOrSlug }, { slug: productIdOrSlug }],
-    isDeleted: false,
+  const product = await prisma.product.findFirst({
+    where: {
+      tenantId,
+      OR: [{ id: productIdOrSlug }, { slug: productIdOrSlug }]
+    }
   });
 
   if (!product) {
     throw new AppError(StatusCodes.NOT_FOUND, "Product not found");
   }
 
-  const productSlug = product.slug || productIdOrSlug;
-
-  // Generate initials from name
   const initials = (payload.name || "")
     .split(" ")
     .map((n: string) => n[0])
@@ -85,7 +65,6 @@ const createProductReviewIntoDB = async (
     .toUpperCase()
     .slice(0, 2);
 
-  // Generate avatar color based on name hash
   const colors = [
     "from-primary/20 to-accent/20",
     "from-blue-500/20 to-purple-500/20",
@@ -103,25 +82,23 @@ const createProductReviewIntoDB = async (
   const colorIndex = (payload.name || "").charCodeAt(0) % colors.length;
   const avatarColor = colors[colorIndex];
 
-  const reviewDoc: any = {
-    productSlug,
-    rating: Number(payload.rating),
-    review: String(payload.review),
-    name: String(payload.name),
-    initials,
-    avatarColor,
-    images: Array.isArray(payload.images) ? payload.images : [],
-    verified: false, // In a real app, verify if user purchased the product
-    date: "Just now",
-  };
+  const review = await prisma.review.create({
+    data: {
+      tenantId,
+      productSlug: product.slug, // Storing slug to match Mongoose logic
+      productId: product.id,     // Also storing ID for better relation
+      rating: Number(payload.rating),
+      review: String(payload.review),
+      name: String(payload.name),
+      initials,
+      avatarColor,
+      images: payload.images || [],
+      verified: false,
+      date: "Just now"
+    }
+  });
 
-  const review = await Review.create(reviewDoc);
-
-  // Format response to match FrameX-Store
-  return {
-    ...review.toObject(),
-    id: String(review._id),
-  };
+  return review;
 };
 
 export const ReviewServices = {

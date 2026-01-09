@@ -6,7 +6,7 @@ import { PromotionalBannerServices } from "./promotionalBanner.service";
 
 // Get promotional banner
 const getPromotionalBanner = catchAsync(async (req: Request, res: Response) => {
-  const result = await PromotionalBannerServices.getPromotionalBannerFromDB();
+  const result = await PromotionalBannerServices.getPromotionalBannerFromDB(req.tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -20,7 +20,7 @@ const getPromotionalBanner = catchAsync(async (req: Request, res: Response) => {
 const updatePromotionalBanner = catchAsync(
   async (req: Request, res: Response) => {
     const result =
-      await PromotionalBannerServices.updatePromotionalBannerIntoDB(req.body);
+      await PromotionalBannerServices.updatePromotionalBannerIntoDB(req.tenantId, req.body);
 
     sendResponse(res, {
       statusCode: StatusCodes.OK,

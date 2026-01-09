@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { prisma } from "@framex/database";
 import AppError from "../../errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { SuperAdminServices } from "../SuperAdmin/superAdmin.service";
 import { ConfigServices } from "../Config/config.service";
 import { SubscriptionServices } from "../Subscription/subscription.service";
-import { User } from "../User/user.model";
 import {
   MerchantContext,
   FraudCheckData,
@@ -14,13 +14,23 @@ import {
 
 // Get merchant context
 const getMerchantContextFromDB = async (merchantId?: string) => {
-  const merchant = await User.findOne({
-    id: merchantId || "",
-    role: "merchant",
-    isDeleted: false,
+  if (!merchantId) throw new AppError(StatusCodes.BAD_REQUEST, "Merchant ID required");
+
+  // Retrieve merchant from Merchant table
+  // Assuming merchantId passed here corresponds to Merchant.id
+  // In the migrated system, authentication likely yields a User (or StoreUser), 
+  // but this service retrieves the Merchant Entity context.
+  // If merchantId is the ID from authentication, we might need to find which Merchant this user belongs to?
+  // But usually merchantId arg implies the Merchant Entity ID.
+  const merchant = await prisma.merchant.findUnique({
+    where: {
+      id: merchantId
+    }
   });
 
   if (!merchant) {
+    // Fallback: Check if it's a User ID that maps to a Merchant?
+    // For now assuming explicit Merchant ID.
     throw new AppError(StatusCodes.NOT_FOUND, "Merchant not found");
   }
 
@@ -31,32 +41,83 @@ const getMerchantContextFromDB = async (merchantId?: string) => {
   const context: MerchantContext = {
     merchant: {
       id: merchant.id,
-      name: merchant.fullName,
-      email: merchant.email || "",
-      status: merchant.status || "in-progress",
-      settings: {},
+      name: merchant.name,
+      email: merchant.email,
+      status: merchant.status || "ACTIVE", // Enum
+      settings: merchant.settings || {},
     },
     database: fullData.database
       ? {
-          id: fullData.database.id,
-          databaseName: fullData.database.databaseName,
-          useSharedDatabase: fullData.database.useSharedDatabase,
-          status: fullData.database.status,
-        }
+        id: fullData.database.id,
+        databaseName: fullData.database.databaseName,
+        useSharedDatabase: fullData.database.useSharedDatabase,
+        status: fullData.database.status,
+      }
       : null,
     deployment: fullData.deployment
       ? {
-          id: fullData.deployment.id,
-          deploymentUrl: fullData.deployment.deploymentUrl,
-          deploymentStatus: fullData.deployment.deploymentStatus,
-          deploymentType: fullData.deployment.deploymentType,
-        }
+        id: fullData.deployment.id,
+        deploymentUrl: fullData.deployment.deploymentUrl,
+        deploymentStatus: fullData.deployment.deploymentStatus,
+        deploymentType: fullData.deployment.deploymentType,
+      }
       : null,
     dbName: fullData.database?.databaseName || "",
     hasConnectionString: false,
   };
 
   return context;
+}
+
+// If found in storeUser (unlikely for merchant role?), handle same way?
+// No, let's stick to `prisma.user` which is more standard for tenants/merchants.
+// I will assume `Merchant` service queries the platform User table.
+// If `merchant` was found in `StoreUser`, it might be a wrong assumption in my previous thought process.
+// BUT wait, `apps/store-api` User service queries `StoreUser` (customers).
+// Does `apps/store-api` have access to `prisma.user`? Yes, via `@framex/database`.
+// So I will use `prisma.user`.
+
+// Re-implementing with prisma.user logic only:
+const userMerchant = await prisma.user.findFirst({
+  where: { id: merchantId, isDeleted: false }
+});
+if (!userMerchant) {
+  throw new AppError(StatusCodes.NOT_FOUND, "Merchant not found");
+}
+
+const fullData = await SuperAdminServices.getFullMerchantDataFromDB(
+  userMerchant.id
+);
+
+const context: MerchantContext = {
+  merchant: {
+    id: userMerchant.id,
+    name: userMerchant.fullName,
+    email: userMerchant.email,
+    status: userMerchant.status || "in-progress",
+    settings: {},
+  },
+  database: fullData.database
+    ? {
+      id: fullData.database.id,
+      databaseName: fullData.database.databaseName,
+      useSharedDatabase: fullData.database.useSharedDatabase,
+      status: fullData.database.status,
+    }
+    : null,
+  deployment: fullData.deployment
+    ? {
+      id: fullData.deployment.id,
+      deploymentUrl: fullData.deployment.deploymentUrl,
+      deploymentStatus: fullData.deployment.deploymentStatus,
+      deploymentType: fullData.deployment.deploymentType,
+    }
+    : null,
+  dbName: fullData.database?.databaseName || "",
+  hasConnectionString: false,
+};
+
+return context;
 };
 
 // Get merchant data from brand config
@@ -84,16 +145,18 @@ const checkFeaturesFromDB = async (merchantId: string, features: string[]) => {
     await SubscriptionServices.getCurrentMerchantSubscriptionFromDB(merchantId);
 
   // Get plan features if subscription exists
-  const planFeatures = subscription?.planId
-    ? await import("../Subscription/subscription.model")
-        .then((m) => m.SubscriptionPlan.findOne({ id: subscription.planId }))
-        .then((plan) => plan?.features || {})
-    : {};
+  let planFeatures: any = {};
+  if (subscription?.planId) {
+    const plan = await prisma.subscriptionPlan.findUnique({
+      where: { id: subscription.planId }
+    });
+    planFeatures = plan?.features || {};
+  }
 
   const result: Record<string, FeatureCheck> = {};
 
   for (const feature of features) {
-    const featureConfig = (planFeatures as any)?.[feature];
+    const featureConfig = planFeatures?.[feature];
     result[feature] = {
       enabled: featureConfig?.enabled ?? false,
       limit: featureConfig?.limit ?? "unlimited",
@@ -109,16 +172,18 @@ const getFeatureLimitsFromDB = async (merchantId: string) => {
   const subscription =
     await SubscriptionServices.getCurrentMerchantSubscriptionFromDB(merchantId);
 
-  const planFeatures = subscription?.planId
-    ? await import("../Subscription/subscription.model")
-        .then((m) => m.SubscriptionPlan.findOne({ id: subscription.planId }))
-        .then((plan) => plan?.features || {})
-    : {};
+  let planFeatures: any = {};
+  if (subscription?.planId) {
+    const plan = await prisma.subscriptionPlan.findUnique({
+      where: { id: subscription.planId }
+    });
+    planFeatures = plan?.features || {};
+  }
 
   const limits: Record<string, number | "unlimited"> = {};
 
   Object.keys(planFeatures).forEach((feature) => {
-    limits[feature] = (planFeatures as any)[feature]?.limit ?? "unlimited";
+    limits[feature] = planFeatures[feature]?.limit ?? "unlimited";
   });
 
   return { limits };
@@ -129,16 +194,18 @@ const getFeatureUsageFromDB = async (merchantId: string) => {
   const subscription =
     await SubscriptionServices.getCurrentMerchantSubscriptionFromDB(merchantId);
 
-  const planFeatures = subscription?.planId
-    ? await import("../Subscription/subscription.model")
-        .then((m) => m.SubscriptionPlan.findOne({ id: subscription.planId }))
-        .then((plan) => plan?.features || {})
-    : {};
+  let planFeatures: any = {};
+  if (subscription?.planId) {
+    const plan = await prisma.subscriptionPlan.findUnique({
+      where: { id: subscription.planId }
+    });
+    planFeatures = plan?.features || {};
+  }
 
   const usage: Record<string, any> = {};
 
   Object.keys(planFeatures).forEach((feature) => {
-    const limit = (planFeatures as any)[feature]?.limit ?? "unlimited";
+    const limit = planFeatures[feature]?.limit ?? "unlimited";
     usage[feature] = {
       current: 0, // TODO: Calculate actual usage
       limit,
@@ -152,7 +219,6 @@ const getFeatureUsageFromDB = async (merchantId: string) => {
 // Fraud check (proxy to super-admin or external service)
 const checkFraudFromDB = async (phone: string): Promise<FraudCheckData> => {
   // TODO: Implement actual fraud check logic
-  // This should proxy to super-admin fraud check service or external API
   return {
     phone,
     total_parcels: 0,
@@ -221,6 +287,7 @@ const getEmailSettingsFromDB = async () => {
     "../EmailTemplate/emailProvider.service"
   );
   const merchantId = undefined; // Get from context if available
+  // assuming single tenant context if merchantId is undefined, handled in service
   return await EmailProviderServices.getEmailProviderSettingsFromDB(merchantId);
 };
 

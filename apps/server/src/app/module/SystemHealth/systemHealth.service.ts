@@ -1,8 +1,5 @@
-import { Merchant } from "../Merchant/merchant.model";
-import { Subscription } from "../Subscription/subscription.model";
-import { Deployment } from "../Deployment/deployment.model";
-import { MongoClient } from "mongodb";
-import { isExpiringSoon, isPastDue } from "../../utils/mongodb";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { prisma } from "@framex/database";
 import config from "../../../config/index";
 
 interface HealthCheck {
@@ -14,134 +11,77 @@ interface HealthCheck {
   lastChecked: string;
 }
 
+const isExpiringSoon = (date: Date) => {
+  const diff = new Date(date).getTime() - Date.now();
+  return diff > 0 && diff < 7 * 24 * 60 * 60 * 1000;
+};
+const isPastDue = (date: Date) => new Date(date).getTime() < Date.now();
+
+
 const getSystemHealth = async () => {
   const checks: HealthCheck[] = [];
   const startTime = Date.now();
 
-  // 1. MongoDB Connection Check
-  const mongoStart = Date.now();
+  // 1. Database Connection Check (Prisma)
+  const dbStart = Date.now();
   try {
-    const uri = config.database_url;
-    if (!uri) {
-      checks.push({
-        name: "MongoDB",
-        status: "unhealthy",
-        message: "MONGODB_URI not configured",
-        lastChecked: new Date().toISOString(),
-      });
-    } else {
-      const client = new MongoClient(uri, {
-        serverSelectionTimeoutMS: 5000,
-        connectTimeoutMS: 5000,
-      });
-      await client.connect();
-      await client.db().admin().ping();
-      const mongoLatency = Date.now() - mongoStart;
-      await client.close();
-
-      checks.push({
-        name: "MongoDB",
-        status: mongoLatency < 1000 ? "healthy" : "degraded",
-        latency: mongoLatency,
-        message: `Connected successfully (${mongoLatency}ms)`,
-        lastChecked: new Date().toISOString(),
-      });
-    }
+    await prisma.$queryRaw`SELECT 1`; // Simple query to check connection
+    const dbLatency = Date.now() - dbStart;
+    checks.push({
+      name: "Database (PostgreSQL)",
+      status: dbLatency < 1000 ? "healthy" : "degraded",
+      latency: dbLatency,
+      message: `Connected successfully (${dbLatency}ms)`,
+      lastChecked: new Date().toISOString(),
+    });
   } catch (error: any) {
     checks.push({
-      name: "MongoDB",
+      name: "Database (PostgreSQL)",
       status: "unhealthy",
-      latency: Date.now() - mongoStart,
+      latency: Date.now() - dbStart,
       message: error.message || "Connection failed",
       lastChecked: new Date().toISOString(),
     });
   }
 
-  // 2. Collections Health Check
+  // 2. Collections/Tables Health Check
   try {
-    const collections = [
-      "merchants",
-      "merchant_subscriptions",
-      "subscription_plans",
-      "merchant_deployments",
-      "merchant_databases",
-    ];
+    const tableStats: Record<string, number> = {};
 
-    const collectionStats: Record<string, number> = {};
-    for (const colName of collections) {
-      try {
-        let count = 0;
-        switch (colName) {
-          case "merchants":
-            count = await Merchant.countDocuments({});
-            break;
-          case "merchant_subscriptions":
-            count = await Subscription.countDocuments({});
-            break;
-          case "subscription_plans":
-            const { Plan } = await import("../Plan/plan.model");
-            count = await Plan.countDocuments({});
-            break;
-          case "merchant_deployments":
-            count = await Deployment.countDocuments({});
-            break;
-          case "merchant_databases":
-            const { Database } = await import("../Database/database.model");
-            count = await Database.countDocuments({});
-            break;
-        }
-        collectionStats[colName] = count;
-      } catch {
-        collectionStats[colName] = -1;
-      }
-    }
-
-    const failedCollections = Object.entries(collectionStats).filter(
-      ([, v]) => v === -1
-    );
+    tableStats["merchants"] = await prisma.merchant.count();
+    tableStats["subscriptions"] = await prisma.subscription.count();
+    tableStats["plans"] = await prisma.plan.count();
+    tableStats["deployments"] = await prisma.deployment.count();
+    tableStats["databases"] = await prisma.databaseInfo.count();
 
     checks.push({
-      name: "Database Collections",
-      status:
-        failedCollections.length === 0
-          ? "healthy"
-          : failedCollections.length < 3
-            ? "degraded"
-            : "unhealthy",
-      message:
-        failedCollections.length === 0
-          ? "All collections accessible"
-          : `${failedCollections.length} collections inaccessible`,
-      details: collectionStats,
+      name: "Database Tables",
+      status: "healthy",
+      message: "All critical tables accessible",
+      details: tableStats,
       lastChecked: new Date().toISOString(),
     });
   } catch (error: any) {
     checks.push({
-      name: "Database Collections",
+      name: "Database Tables",
       status: "unhealthy",
-      message: error.message || "Failed to check collections",
+      message: error.message || "Failed to check tables",
       lastChecked: new Date().toISOString(),
     });
   }
 
   // 3. Deployment Health
   try {
-    const deployments = await Deployment.find({});
+    const deployments = await prisma.deployment.findMany(); // optimizing by grouping if possible, but finding all for now matching old logic
 
-    const active = deployments.filter(
-      (d) => d.deploymentStatus === "active"
-    ).length;
-    const pending = deployments.filter(
-      (d) => d.deploymentStatus === "pending"
-    ).length;
-    const failed = deployments.filter(
-      (d) => d.deploymentStatus === "failed"
-    ).length;
+    const active = deployments.filter(d => d.status === "COMPLETED").length; // Mapping status
+    const pending = deployments.filter(d => d.status === "PENDING" || d.status === "IN_PROGRESS").length;
+    const failed = deployments.filter(d => d.status === "FAILED").length;
     const total = deployments.length;
 
     let status: "healthy" | "degraded" | "unhealthy" = "healthy";
     if (failed > 0) status = "degraded";
-    if (failed > total * 0.2) status = "unhealthy";
+    if (failed > total * 0.2 && total > 0) status = "unhealthy";
 
     checks.push({
       name: "Deployments",
@@ -154,44 +94,43 @@ const getSystemHealth = async () => {
     checks.push({
       name: "Deployments",
       status: "unhealthy",
-      message: error.message || "Failed to check deployments",
+      message: error.message,
       lastChecked: new Date().toISOString(),
     });
   }
 
   // 4. Subscription Health
   try {
-    const subscriptions = await Subscription.find({});
+    const subscriptions = await prisma.subscription.findMany();
 
-    const now = new Date();
-    const active = subscriptions.filter((s) => s.status === "active").length;
-    const pastDue = subscriptions.filter((s) => {
-      if (s.status !== "active") return false;
+    const active = subscriptions.filter(s => s.status === "ACTIVE").length;
+    const pastDue = subscriptions.filter(s => {
+      if (s.status !== "ACTIVE") return false;
       return isPastDue(s.currentPeriodEnd);
     }).length;
-    const expiringSoon = subscriptions.filter((s) => {
-      if (s.status !== "active") return false;
+    const expiringSoon = subscriptions.filter(s => {
+      if (s.status !== "ACTIVE") return false;
       return isExpiringSoon(s.currentPeriodEnd);
     }).length;
     const total = subscriptions.length;
 
     let status: "healthy" | "degraded" | "unhealthy" = "healthy";
     if (pastDue > 0 || expiringSoon > 5) status = "degraded";
-    if (pastDue > total * 0.1) status = "unhealthy";
+    if (pastDue > total * 0.1 && total > 0) status = "unhealthy";
 
     checks.push({
       name: "Subscriptions",
       status,
       message: `${active} active, ${pastDue} past due, ${expiringSoon} expiring soon`,
       details: { active, pastDue, expiringSoon, total },
-      lastChecked: new Date().toISOString(),
+      lastChecked: new Date().toISOString()
     });
   } catch (error: any) {
     checks.push({
       name: "Subscriptions",
       status: "unhealthy",
-      message: error.message || "Failed to check subscriptions",
-      lastChecked: new Date().toISOString(),
+      message: error.message,
+      lastChecked: new Date().toISOString()
     });
   }
 
@@ -238,19 +177,11 @@ const getSystemHealth = async () => {
         }
       } catch (fetchError: any) {
         const vercelLatency = Date.now() - vercelStart;
-        const errorMessage =
-          fetchError?.cause?.code === "ECONNREFUSED" ||
-          fetchError?.code === "ECONNREFUSED"
-            ? "Connection refused - service may be unavailable"
-            : fetchError?.name === "AbortError"
-              ? "Request timed out"
-              : fetchError?.message || "Connection failed";
-
         checks.push({
           name: "Vercel API",
           status: "degraded",
           latency: vercelLatency,
-          message: errorMessage,
+          message: fetchError.message || "Connection failed",
           lastChecked: new Date().toISOString(),
         });
       }
@@ -259,10 +190,7 @@ const getSystemHealth = async () => {
     checks.push({
       name: "Vercel API",
       status: "degraded",
-      message:
-        error?.cause?.code === "ECONNREFUSED"
-          ? "Service unavailable"
-          : error.message || "Connection failed",
+      message: error.message,
       lastChecked: new Date().toISOString(),
     });
   }
@@ -289,7 +217,7 @@ const getSystemHealth = async () => {
     checks.push({
       name: "FraudShield API",
       status: "degraded",
-      message: error.message || "Check failed",
+      message: error.message,
       lastChecked: new Date().toISOString(),
     });
   }
@@ -307,12 +235,7 @@ const getSystemHealth = async () => {
   return {
     success: true,
     status: overallStatus,
-    message:
-      overallStatus === "healthy"
-        ? "All systems operational"
-        : overallStatus === "degraded"
-          ? "Some systems degraded"
-          : "Critical issues detected",
+    message: overallStatus === "healthy" ? "All systems operational" : "Issues detected",
     totalCheckTime: totalLatency,
     checks,
     summary: {

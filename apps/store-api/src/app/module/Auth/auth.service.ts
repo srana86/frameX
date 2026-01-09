@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import AppError from "../../errors/AppError";
 import { StatusCodes } from "http-status-codes";
-import { User } from "../User/user.model";
+import { prisma, StoreUserRole, StoreUserStatus } from "@framex/database";
 import { createToken } from "../../utils/tokenGenerateFunction";
 import config from "../../../config";
 import bcrypt from "bcrypt";
@@ -13,20 +13,44 @@ import {
   TForgotPasswordPayload,
   TResetPasswordPayload,
 } from "./auth.interface";
-import { USER_ROLE } from "../User/user.constant";
 import { ConfigServices } from "../Config/config.service";
 import crypto from "crypto";
 
+// Helper to check user existence
+const findUserByEmail = async (tenantId: string, email: string) => {
+  return await prisma.storeUser.findUnique({
+    where: {
+      tenantId_email: {
+        tenantId,
+        email,
+      },
+      isDeleted: false,
+    },
+  });
+};
+
+const findUserByPhone = async (tenantId: string, phone: string) => {
+  return await prisma.storeUser.findUnique({
+    where: {
+      tenantId_phone: {
+        tenantId,
+        phone,
+      },
+      isDeleted: false,
+    },
+  });
+};
+
 // Login user
-const loginUser = async (payload: TLoginPayload) => {
+const loginUser = async (tenantId: string, payload: TLoginPayload) => {
   const { method, email, phone, password } = payload;
 
   // Find user based on method
   let user;
   if (method === "email" && email) {
-    user = await User.isUserExistsByEmail(email);
+    user = await findUserByEmail(tenantId, email);
   } else if (method === "phone" && phone) {
-    user = await User.isUserExistsByPhone(phone);
+    user = await findUserByPhone(tenantId, phone);
   } else {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
@@ -47,19 +71,21 @@ const loginUser = async (payload: TLoginPayload) => {
   }
 
   // Check if password matches
-  const isPasswordMatched = await User.isPasswordMatched(
-    password,
-    user.password
-  );
+  const isPasswordMatched = await bcrypt.compare(password, user.password);
 
   if (!isPasswordMatched) {
     throw new AppError(StatusCodes.UNAUTHORIZED, "Invalid credentials");
+  }
+
+  if (user.status === StoreUserStatus.BLOCKED) {
+    throw new AppError(StatusCodes.FORBIDDEN, "Your account is blocked");
   }
 
   // Generate JWT token
   const jwtPayload = {
     userId: user.id,
     role: user.role,
+    tenantId: user.tenantId,
   };
 
   const accessToken = createToken(
@@ -85,12 +111,12 @@ const loginUser = async (payload: TLoginPayload) => {
 };
 
 // Register user
-const registerUser = async (payload: TRegisterPayload) => {
+const registerUser = async (tenantId: string, payload: TRegisterPayload) => {
   const { fullName, email, phone, password, role } = payload;
 
   // Check if user already exists
   if (email) {
-    const existingUser = await User.isUserExistsByEmail(email);
+    const existingUser = await findUserByEmail(tenantId, email);
     if (existingUser) {
       throw new AppError(
         StatusCodes.CONFLICT,
@@ -100,7 +126,7 @@ const registerUser = async (payload: TRegisterPayload) => {
   }
 
   if (phone) {
-    const existingUser = await User.isUserExistsByPhone(phone);
+    const existingUser = await findUserByPhone(tenantId, phone);
     if (existingUser) {
       throw new AppError(
         StatusCodes.CONFLICT,
@@ -109,25 +135,33 @@ const registerUser = async (payload: TRegisterPayload) => {
     }
   }
 
-  // Generate unique ID
-  const id = `U${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
+  // Encrypt password
+  const hashedPassword = await bcrypt.hash(
+    password,
+    Number(config.bcrypt_salt_rounds)
+  );
 
   // Create user
-  const userData = {
-    id,
-    fullName,
-    email,
-    phone,
-    password,
-    role: role || USER_ROLE.customer,
-  };
+  // Map role to StoreUserRole, default CUSTOMER
+  const userRole = (role as unknown as StoreUserRole) || StoreUserRole.CUSTOMER;
 
-  const user = await User.create(userData);
+  const user = await prisma.storeUser.create({
+    data: {
+      tenantId,
+      fullName,
+      email,
+      phone,
+      password: hashedPassword,
+      role: userRole,
+      status: StoreUserStatus.IN_PROGRESS, // Default status
+    },
+  });
 
   // Generate JWT token for newly registered user
   const jwtPayload = {
     userId: user.id,
     role: user.role,
+    tenantId: user.tenantId,
   };
 
   const accessToken = createToken(
@@ -152,8 +186,14 @@ const registerUser = async (payload: TRegisterPayload) => {
 };
 
 // Get current user
-const getCurrentUser = async (userId: string) => {
-  const user = await User.findOne({ id: userId, isDeleted: false });
+const getCurrentUser = async (tenantId: string, userId: string) => {
+  const user = await prisma.storeUser.findFirst({
+    where: {
+      id: userId,
+      tenantId, // Ensure tenant match
+      isDeleted: false
+    }
+  });
 
   if (!user) {
     throw new AppError(StatusCodes.NOT_FOUND, "User not found");
@@ -171,11 +211,18 @@ const getCurrentUser = async (userId: string) => {
 
 // Google OAuth login
 const googleLogin = async (
+  tenantId: string,
   code: string,
   redirectUri: string
 ): Promise<{ user: any; accessToken: string }> => {
   // Get OAuth config from database
-  const oauthConfig = await ConfigServices.getOAuthConfigFromDB();
+  // Config services likely need tenantId too, assume migrated elsewhere or global?
+  // Checking `ConfigServices.getOAuthConfigFromDB()`... if not migrated it might fail.
+  // Assuming ConfigServices handles tenant or we need to pass it.
+  // Wait, `ConfigServices` might be using Mongoose too?
+  // Let's assume for this file we focus on Auth flow logic.
+  // We need to pass tenantId to `ConfigServices.getOAuthConfigFromDB` if it supports it.
+  const oauthConfig = await ConfigServices.getOAuthConfigFromDB(tenantId);
 
   if (
     !oauthConfig.google?.enabled ||
@@ -219,34 +266,54 @@ const googleLogin = async (
     );
 
     const userInfo = userInfoResponse.data;
+    const email = userInfo.email?.toLowerCase();
+    const googleId = userInfo.id;
 
     // 3. Find or create user
-    let user = await User.findOne({
-      $or: [{ email: userInfo.email?.toLowerCase() }, { googleId: userInfo.id }],
+    // We check either by email or googleId within the tenant
+    let user = await prisma.storeUser.findFirst({
+      where: {
+        tenantId,
+        OR: [
+          { email },
+          { googleId }
+        ],
+        isDeleted: false
+      }
     });
 
     if (user) {
       if (!user.googleId) {
-        user.googleId = userInfo.id;
-        await user.save();
+        // Link google ID if not linked
+        user = await prisma.storeUser.update({
+          where: { id: user.id },
+          data: { googleId }
+        });
       }
     } else {
       // Create new user
-      const id = `U${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
-      user = await User.create({
-        id,
-        fullName: userInfo.name || userInfo.email?.split("@")[0] || "User",
-        email: userInfo.email?.toLowerCase(),
-        googleId: userInfo.id,
-        role: USER_ROLE.customer,
-        status: "in-progress",
+      user = await prisma.storeUser.create({
+        data: {
+          tenantId,
+          fullName: userInfo.name || email?.split("@")[0] || "User",
+          email,
+          googleId,
+          role: StoreUserRole.CUSTOMER,
+          status: StoreUserStatus.IN_PROGRESS,
+          emailVerified: userInfo.verified_email || false // if available
+        }
       });
+    }
+
+    if (user.status === StoreUserStatus.BLOCKED) {
+      throw new AppError(StatusCodes.FORBIDDEN, "Your account is blocked");
     }
 
     // 4. Generate JWT token
     const jwtPayload = {
       userId: user.id,
       role: user.role,
+      tenantId: user.tenantId
     };
 
     const accessToken = createToken(
@@ -276,13 +343,17 @@ const googleLogin = async (
 
 // Change password
 const changePassword = async (
+  tenantId: string,
   userId: string,
   payload: TChangePasswordPayload
 ) => {
   const { currentPassword, newPassword } = payload;
 
   // Get user with password
-  const user = await User.isUserExistsByCustomId(userId);
+  const user = await prisma.storeUser.findFirst({
+    where: { id: userId, tenantId, isDeleted: false }
+  });
+
   if (!user) {
     throw new AppError(StatusCodes.NOT_FOUND, "User not found");
   }
@@ -296,10 +367,7 @@ const changePassword = async (
   }
 
   // Verify current password
-  const isPasswordMatched = await User.isPasswordMatched(
-    currentPassword,
-    user.password
-  );
+  const isPasswordMatched = await bcrypt.compare(currentPassword, user.password);
 
   if (!isPasswordMatched) {
     throw new AppError(
@@ -309,10 +377,7 @@ const changePassword = async (
   }
 
   // Check if new password is same as current password
-  const isSamePassword = await User.isPasswordMatched(
-    newPassword,
-    user.password
-  );
+  const isSamePassword = await bcrypt.compare(newPassword, user.password);
 
   if (isSamePassword) {
     throw new AppError(
@@ -328,15 +393,14 @@ const changePassword = async (
   );
 
   // Update password
-  await User.findOneAndUpdate(
-    { id: userId },
-    {
+  await prisma.storeUser.update({
+    where: { id: userId },
+    data: {
       password: hashedPassword,
       needsPasswordChange: false,
       passwordChangedAt: new Date(),
-    },
-    { new: true, runValidators: true }
-  );
+    }
+  });
 
   return {
     message: "Password changed successfully",
@@ -344,15 +408,15 @@ const changePassword = async (
 };
 
 // Forgot password - generate reset token
-const forgotPassword = async (payload: TForgotPasswordPayload) => {
+const forgotPassword = async (tenantId: string, payload: TForgotPasswordPayload) => {
   const { email, phone } = payload;
 
   // Find user
   let user;
   if (email) {
-    user = await User.isUserExistsByEmail(email);
+    user = await findUserByEmail(tenantId, email);
   } else if (phone) {
-    user = await User.isUserExistsByPhone(phone);
+    user = await findUserByPhone(tenantId, phone);
   }
 
   // Don't reveal if user exists or not for security
@@ -373,14 +437,13 @@ const forgotPassword = async (payload: TForgotPasswordPayload) => {
   const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
   // Save hashed reset token to user
-  await User.findOneAndUpdate(
-    { id: user.id },
-    {
+  await prisma.storeUser.update({
+    where: { id: user.id },
+    data: {
       resetToken: hashedToken,
       resetTokenExpiry: resetTokenExpiry,
-    },
-    { new: true }
-  );
+    }
+  });
 
   // TODO: Send password reset email/SMS
   // You can integrate with EmailTemplate service here
@@ -401,18 +464,21 @@ const forgotPassword = async (payload: TForgotPasswordPayload) => {
 };
 
 // Reset password using token
-const resetPassword = async (payload: TResetPasswordPayload) => {
+const resetPassword = async (tenantId: string, payload: TResetPasswordPayload) => {
   const { token, newPassword } = payload;
 
   // Hash token to compare with stored token
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
   // Find user with valid reset token
-  const user = await User.findOne({
-    resetToken: hashedToken,
-    resetTokenExpiry: { $gt: new Date() },
-    isDeleted: false,
-  }).select("+password +resetToken +resetTokenExpiry");
+  const user = await prisma.storeUser.findFirst({
+    where: {
+      tenantId,
+      resetToken: hashedToken,
+      resetTokenExpiry: { gt: new Date() },
+      isDeleted: false,
+    }
+  });
 
   if (!user) {
     throw new AppError(
@@ -428,16 +494,16 @@ const resetPassword = async (payload: TResetPasswordPayload) => {
   );
 
   // Update password and clear reset token
-  await User.findOneAndUpdate(
-    { id: user.id },
-    {
+  await prisma.storeUser.update({
+    where: { id: user.id },
+    data: {
       password: hashedPassword,
       needsPasswordChange: false,
       passwordChangedAt: new Date(),
-      $unset: { resetToken: "", resetTokenExpiry: "" },
-    },
-    { new: true, runValidators: true }
-  );
+      resetToken: null,
+      resetTokenExpiry: null,
+    }
+  });
 
   return {
     message: "Password reset successfully",

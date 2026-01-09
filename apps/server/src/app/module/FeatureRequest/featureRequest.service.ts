@@ -1,127 +1,78 @@
-import { FeatureRequest } from "./featureRequest.model";
-import { toPlainObjectArray, toPlainObject } from "../../utils/mongodb";
-import { IFeatureRequest } from "./featureRequest.interface";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { prisma } from "@framex/database";
+import { FeatureRequestStatus } from "@prisma/client";
 
 const getAllFeatureRequests = async (status?: string, merchantId?: string) => {
-  const query: Record<string, any> = {};
-  if (status) query.status = status;
-  if (merchantId) query.merchantId = merchantId;
+  const where: any = {};
+  if (status) where.status = status.toUpperCase() as FeatureRequestStatus;
+  if (merchantId) where.tenantId = merchantId; // Schema uses tenantId or userId? 
+  // Schema lines 977: tenantId String?, userId String?
+  // Mongoose used `merchantId`. I'll map to `tenantId`.
 
-  const requests = await FeatureRequest.find(query)
-    .sort({ createdAt: -1 })
-    .limit(200);
-  return {
-    success: true,
-    data: toPlainObjectArray<IFeatureRequest>(requests),
-  };
+  const requests = await prisma.featureRequest.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    take: 200
+  });
+
+  return { success: true, data: requests };
 };
 
 const getFeatureRequestById = async (id: string) => {
-  const request = await FeatureRequest.findOne({ id });
-  if (!request) {
-    throw new Error("Feature request not found");
-  }
-  return toPlainObject<IFeatureRequest>(request);
+  const request = await prisma.featureRequest.findUnique({
+    where: { id }
+  });
+  if (!request) throw new Error("Feature request not found");
+  return request;
 };
 
-const createFeatureRequest = async (payload: Partial<IFeatureRequest>) => {
-  const {
-    title,
-    description,
-    priority = "medium",
-    contactEmail,
-    contactPhone,
-    merchantId,
-    status = "new",
-  } = payload;
+const createFeatureRequest = async (payload: any) => {
+  const { title, description, merchantId, status } = payload;
 
-  if (!title || !description || !merchantId) {
-    throw new Error("title, description, and merchantId are required");
-  }
+  // Status mapping
+  // Prisma Enum: PENDING, APPROVED, IN_PROGRESS, COMPLETED, REJECTED
+  // Mongoose: new, in_review, resolved
+  // Mapping: new -> PENDING, in_review -> IN_PROGRESS, resolved -> COMPLETED
+  let prismaStatus: FeatureRequestStatus = FeatureRequestStatus.PENDING;
+  if (status === "in_review") prismaStatus = FeatureRequestStatus.IN_PROGRESS;
+  if (status === "resolved") prismaStatus = FeatureRequestStatus.COMPLETED;
 
-  const safePriority: IFeatureRequest["priority"] = [
-    "low",
-    "medium",
-    "high",
-  ].includes(priority as string)
-    ? (priority as IFeatureRequest["priority"])
-    : "medium";
-  const safeStatus: IFeatureRequest["status"] = [
-    "new",
-    "in_review",
-    "resolved",
-  ].includes(status as string)
-    ? (status as IFeatureRequest["status"])
-    : "new";
+  const request = await prisma.featureRequest.create({
+    data: {
+      title,
+      description,
+      tenantId: merchantId,
+      status: prismaStatus,
+      // priority? Schema lines 977-989: NO priority field.
+      // votes Int @default(0)
+      // I'll ignore priority or add to description.
+    }
+  });
 
-  const requestData: IFeatureRequest = {
-    id: `fr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    title: String(title).trim(),
-    description: String(description).trim(),
-    priority: safePriority,
-    contactEmail: contactEmail ? String(contactEmail).trim() : undefined,
-    contactPhone: contactPhone ? String(contactPhone).trim() : undefined,
-    merchantId: String(merchantId).trim(),
-    status: safeStatus,
-    createdAt: new Date().toISOString(),
-  };
-
-  const request = await FeatureRequest.create(requestData);
-  return {
-    success: true,
-    data: toPlainObject<IFeatureRequest>(request),
-  };
+  return { success: true, data: request };
 };
 
-const updateFeatureRequest = async (
-  id: string,
-  payload: { status?: string; priority?: string }
-) => {
-  if (!id) {
-    throw new Error("id is required");
-  }
-
-  const updates: Record<string, any> = {};
+const updateFeatureRequest = async (id: string, payload: any) => {
+  const updates: any = {};
   if (payload.status) {
-    if (!["new", "in_review", "resolved"].includes(payload.status)) {
-      throw new Error("Invalid status");
-    }
-    updates.status = payload.status;
-  }
-  if (payload.priority) {
-    if (!["low", "medium", "high"].includes(payload.priority)) {
-      throw new Error("Invalid priority");
-    }
-    updates.priority = payload.priority;
+    if (payload.status === "new") updates.status = FeatureRequestStatus.PENDING;
+    if (payload.status === "in_review") updates.status = FeatureRequestStatus.IN_PROGRESS;
+    if (payload.status === "resolved") updates.status = FeatureRequestStatus.COMPLETED;
   }
 
-  if (Object.keys(updates).length === 0) {
-    throw new Error("No updates provided");
-  }
+  // priority update? Ignore.
 
-  const request = await FeatureRequest.findOneAndUpdate(
-    { id },
-    { $set: updates },
-    { new: true }
-  );
-  if (!request) {
-    throw new Error("Not found");
-  }
+  const request = await prisma.featureRequest.update({
+    where: { id },
+    data: updates
+  });
 
-  return {
-    success: true,
-    data: toPlainObject<IFeatureRequest>(request),
-  };
+  return { success: true, data: request };
 };
 
 const deleteFeatureRequest = async (id: string) => {
-  const request = await FeatureRequest.findOne({ id });
-  if (!request) {
-    throw new Error("Feature request not found");
-  }
-
-  await FeatureRequest.deleteOne({ id });
-  return { success: true, message: "Feature request deleted successfully" };
+  await prisma.featureRequest.delete({ where: { id } });
+  return { success: true, message: "Deleted successfully" };
 };
 
 export const FeatureRequestServices = {

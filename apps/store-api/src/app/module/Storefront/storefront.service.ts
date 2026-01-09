@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { DeliveryServiceConfig } from "../Config/config.model";
+import { prisma } from "@framex/database";
 import {
   StorefrontDeliveryConfig,
   CalculateShippingRequest,
@@ -8,9 +8,11 @@ import {
 
 // Get delivery config for storefront (public endpoint)
 const getStorefrontDeliveryConfigFromDB =
-  async (): Promise<StorefrontDeliveryConfig> => {
-    const config = await DeliveryServiceConfig.findOne({
-      id: "delivery-service-config",
+  async (tenantId: string): Promise<StorefrontDeliveryConfig> => {
+    const config = await prisma.deliveryServiceConfig.findUnique({
+      where: {
+        tenantId,
+      },
     });
 
     if (!config) {
@@ -31,22 +33,35 @@ const getStorefrontDeliveryConfigFromDB =
       enabled: true,
       methods: [
         {
-          id: "standard",
+          // Assuming config has a deliveryOption field or we infer 'standard'
+          // The Mongoose code returned 'standard'.
+          // Config model has: deliveryOption String @default("districts")
+          id: "standard", // or config.deliveryOption
           name: "Standard Delivery",
-          cost: config.defaultDeliveryCharge || 0,
+          cost: Number(config.defaultDeliveryCharge || 0),
           estimatedDays: 3,
         },
       ],
+      // freeShippingThreshold is not in schema directly? 
+      // Schema: weightBasedCharges, specificDeliveryCharges.
+      // Schema doesn't have `freeShippingThreshold`.
+      // Mongoose code used `(config as any).freeShippingThreshold`.
+      // I'll keep the cast for now or remove if not supported.
+      // Let's assume it might be in JSON maybe? Or it was removed from schema.
+      // I'll leave it as any or default to undefined.
       freeShippingThreshold: (config as any).freeShippingThreshold,
     };
   };
 
 // Calculate shipping cost (public endpoint)
 const calculateShippingFromDB = async (
+  tenantId: string,
   payload: CalculateShippingRequest
 ): Promise<CalculateShippingResponse> => {
-  const config = await DeliveryServiceConfig.findOne({
-    id: "delivery-service-config",
+  const config = await prisma.deliveryServiceConfig.findUnique({
+    where: {
+      tenantId,
+    },
   });
 
   if (!config) {
@@ -63,38 +78,40 @@ const calculateShippingFromDB = async (
     };
   }
 
-  let shippingCost = config.defaultDeliveryCharge || 0;
+  let shippingCost = Number(config.defaultDeliveryCharge || 0);
 
   // Check for specific delivery charges
+  const specificDeliveryCharges = config.specificDeliveryCharges as any[]; // Json type
   if (
-    config.specificDeliveryCharges &&
-    config.specificDeliveryCharges.length > 0
+    specificDeliveryCharges &&
+    Array.isArray(specificDeliveryCharges) &&
+    specificDeliveryCharges.length > 0
   ) {
     const normalize = (str: string) => str.toLowerCase().trim();
 
     // Try to match by area first (more specific)
     if (payload.area) {
-      const areaMatch = config.specificDeliveryCharges.find(
-        (charge) => normalize(charge.location) === normalize(payload.area!)
+      const areaMatch = specificDeliveryCharges.find(
+        (charge: any) => normalize(charge.location) === normalize(payload.area!)
       );
       if (areaMatch) {
-        shippingCost = areaMatch.charge;
+        shippingCost = Number(areaMatch.charge);
       }
     }
 
     // Try to match by city if no area match
-    if (shippingCost === config.defaultDeliveryCharge) {
-      const cityMatch = config.specificDeliveryCharges.find(
-        (charge) => normalize(charge.location) === normalize(payload.city)
+    if (shippingCost === Number(config.defaultDeliveryCharge)) {
+      const cityMatch = specificDeliveryCharges.find(
+        (charge: any) => normalize(charge.location) === normalize(payload.city)
       );
       if (cityMatch) {
-        shippingCost = cityMatch.charge;
+        shippingCost = Number(cityMatch.charge);
       }
     }
 
     // Try partial matching (in case location contains city name)
-    if (shippingCost === config.defaultDeliveryCharge) {
-      const partialMatch = config.specificDeliveryCharges.find((charge) => {
+    if (shippingCost === Number(config.defaultDeliveryCharge)) {
+      const partialMatch = specificDeliveryCharges.find((charge: any) => {
         const normalizedLocation = normalize(charge.location);
         const normalizedCity = normalize(payload.city);
         return (
@@ -103,13 +120,13 @@ const calculateShippingFromDB = async (
         );
       });
       if (partialMatch) {
-        shippingCost = partialMatch.charge;
+        shippingCost = Number(partialMatch.charge);
       }
     }
   }
 
   // Check for free shipping threshold
-  const freeShippingThreshold = (config as any).freeShippingThreshold;
+  const freeShippingThreshold = (config as any).freeShippingThreshold; // Not in schema, keeping logic if extra field exists
   const freeShipping = freeShippingThreshold
     ? (payload.total || 0) >= freeShippingThreshold
     : false;

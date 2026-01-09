@@ -1,32 +1,22 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
-import { Merchant } from "../Merchant/merchant.model";
-import { Subscription } from "../Subscription/subscription.model";
-import { Plan } from "../Plan/plan.model";
+import { prisma } from "@framex/database";
 import httpStatus from "http-status";
 
-/**
- * Get merchant subscription and plan data
- * Public endpoint for merchant apps to fetch their subscription details
- *
- * GET /api/v1/merchant-subscription?merchantId=xxx
- * OR use X-Merchant-ID header
- */
 const getMerchantSubscription = catchAsync(async (req, res) => {
-    // Get merchantId from query param or header
     const merchantId = req.query.merchantId as string || req.headers["x-merchant-id"] as string;
 
     if (!merchantId) {
         return sendResponse(res, {
             statusCode: httpStatus.BAD_REQUEST,
             success: false,
-            message: "merchantId is required (query param or X-Merchant-ID header)",
+            message: "merchantId is required",
             data: null,
         });
     }
 
-    // Get merchant details
-    const merchant = await Merchant.findOne({ id: merchantId });
+    const merchant = await prisma.merchant.findUnique({ where: { id: merchantId } });
 
     if (!merchant) {
         return sendResponse(res, {
@@ -37,58 +27,38 @@ const getMerchantSubscription = catchAsync(async (req, res) => {
         });
     }
 
-    // Get subscription
-    const subscription = await Subscription.findOne({ merchantId });
+    const subscription = await prisma.subscription.findFirst({ where: { merchantId } });
 
     if (!subscription) {
-        // Return merchant without subscription (might be on free tier or not subscribed)
-        const merchantData = merchant.toObject();
-        delete (merchantData as any)._id;
-
+        // Return merchant without subscription
         return sendResponse(res, {
             statusCode: httpStatus.OK,
             success: true,
             message: "Merchant found, no subscription",
             data: {
-                merchant: merchantData,
+                merchant,
                 subscription: null,
                 plan: null,
             },
         });
     }
 
-    // Get plan details
     const planId = subscription.planId;
-    const plan = planId ? await Plan.findOne({ id: planId }) : null;
+    const plan = planId ? await prisma.plan.findUnique({ where: { id: planId } }) : null;
 
-    // Clean up MongoDB _id fields
-    const merchantData = merchant.toObject();
-    delete (merchantData as any)._id;
-
-    const subscriptionData = subscription.toObject();
-    delete (subscriptionData as any)._id;
-
-    const planData = plan ? (() => {
-        const data = plan.toObject();
-        delete (data as any)._id;
-        return data;
-    })() : null;
-
-    // Calculate dynamic subscription status
+    // Calculate dynamic status
     const now = new Date();
-    const periodEnd = new Date(subscriptionData.currentPeriodEnd);
-    const graceEnd = subscriptionData.gracePeriodEndsAt
-        ? new Date(subscriptionData.gracePeriodEndsAt)
-        : null;
+    const periodEnd = new Date(subscription.currentPeriodEnd);
+    const graceEnd = subscription.gracePeriodEndsAt ? new Date(subscription.gracePeriodEndsAt) : null;
 
-    let dynamicStatus: string = subscriptionData.status;
+    let dynamicStatus: string = subscription.status; // Prisma status is Enum (ACTIVE, etc). Convert to string.
     let isExpired = false;
     let isGracePeriod = false;
     let daysRemaining = Math.ceil(
         (periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    if (subscriptionData.status === "active") {
+    if (subscription.status === "ACTIVE") {
         if (now > periodEnd) {
             if (graceEnd && now <= graceEnd) {
                 dynamicStatus = "grace_period";
@@ -105,9 +75,9 @@ const getMerchantSubscription = catchAsync(async (req, res) => {
     }
 
     const result = {
-        merchant: merchantData,
+        merchant,
         subscription: {
-            ...subscriptionData,
+            ...subscription,
             dynamicStatus,
             isExpired,
             isGracePeriod,
@@ -115,7 +85,7 @@ const getMerchantSubscription = catchAsync(async (req, res) => {
             isExpiringSoon: daysRemaining <= 7 && daysRemaining > 0,
             requiresPayment: isExpired || isGracePeriod,
         },
-        plan: planData,
+        plan,
     };
 
     sendResponse(res, {

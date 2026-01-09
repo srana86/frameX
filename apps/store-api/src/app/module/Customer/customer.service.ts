@@ -1,95 +1,89 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Order } from "../Order/order.model";
-import QueryBuilder from "../../builder/QueryBuilder";
+import { prisma, PrismaQueryBuilder } from "@framex/database";
 
 // Get all customers with statistics
-const getAllCustomersFromDB = async (query: Record<string, unknown>) => {
-  // Aggregate orders to get customer statistics
-  const customersAggregation = await Order.aggregate([
-    { $match: { isDeleted: false } },
-    {
-      $group: {
-        _id: {
-          phone: "$customer.phone",
-          email: "$customer.email",
-        },
-        fullName: { $first: "$customer.fullName" },
-        addressLine1: { $first: "$customer.addressLine1" },
-        city: { $first: "$customer.city" },
-        totalOrders: { $sum: 1 },
-        totalSpent: { $sum: "$total" },
-        firstOrderDate: { $min: "$createdAt" },
-        lastOrderDate: { $max: "$createdAt" },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        phone: "$_id.phone",
-        email: "$_id.email",
-        fullName: 1,
-        addressLine1: 1,
-        city: 1,
-        totalOrders: 1,
-        totalSpent: 1,
-        firstOrderDate: 1,
-        lastOrderDate: 1,
-        averageOrderValue: { $divide: ["$totalSpent", "$totalOrders"] },
-      },
-    },
-  ]);
+const getAllCustomersFromDB = async (tenantId: string, query: Record<string, unknown>) => {
+  const searchTerm = (query.searchTerm as string)?.toLowerCase();
 
-  // Apply search filter if provided
-  let filteredCustomers = customersAggregation;
-  if (query.searchTerm) {
-    const searchTerm = (query.searchTerm as string).toLowerCase();
-    filteredCustomers = customersAggregation.filter(
-      (customer: any) =>
-        customer.fullName?.toLowerCase().includes(searchTerm) ||
-        customer.email?.toLowerCase().includes(searchTerm) ||
-        customer.phone?.includes(searchTerm)
-    );
+  const where: any = { tenantId };
+  if (searchTerm) {
+    where.OR = [
+      { name: { contains: searchTerm, mode: "insensitive" } },
+      { email: { contains: searchTerm, mode: "insensitive" } },
+      { phone: { contains: searchTerm } }
+    ];
   }
 
-  // Calculate statistics
+  // Get customers
+  const customers = await prisma.customer.findMany({
+    where,
+    include: {
+      orders: {
+        select: {
+          total: true,
+          createdAt: true
+        }
+      }
+    },
+    orderBy: { createdAt: "desc" },
+    take: Number(query.limit) || 30,
+    skip: ((Number(query.page) || 1) - 1) * (Number(query.limit) || 30)
+  });
+
+  const total = await prisma.customer.count({ where });
+
+  // Calculate statistics for each customer
+  const enrichedCustomers = customers.map(c => {
+    const totalOrders = c.orders.length;
+    const totalSpent = c.orders.reduce((sum, o) => sum + Number(o.total), 0);
+    const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
+    const firstOrderDate = c.orders.length > 0 ? c.orders[c.orders.length - 1].createdAt : null;
+    const lastOrderDate = c.orders.length > 0 ? c.orders[0].createdAt : null;
+
+    return {
+      id: c.id,
+      fullName: c.name,
+      email: c.email,
+      phone: c.phone,
+      addressLine1: c.address,
+      city: c.city,
+      totalOrders,
+      totalSpent,
+      firstOrderDate,
+      lastOrderDate,
+      averageOrderValue
+    };
+  });
+
+  // Calculate overall stats (approximate or need separate aggregation)
+  // For precise overall stats, we would agg on all orders or customers, but that's expensive.
+  // The original Mongoose code aggregated *all* orders to get stats.
+  // We can do a separate aggregation on Order table if needed.
+
+  const statsAggregate = await prisma.order.aggregate({
+    where: { tenantId, status: { not: "CANCELLED" } }, // Assuming we exclude cancelled
+    _sum: { total: true },
+    _count: { _all: true } // total orders
+  });
+
+  // Total customers count
+  const totalCustomers = await prisma.customer.count({ where: { tenantId } });
+
   const stats = {
-    totalCustomers: filteredCustomers.length,
-    totalRevenue: filteredCustomers.reduce(
-      (sum: number, c: any) => sum + (c.totalSpent || 0),
-      0
-    ),
-    averageOrderValue:
-      filteredCustomers.reduce(
-        (sum: number, c: any) => sum + (c.averageOrderValue || 0),
-        0
-      ) / filteredCustomers.length || 0,
-  };
-
-  // Apply pagination
-  const page = Number(query.page) || 1;
-  const limit = Number(query.limit) || 30;
-  const skip = (page - 1) * limit;
-  const paginatedCustomers = filteredCustomers.slice(skip, skip + limit);
-
-  // Generate IDs for customers
-  const customersWithIds = paginatedCustomers.map(
-    (customer: any, index: number) => ({
-      id: `CUST${Date.now()}${index}`,
-      ...customer,
-    })
-  );
-
-  const meta = {
-    page,
-    limit,
-    total: filteredCustomers.length,
-    totalPage: Math.ceil(filteredCustomers.length / limit),
+    totalCustomers,
+    totalRevenue: Number(statsAggregate._sum.total || 0),
+    averageOrderValue: statsAggregate._count._all > 0 ? Number(statsAggregate._sum.total || 0) / statsAggregate._count._all : 0
   };
 
   return {
-    customers: customersWithIds,
+    customers: enrichedCustomers,
     stats,
-    meta,
+    meta: {
+      page: Number(query.page) || 1,
+      limit: Number(query.limit) || 30,
+      total,
+      totalPage: Math.ceil(total / (Number(query.limit) || 30))
+    }
   };
 };
 

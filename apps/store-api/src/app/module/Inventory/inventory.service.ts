@@ -1,139 +1,172 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import AppError from "../../errors/AppError";
+/**
+ * Inventory Service - Prisma Version
+ * Multi-tenant inventory operations
+ */
+
+import { prisma, Prisma } from "@framex/database";
 import { StatusCodes } from "http-status-codes";
-import { InventoryTransaction } from "./inventory.model";
-import QueryBuilder from "../../builder/QueryBuilder";
-import { TInventoryTransaction } from "./inventory.interface";
-import { Product } from "../Product/product.model";
+import AppError from "../../errors/AppError";
 
-// Get all inventory transactions with pagination, filter, and search
-const getAllInventoryTransactionsFromDB = async (
-  query: Record<string, unknown>
+/**
+ * Get inventory for all products
+ */
+const getAllInventory = async (
+  tenantId: string,
+  query: { page?: number; limit?: number; lowStock?: boolean }
 ) => {
-  const transactionQuery = new QueryBuilder(InventoryTransaction.find(), query)
-    .search(["productId", "productName", "orderId", "notes"])
-    .filter()
-    .sort()
-    .paginate()
-    .fields();
+  const { page = 1, limit = 20, lowStock } = query;
+  const skip = (page - 1) * limit;
 
-  const result = await transactionQuery.modelQuery;
-  const meta = await transactionQuery.countTotal();
-
-  return {
-    meta,
-    data: result,
+  const where: Prisma.InventoryWhereInput = {
+    tenantId,
+    ...(lowStock && {
+      // Prisma doesn't support comparing two columns directly in `where` easily without raw query
+      // However, we can fetch and filter or use raw query if critical.
+      // For now, we'll fetch all and filter in memory if lowStock is true, or improve query later.
+    }),
   };
-};
 
-// Create inventory transaction
-const createInventoryTransactionIntoDB = async (
-  payload: TInventoryTransaction
-) => {
-  // Generate ID if not provided
-  if (!payload.id) {
-    payload.id = `INV${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  // Get current stock
-  const product = await Product.findOne({
-    $or: [{ id: payload.productId }, { slug: payload.productId }],
-  });
-
-  if (!product) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Product not found");
-  }
-
-  payload.productName = product.name;
-  payload.previousStock = product.stock || 0;
-
-  // Calculate new stock based on type
-  let stockChange = 0;
-  if (payload.type === "order" || payload.type === "adjustment") {
-    stockChange = -payload.quantity;
-  } else if (payload.type === "restock" || payload.type === "return") {
-    stockChange = payload.quantity;
-  }
-
-  payload.newStock = payload.previousStock + stockChange;
-
-  // Create transaction
-  const result = await InventoryTransaction.create(payload);
-
-  // Update product stock
-  await Product.updateOne(
-    { $or: [{ id: payload.productId }, { slug: payload.productId }] },
-    { $set: { stock: payload.newStock } }
-  );
-
-  return result;
-};
-
-// Get inventory overview statistics
-const getInventoryOverviewFromDB = async () => {
-  // Query products where isDeleted is false or doesn't exist (for backward compatibility)
-  const products = await Product.find({
-    $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
-  });
-
-  let totalProducts = products.length;
-  let totalStock = 0;
-  let lowStockItems = 0;
-  let outOfStockItems = 0;
-  let totalValue = 0;
-  const lowStockThreshold = 10;
-
-  products.forEach((product) => {
-    const stock = product.stock || 0;
-    totalStock += stock;
-
-    if (stock === 0) {
-      outOfStockItems++;
-    } else if (stock <= lowStockThreshold) {
-      lowStockItems++;
-    }
-
-    if (product.buyPrice) {
-      totalValue += stock * product.buyPrice;
-    }
-  });
-
-  // Get categories with stock info
-  const categories = await Product.aggregate([
-    { $match: { isDeleted: false } },
-    {
-      $group: {
-        _id: "$category",
-        totalStock: { $sum: "$stock" },
-        lowStock: {
-          $sum: {
-            $cond: [{ $lte: ["$stock", lowStockThreshold] }, 1, 0],
-          },
+  const [inventory, total] = await Promise.all([
+    prisma.inventory.findMany({
+      where: { tenantId },
+      include: {
+        product: {
+          select: { id: true, name: true, slug: true, images: true, status: true },
         },
       },
-    },
-    {
-      $project: {
-        name: "$_id",
-        totalStock: 1,
-        lowStock: 1,
-        _id: 0,
-      },
-    },
+      orderBy: { quantity: "asc" },
+      skip,
+      take: limit,
+    }),
+    prisma.inventory.count({ where: { tenantId } }),
   ]);
 
+  // Filter low stock in memory 
+  const filtered = lowStock
+    ? inventory.filter((inv) => inv.quantity <= inv.lowStock)
+    : inventory;
+
   return {
-    totalProducts,
-    totalStock,
-    lowStockItems,
-    outOfStockItems,
-    totalValue,
-    categories,
+    data: filtered,
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
   };
+};
+
+/**
+ * Get inventory for single product
+ */
+const getProductInventory = async (tenantId: string, productId: string) => {
+  const inventory = await prisma.inventory.findFirst({
+    where: { tenantId, productId },
+    include: {
+      product: true,
+    },
+  });
+
+  if (!inventory) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Inventory not found");
+  }
+
+  return inventory;
+};
+
+/**
+ * Update inventory quantity
+ */
+const updateInventory = async (
+  tenantId: string,
+  productId: string,
+  data: { quantity?: number; lowStock?: number }
+) => {
+  const existing = await prisma.inventory.findFirst({
+    where: { tenantId, productId },
+  });
+
+  if (!existing) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Inventory not found");
+  }
+
+  return prisma.inventory.update({
+    where: { id: existing.id },
+    data,
+    include: { product: true },
+  });
+};
+
+/**
+ * Adjust inventory (add or subtract)
+ */
+const adjustInventory = async (
+  tenantId: string,
+  productId: string,
+  adjustment: number,
+  reason?: string
+) => {
+  const existing = await prisma.inventory.findFirst({
+    where: { tenantId, productId },
+  });
+
+  if (!existing) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Inventory not found");
+  }
+
+  const newQuantity = existing.quantity + adjustment;
+
+  if (newQuantity < 0) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient inventory");
+  }
+
+  return prisma.inventory.update({
+    where: { id: existing.id },
+    data: { quantity: newQuantity },
+    include: { product: true },
+  });
+};
+
+/**
+ * Bulk update inventory
+ */
+const bulkUpdateInventory = async (
+  tenantId: string,
+  updates: Array<{ productId: string; quantity: number }>
+) => {
+  const results = await Promise.all(
+    updates.map(async (update) => {
+      try {
+        return await prisma.inventory.updateMany({
+          where: { tenantId, productId: update.productId },
+          data: { quantity: update.quantity },
+        });
+      } catch (error) {
+        return { productId: update.productId, error: "Update failed" };
+      }
+    })
+  );
+
+  return results;
+};
+
+/**
+ * Get low stock alerts
+ */
+const getLowStockAlerts = async (tenantId: string) => {
+  const inventory = await prisma.inventory.findMany({
+    where: { tenantId },
+    include: {
+      product: {
+        select: { id: true, name: true, slug: true, images: true },
+      },
+    },
+  });
+
+  return inventory.filter((inv) => inv.quantity <= inv.lowStock);
 };
 
 export const InventoryServices = {
-  getAllInventoryTransactionsFromDB,
-  createInventoryTransactionIntoDB,
-  getInventoryOverviewFromDB,
+  getAllInventory,
+  getProductInventory,
+  updateInventory,
+  adjustInventory,
+  bulkUpdateInventory,
+  getLowStockAlerts,
 };

@@ -1,18 +1,32 @@
 import { Server } from "http";
-import mongoose from "mongoose";
 import app from "./app";
 import config from "./config";
 import { initializeSocketIO, shutdownSocketIO } from "./app/socket/socket";
+import { prisma } from "@framex/database";
 
 let server: Server;
 
 async function main() {
   try {
-    await mongoose.connect(config.database_url as string);
-    console.log("✅ Database is connected");
+    // Check if database URL is configured
+    if (!process.env.DATABASE_URL) {
+      console.error(
+        "❌ [Database] DATABASE_URL is not configured in environment variables"
+      );
+      console.error("   Please set DATABASE_URL in your .env file");
+      process.exit(1);
+    }
+
+    console.log("🔄 [Database] Connecting to PostgreSQL...");
+    const startTime = Date.now();
+
+    // Test database connection
+    await prisma.$connect();
+    const connectionTime = Date.now() - startTime;
+    console.log(`✅ [Database] PostgreSQL connected in ${connectionTime}ms`);
 
     server = app.listen(config.port, () => {
-      console.log(`app is listening on port ${config.port}`);
+      console.log(`🚀 [Server] Store API is listening on port ${config.port}`);
     });
 
     // Initialize Socket.IO server
@@ -31,18 +45,21 @@ async function main() {
       pingInterval: config.socket_ping_interval as number,
       corsOrigin: corsOrigins,
     });
-  } catch (err) {
-    console.log(err);
+  } catch (err: any) {
+    console.error("❌ [Database] Failed to connect to PostgreSQL:");
+    console.error(`   Error: ${err.message || err}`);
+    process.exit(1);
   }
 }
 
 main();
 
-process.on("unhandledRejection", (err) => {
-  console.log(`😈 unhandledRejection is detected , shutting down ...`, err);
+process.on("unhandledRejection", async (err) => {
+  console.log(`😈 unhandledRejection is detected, shutting down...`, err);
+  await shutdownSocketIO();
+  await prisma.$disconnect();
   if (server) {
-    server.close(async () => {
-      await shutdownSocketIO();
+    server.close(() => {
       process.exit(1);
     });
   }
@@ -50,18 +67,19 @@ process.on("unhandledRejection", (err) => {
 });
 
 process.on("uncaughtException", async () => {
-  console.log(`😈 uncaughtException is detected , shutting down ...`);
+  console.log(`😈 uncaughtException is detected, shutting down...`);
   await shutdownSocketIO();
+  await prisma.$disconnect();
   process.exit(1);
 });
 
 // Graceful shutdown
 process.on("SIGTERM", async () => {
   console.log("SIGTERM received, shutting down gracefully");
+  await shutdownSocketIO();
+  await prisma.$disconnect();
   if (server) {
-    server.close(async () => {
-      await shutdownSocketIO();
-      await mongoose.connection.close();
+    server.close(() => {
       process.exit(0);
     });
   }
@@ -69,10 +87,10 @@ process.on("SIGTERM", async () => {
 
 process.on("SIGINT", async () => {
   console.log("SIGINT received, shutting down gracefully");
+  await shutdownSocketIO();
+  await prisma.$disconnect();
   if (server) {
-    server.close(async () => {
-      await shutdownSocketIO();
-      await mongoose.connection.close();
+    server.close(() => {
       process.exit(0);
     });
   }

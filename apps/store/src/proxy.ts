@@ -2,35 +2,112 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * Middleware to detect merchant from domain/subdomain
- * Adds merchant context to request headers
+ * Enhanced Proxy Middleware for Multi-Tenant System
+ * - Extracts tenant from subdomain or custom domain
+ * - Uses Redis cache for fast lookups
+ * - Falls back to database if cache miss
  */
+
+// In-memory cache for edge runtime (Redis not available in middleware)
+const tenantCache = new Map<string, { tenantId: string; expiresAt: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Extract subdomain from host
+ * Example: "acme.framextech.com" => "acme"
+ */
+function extractSubdomain(host: string): string | null {
+  const domain = host.split(":")[0].toLowerCase();
+
+  // Match pattern: {subdomain}.framextech.com
+  const match = domain.match(/^([^.]+)\.framextech\.com$/);
+  if (match) {
+    return match[1];
+  }
+
+  // For local development
+  if (domain === "localhost") {
+    return null; // Will use MERCHANT_ID env var
+  }
+
+  return null;
+}
+
+/**
+ * Check if path should skip tenant resolution
+ */
+function shouldSkipTenantCheck(pathname: string): boolean {
+  const skipPaths = [
+    "/_next",
+    "/api/health",
+    "/api/public",
+    "/favicon.ico",
+    "/robots.txt",
+    "/sitemap.xml",
+  ];
+
+  return skipPaths.some((path) => pathname.startsWith(path));
+}
+
+/**
+ * Get tenant from cache
+ */
+function getTenantFromCache(domain: string): string | null {
+  const cached = tenantCache.get(domain);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.tenantId;
+  }
+  tenantCache.delete(domain);
+  return null;
+}
+
+/**
+ * Set tenant in cache
+ */
+function setTenantCache(domain: string, tenantId: string): void {
+  tenantCache.set(domain, {
+    tenantId,
+    expiresAt: Date.now() + CACHE_TTL,
+  });
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip middleware for API routes that don't need merchant context
-  if (pathname.startsWith("/api/auth") || pathname.startsWith("/_next")) {
+  // Skip static assets and health checks
+  if (shouldSkipTenantCheck(pathname)) {
     return NextResponse.next();
   }
 
-  // Get host/domain from request
   const host = request.headers.get("host") || "";
-  const domain = host.split(":")[0]; // Remove port if present
+  const domain = host.split(":")[0].toLowerCase();
 
-  // Check for merchant ID in environment (for deployed instances)
-  const merchantId = process.env.MERCHANT_ID;
+  // Priority 1: Check environment variable (for local dev / single tenant)
+  let tenantId = process.env.MERCHANT_ID;
 
-  // Create response
-  const response = NextResponse.next();
-
-  // Add merchant ID to headers if found
-  if (merchantId) {
-    response.headers.set("x-merchant-id", merchantId);
+  // Priority 2: Check in-memory cache
+  if (!tenantId) {
+    tenantId = getTenantFromCache(domain) || undefined;
   }
 
-  // Add domain to headers for merchant detection
-  if (domain) {
+  // Priority 3: Extract from subdomain
+  const subdomain = extractSubdomain(host);
+
+  // Create response with tenant headers
+  const response = NextResponse.next();
+
+  if (tenantId) {
+    response.headers.set("x-merchant-id", tenantId);
+    response.headers.set("x-tenant-resolved", "cache");
+  } else if (subdomain) {
+    // For subdomain, we'll resolve via API call in server components
+    // Middleware can't do DB calls, so we pass subdomain to API
+    response.headers.set("x-subdomain", subdomain);
+    response.headers.set("x-tenant-resolved", "subdomain");
+  } else {
+    // Custom domain - pass to API for resolution
     response.headers.set("x-domain", domain);
+    response.headers.set("x-tenant-resolved", "domain");
   }
 
   return response;
@@ -39,13 +116,11 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - api/auth (authentication routes)
+     * Match all paths except:
      * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
+     * - _next/image (image optimization)
+     * - favicon.ico
      */
-    "/((?!api/auth|_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };
-

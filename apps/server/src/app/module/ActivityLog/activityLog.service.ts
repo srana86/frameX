@@ -1,6 +1,5 @@
-import { ActivityLog } from "./activityLog.model";
-import { toPlainObjectArray, toPlainObject } from "../../utils/mongodb";
-import { IActivityLog } from "./activityLog.interface";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { prisma, PrismaQueryBuilder } from "@framex/database";
 
 const getAllActivityLogs = async (
   type?: string,
@@ -12,31 +11,24 @@ const getAllActivityLogs = async (
   limit: number = 50
 ) => {
   const query: any = {};
-  if (type) query.type = type;
   if (action) query.action = action;
-  if (entityId) query.entityId = entityId;
+  if (entityId) query.resourceId = entityId;
   if (startDate || endDate) {
     query.createdAt = {};
-    if (startDate) query.createdAt.$gte = startDate;
-    if (endDate) query.createdAt.$lte = endDate;
+    if (startDate) query.createdAt.gte = new Date(startDate);
+    if (endDate) query.createdAt.lte = new Date(endDate);
   }
 
-  const total = await ActivityLog.countDocuments(query);
-  const logs = await ActivityLog.find(query)
-    .sort({ createdAt: -1 })
-    .skip((page - 1) * limit)
-    .limit(limit);
+  const builder = new PrismaQueryBuilder({
+    model: prisma.activityLog,
+    query: { page, limit }
+  });
 
-  return {
-    success: true,
-    logs: toPlainObjectArray<IActivityLog>(logs),
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
-  };
+  return builder
+    .addBaseWhere(query)
+    .sort()
+    .paginate()
+    .execute();
 };
 
 const createActivityLog = async (payload: {
@@ -49,42 +41,35 @@ const createActivityLog = async (payload: {
   ipAddress?: string;
   userAgent?: string;
 }) => {
-  if (!payload.type || !payload.action || !payload.entityId) {
-    throw new Error("type, action, and entityId are required");
-  }
+  const log = await prisma.activityLog.create({
+    data: {
+      action: payload.action,
+      resource: payload.type,
+      resourceId: payload.entityId,
+      details: payload.details,
+      ipAddress: payload.ipAddress,
+      userAgent: payload.userAgent,
+      userId: payload.performedBy !== 'system' ? payload.performedBy : undefined
+    }
+  });
 
-  const logData: IActivityLog = {
-    id: `log_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    type: payload.type as any,
-    action: payload.action,
-    entityId: payload.entityId,
-    entityName: payload.entityName,
-    details: payload.details,
-    performedBy: payload.performedBy || "system",
-    ipAddress: payload.ipAddress,
-    userAgent: payload.userAgent,
-    createdAt: new Date().toISOString(),
-  };
-
-  const log = await ActivityLog.create(logData);
-  return {
-    success: true,
-    log: toPlainObject<IActivityLog>(log),
-  };
+  return { success: true, log };
 };
 
 const deleteOldLogs = async (olderThanDays: number = 90) => {
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
-  const result = await ActivityLog.deleteMany({
-    createdAt: { $lt: cutoffDate.toISOString() },
+  const result = await prisma.activityLog.deleteMany({
+    where: {
+      createdAt: { lt: cutoffDate }
+    }
   });
 
   return {
     success: true,
-    deletedCount: result.deletedCount,
-    message: `Deleted ${result.deletedCount} logs older than ${olderThanDays} days`,
+    deletedCount: result.count,
+    message: `Deleted ${result.count} logs older than ${olderThanDays} days`,
   };
 };
 

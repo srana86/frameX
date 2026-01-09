@@ -6,7 +6,7 @@ import { HeroSlideServices } from "./heroSlide.service";
 
 // Get enabled hero slides
 const getEnabledHeroSlides = catchAsync(async (req: Request, res: Response) => {
-  const result = await HeroSlideServices.getEnabledHeroSlidesFromDB();
+  const result = await HeroSlideServices.getEnabledHeroSlidesFromDB(req.tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -18,7 +18,7 @@ const getEnabledHeroSlides = catchAsync(async (req: Request, res: Response) => {
 
 // Get all hero slides
 const getAllHeroSlides = catchAsync(async (req: Request, res: Response) => {
-  const result = await HeroSlideServices.getAllHeroSlidesFromDB();
+  const result = await HeroSlideServices.getAllHeroSlidesFromDB(req.tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -31,7 +31,7 @@ const getAllHeroSlides = catchAsync(async (req: Request, res: Response) => {
 // Get single hero slide
 const getSingleHeroSlide = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await HeroSlideServices.getSingleHeroSlideFromDB(id);
+  const result = await HeroSlideServices.getSingleHeroSlideFromDB(req.tenantId, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -47,7 +47,7 @@ const createHeroSlide = catchAsync(async (req: Request, res: Response) => {
     image?: Express.Multer.File[];
     mobileImage?: Express.Multer.File[];
   };
-  const result = await HeroSlideServices.createHeroSlideIntoDB(req.body, files);
+  const result = await HeroSlideServices.createHeroSlideIntoDB(req.tenantId, req.body, files);
 
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,
@@ -65,6 +65,7 @@ const updateHeroSlide = catchAsync(async (req: Request, res: Response) => {
     mobileImage?: Express.Multer.File[];
   };
   const result = await HeroSlideServices.updateHeroSlideIntoDB(
+    req.tenantId,
     id,
     req.body,
     files
@@ -81,7 +82,7 @@ const updateHeroSlide = catchAsync(async (req: Request, res: Response) => {
 // Delete hero slide
 const deleteHeroSlide = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await HeroSlideServices.deleteHeroSlideFromDB(id);
+  const result = await HeroSlideServices.deleteHeroSlideFromDB(req.tenantId, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

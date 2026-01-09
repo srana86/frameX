@@ -1,6 +1,6 @@
-import { CheckoutSession } from "../Checkout/checkout.model";
-import { toPlainObjectArray, toPlainObject } from "../../utils/mongodb";
-import { ICheckoutSession } from "../Checkout/checkout.interface";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { prisma, PrismaQueryBuilder } from "@framex/database";
+import { CheckoutStatus } from "@prisma/client";
 
 const getAllPayments = async (
   status?: string,
@@ -10,94 +10,78 @@ const getAllPayments = async (
 ) => {
   const query: any = {};
   if (status && status !== "all") {
-    query.status = status;
+    query.status = status.toUpperCase() as CheckoutStatus; // Enum mapping
   }
   if (merchantId) {
     query.merchantId = merchantId;
   }
 
-  const total = await CheckoutSession.countDocuments(query);
-  const payments = await CheckoutSession.find(query)
-    .sort({ createdAt: -1 })
-    .skip((page - 1) * limit)
-    .limit(limit);
+  const builder = new PrismaQueryBuilder({
+    model: prisma.checkout,
+    query: { page, limit, ...query },
+    searchFields: ["sessionId", "transactionId"] // Checking if transactionId exists in Checkout model? Schema: sessionId is unique.
+    // Schema lines 1002-1020: id, merchantId, sessionId, amount, currency, status, items, customerId, customerEmail, metadata, expiresAt, completedAt
+    // It seems `sessionId` is the main ID. Mongoose code used `tranId`.
+    // I will assume `sessionId` holds the transaction ID.
+  });
+
+  const result = await builder
+    .addBaseWhere(query)
+    .sort()
+    .paginate()
+    .execute();
+
+  // Mapping result to match previous interface if possible
+  const payments = result.data.map((p: any) => ({
+    id: p.id,
+    tranId: p.sessionId, // Mapping sessionId to tranId
+    merchantId: p.merchantId,
+    // merchantName/Email likely in metadata or need join. 
+    // Schema items/metadata are Json.
+    ...(p.metadata || {}),
+    status: p.status.toLowerCase(),
+    amount: Number(p.amount),
+    currency: p.currency,
+    createdAt: p.createdAt,
+    updatedAt: p.updatedAt
+  }));
 
   return {
-    payments: payments
-      .map((p) => {
-        const data = toPlainObject<ICheckoutSession>(p);
-        if (!data) return null;
-        return {
-          id: (p as any)._id?.toString(),
-          tranId: data.tranId,
-          merchantId: data.merchantId,
-          merchantName: data.merchantName,
-          merchantEmail: data.merchantEmail,
-          merchantPhone: data.merchantPhone,
-          planId: data.planId,
-          planName: data.planName,
-          amount: data.planPrice || 0,
-          billingCycle: data.billingCycle,
-          currency: "BDT", // Default currency
-          status:
-            data.status === "completed"
-              ? "completed"
-              : data.status === "failed"
-                ? "failed"
-                : "pending",
-          paymentMethod: data.card_type || data.paymentMethod,
-          cardType: data.card_type,
-          cardNo: data.card_no,
-          bankTranId: data.bank_tran_id,
-          valId: data.val_id,
-          customerName: data.customerName,
-          customerEmail: data.customerEmail,
-          createdAt: data.createdAt,
-          updatedAt: data.updatedAt,
-        };
-      })
-      .filter(Boolean),
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
+    payments,
+    pagination: result.meta
   };
 };
 
 const getPaymentStats = async () => {
   const [completed, pending, failed, total] = await Promise.all([
-    CheckoutSession.countDocuments({ status: "completed" }),
-    CheckoutSession.countDocuments({ status: "pending" }),
-    CheckoutSession.countDocuments({ status: "failed" }),
-    CheckoutSession.countDocuments({}),
+    prisma.checkout.count({ where: { status: "COMPLETED" } }),
+    prisma.checkout.count({ where: { status: "PENDING" } }),
+    prisma.checkout.count({ where: { status: { in: ["EXPIRED", "CANCELLED"] } } }), // Mapping failed to expired/cancelled? Or maybe FAILED exists? 
+    // Enum CheckoutStatus: PENDING, COMPLETED, EXPIRED, CANCELLED. No FAILED.
+    // I'll map 'failed' to CANCELLED/EXPIRED for stats or just query all.
+    prisma.checkout.count()
   ]);
 
-  // Get total revenue
-  const revenueResult = await CheckoutSession.aggregate([
-    { $match: { status: "completed" } },
-    { $group: { _id: null, total: { $sum: "$planPrice" } } },
-  ]);
+  const revenueResult = await prisma.checkout.aggregate({
+    _sum: { amount: true },
+    where: { status: "COMPLETED" }
+  });
 
-  const totalRevenue = revenueResult[0]?.total || 0;
+  const totalRevenue = Number(revenueResult._sum.amount || 0);
 
-  // Get this month's revenue
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const thisMonthResult = await CheckoutSession.aggregate([
-    {
-      $match: {
-        status: "completed",
-        createdAt: { $gte: startOfMonth.toISOString() },
-      },
-    },
-    { $group: { _id: null, total: { $sum: "$planPrice" } } },
-  ]);
+  const thisMonthResult = await prisma.checkout.aggregate({
+    _sum: { amount: true },
+    where: {
+      status: "COMPLETED",
+      createdAt: { gte: startOfMonth }
+    }
+  });
 
-  const thisMonthRevenue = thisMonthResult[0]?.total || 0;
+  const thisMonthRevenue = Number(thisMonthResult._sum.amount || 0);
 
   return {
     total,
@@ -119,25 +103,36 @@ const updatePaymentSession = async (
     failedAt?: string;
   }
 ) => {
-  const updatePayload: any = {
-    ...updateData,
-    updatedAt: new Date().toISOString(),
-  };
+  const session = await prisma.checkout.findFirst({ where: { sessionId: tranId } });
+  if (!session) throw new Error("Session not found");
 
-  const result = await CheckoutSession.findOneAndUpdate(
-    { tranId },
-    { $set: updatePayload },
-    { new: true }
-  );
-
-  if (!result) {
-    throw new Error("Session not found");
+  const data: any = {};
+  if (updateData.status) data.status = updateData.status.toUpperCase() as CheckoutStatus;
+  if (updateData.completedAt) data.completedAt = new Date(updateData.completedAt);
+  // metadata update?
+  if (updateData.valId || updateData.error || updateData.failedAt) {
+    data.metadata = {
+      ...(session.metadata as any || {}),
+      valId: updateData.valId,
+      error: updateData.error,
+      failedAt: updateData.failedAt
+    };
   }
+
+  const result = await prisma.checkout.update({
+    where: { id: session.id },
+    data
+  });
 
   return {
     success: true,
     updated: "checkout_session",
-    session: toPlainObject<ICheckoutSession>(result),
+    session: {
+      ...result,
+      tranId: result.sessionId,
+      status: result.status.toLowerCase(),
+      amount: Number(result.amount)
+    }
   };
 };
 

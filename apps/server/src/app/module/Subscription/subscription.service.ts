@@ -1,262 +1,213 @@
-import { Subscription } from "./subscription.model";
-import { Plan } from "../Plan/plan.model";
-import { Merchant } from "../Merchant/merchant.model";
-import { ActivityLog } from "../ActivityLog/activityLog.model";
-import {
-  toPlainObjectArray,
-  toPlainObject,
-  calculatePeriodEnd,
-  isExpiringSoon,
-  isPastDue,
-  getDaysUntilExpiry,
-} from "../../utils/mongodb";
-import { ISubscription } from "./subscription.interface";
+import { prisma, BillingCycle, SubscriptionStatus } from "@framex/database";
+import { Decimal } from "@prisma/client/runtime/library";
+
+// Helper functions for date calculations
+function calculatePeriodEnd(start: Date, months: number): Date {
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + months);
+  return end;
+}
+
+function getDaysUntilExpiry(endDate: Date | string): number {
+  const end = new Date(endDate);
+  const now = new Date();
+  const diff = end.getTime() - now.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function isExpiringSoon(endDate: Date | string, days = 7): boolean {
+  return getDaysUntilExpiry(endDate) <= days && getDaysUntilExpiry(endDate) > 0;
+}
+
+function isPastDue(endDate: Date | string): boolean {
+  return new Date(endDate) < new Date();
+}
+
+function mapBillingCycle(months: number): BillingCycle {
+  if (months === 1) return "MONTHLY";
+  if (months === 6) return "SEMI_ANNUAL";
+  return "YEARLY";
+}
 
 const getAllSubscriptions = async () => {
-  const [subscriptions, plans, merchants] = await Promise.all([
-    Subscription.find({}).sort({ createdAt: -1 }),
-    Plan.find({}),
-    Merchant.find({}),
-  ]);
+  const subscriptions = await prisma.merchantSubscription.findMany({
+    include: { plan: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const merchants = await prisma.merchant.findMany();
+  const merchantMap = new Map(merchants.map((m) => [m.id, m]));
 
   return subscriptions.map((sub) => {
-    const plan = plans.find((p) => p.id === sub.planId);
-    const merchant = merchants.find((m) => m.id === sub.merchantId);
-    const subData = toPlainObject<ISubscription>(sub);
+    const merchant = merchantMap.get(sub.merchantId);
+    let dynamicStatus: string = sub.status;
 
-    // Calculate dynamic status (keep original status, add expiring flag)
-    let dynamicStatus: string = subData?.status || "active";
-    if (subData?.status === "active" && subData?.currentPeriodEnd) {
-      if (isPastDue(subData.currentPeriodEnd)) {
-        dynamicStatus = "expired";
+    if (sub.status === "ACTIVE" && sub.currentPeriodEnd) {
+      if (isPastDue(sub.currentPeriodEnd)) {
+        dynamicStatus = "EXPIRED";
       }
     }
 
     return {
-      ...subData,
+      ...sub,
       dynamicStatus,
-      isExpiringSoon: subData?.currentPeriodEnd
-        ? isExpiringSoon(subData.currentPeriodEnd)
-        : false,
-      isPastDue: subData?.currentPeriodEnd
-        ? isPastDue(subData.currentPeriodEnd)
-        : false,
-      daysUntilExpiry: subData?.currentPeriodEnd
-        ? getDaysUntilExpiry(subData.currentPeriodEnd)
-        : 0,
-      plan: plan ? toPlainObject(plan) : null,
-      merchant: merchant
-        ? {
-            name: merchant.name,
-            email: merchant.email,
-          }
-        : null,
+      isExpiringSoon: sub.currentPeriodEnd ? isExpiringSoon(sub.currentPeriodEnd) : false,
+      isPastDue: sub.currentPeriodEnd ? isPastDue(sub.currentPeriodEnd) : false,
+      daysUntilExpiry: sub.currentPeriodEnd ? getDaysUntilExpiry(sub.currentPeriodEnd) : 0,
+      merchant: merchant ? { name: merchant.name, email: merchant.email } : null,
     };
   });
 };
 
 const getSubscriptionById = async (id: string) => {
-  const subscription = await Subscription.findOne({ id });
+  const subscription = await prisma.merchantSubscription.findUnique({
+    where: { id },
+    include: { plan: true },
+  });
+
   if (!subscription) {
     throw new Error("Subscription not found");
   }
 
-  const plan = subscription.planId
-    ? await Plan.findOne({ id: subscription.planId })
-    : null;
-
-  return {
-    ...toPlainObject<ISubscription>(subscription),
-    plan: plan ? toPlainObject(plan) : null,
-  };
+  return subscription;
 };
 
-const createSubscription = async (payload: Partial<ISubscription>) => {
-  // Check if subscription already exists
-  const existingSub = await Subscription.findOne({
-    merchantId: payload.merchantId,
+const createSubscription = async (payload: {
+  merchantId: string;
+  planId: string;
+  planName?: string;
+  billingCycleMonths?: number;
+  amount?: number;
+  currency?: string;
+  status?: SubscriptionStatus;
+  currentPeriodStart?: string;
+  currentPeriodEnd?: string;
+  autoRenew?: boolean;
+}) => {
+  const existing = await prisma.merchantSubscription.findFirst({
+    where: { merchantId: payload.merchantId },
   });
-  if (existingSub) {
-    // Update existing subscription
-    const billingCycleMonths =
-      payload.billingCycleMonths || existingSub.billingCycleMonths || 1;
-    const now = new Date();
-    const periodEnd = payload.currentPeriodEnd
-      ? new Date(payload.currentPeriodEnd)
-      : calculatePeriodEnd(now, billingCycleMonths);
-    const gracePeriodEnd = new Date(periodEnd);
-    gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 7);
 
-    const updateData: any = {
-      planId: payload.planId!,
-      planName: payload.planName || existingSub.planName,
-      billingCycleMonths,
-      billingCycle:
-        payload.billingCycle ||
-        (billingCycleMonths === 1
-          ? "monthly"
-          : billingCycleMonths === 6
-            ? "semi_annual"
-            : "yearly"),
-      amount: payload.amount || existingSub.amount,
-      currency: payload.currency || existingSub.currency || "BDT",
-      status: payload.status || "active",
-      currentPeriodStart: payload.currentPeriodStart || now.toISOString(),
-      currentPeriodEnd: periodEnd.toISOString(),
-      gracePeriodEndsAt:
-        payload.gracePeriodEndsAt || gracePeriodEnd.toISOString(),
-      nextBillingDate: payload.nextBillingDate || periodEnd.toISOString(),
-      lastPaymentDate: payload.lastPaymentDate || now.toISOString(),
-      autoRenew: payload.autoRenew !== false,
-      cancelAtPeriodEnd: payload.cancelAtPeriodEnd || false,
-      updatedAt: new Date().toISOString(),
-    };
-
-    await Subscription.findOneAndUpdate(
-      { merchantId: payload.merchantId },
-      { $set: updateData }
-    );
-    if (payload.amount) {
-      await Subscription.findOneAndUpdate(
-        { merchantId: payload.merchantId },
-        { $inc: { totalPaid: payload.amount } }
-      );
-    }
-
-    const updated = await Subscription.findOne({
-      merchantId: payload.merchantId,
-    });
-    return toPlainObject<ISubscription>(updated!);
-  }
-
-  // Create new subscription
-  const billingCycleMonths = payload.billingCycleMonths || 1;
   const now = new Date();
+  const billingCycleMonths = payload.billingCycleMonths || 1;
   const periodEnd = payload.currentPeriodEnd
     ? new Date(payload.currentPeriodEnd)
     : calculatePeriodEnd(now, billingCycleMonths);
   const gracePeriodEnd = new Date(periodEnd);
   gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 7);
 
-  const subscriptionData: ISubscription = {
-    id: payload.id || `sub_${Date.now()}`,
-    merchantId: payload.merchantId!,
-    planId: payload.planId!,
-    planName: payload.planName,
-    billingCycleMonths,
-    billingCycle:
-      payload.billingCycle ||
-      (billingCycleMonths === 1
-        ? "monthly"
-        : billingCycleMonths === 6
-          ? "semi_annual"
-          : "yearly"),
-    amount: payload.amount || 0,
-    currency: payload.currency || "BDT",
-    status: payload.status || "active",
-    currentPeriodStart: payload.currentPeriodStart || now.toISOString(),
-    currentPeriodEnd: periodEnd.toISOString(),
-    gracePeriodEndsAt: gracePeriodEnd.toISOString(),
-    trialEndsAt: payload.trialEndsAt,
-    cancelAtPeriodEnd: payload.cancelAtPeriodEnd || false,
-    cancelledAt: payload.cancelledAt,
-    paymentMethodId: payload.paymentMethodId,
-    lastPaymentDate: payload.lastPaymentDate || now.toISOString(),
-    nextBillingDate: payload.nextBillingDate || periodEnd.toISOString(),
-    totalPaid: payload.totalPaid || payload.amount || 0,
-    autoRenew: payload.autoRenew !== false,
-    renewalCount: 0,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+  if (existing) {
+    // Update existing subscription
+    const updated = await prisma.merchantSubscription.update({
+      where: { id: existing.id },
+      data: {
+        planId: payload.planId,
+        planName: payload.planName || existing.planName,
+        billingCycleMonths,
+        billingCycle: mapBillingCycle(billingCycleMonths),
+        amount: payload.amount ? new Decimal(payload.amount) : existing.amount,
+        currency: payload.currency || existing.currency,
+        status: payload.status || "ACTIVE",
+        currentPeriodStart: payload.currentPeriodStart ? new Date(payload.currentPeriodStart) : now,
+        currentPeriodEnd: periodEnd,
+        gracePeriodEndsAt: gracePeriodEnd,
+        nextBillingDate: periodEnd,
+        autoRenew: payload.autoRenew !== false,
+        totalPaid: existing.totalPaid.add(new Decimal(payload.amount || 0)),
+      },
+      include: { plan: true },
+    });
 
-  const subscription = await Subscription.create(subscriptionData);
+    return updated;
+  }
 
-  // Log activity
-  await ActivityLog.create({
-    id: `log_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    type: "subscription",
-    action: "subscription_created",
-    entityId: subscription.id,
-    details: {
-      subscriptionId: subscription.id,
-      merchantId: subscription.merchantId,
-      planId: subscription.planId,
-      planName: subscription.planName,
+  // Create new subscription
+  const subscription = await prisma.merchantSubscription.create({
+    data: {
+      merchantId: payload.merchantId,
+      planId: payload.planId,
+      planName: payload.planName,
       billingCycleMonths,
-      amount: subscription.amount,
+      billingCycle: mapBillingCycle(billingCycleMonths),
+      amount: new Decimal(payload.amount || 0),
+      currency: payload.currency || "BDT",
+      status: payload.status || "ACTIVE",
+      currentPeriodStart: payload.currentPeriodStart ? new Date(payload.currentPeriodStart) : now,
+      currentPeriodEnd: periodEnd,
+      gracePeriodEndsAt: gracePeriodEnd,
+      nextBillingDate: periodEnd,
+      autoRenew: payload.autoRenew !== false,
+      totalPaid: new Decimal(payload.amount || 0),
     },
-    createdAt: new Date().toISOString(),
+    include: { plan: true },
   });
 
-  return toPlainObject<ISubscription>(subscription);
+  // Log activity
+  await prisma.activityLog.create({
+    data: {
+      action: "subscription_created",
+      resource: "subscription",
+      resourceId: subscription.id,
+      details: {
+        subscriptionId: subscription.id,
+        merchantId: subscription.merchantId,
+        planId: subscription.planId,
+        planName: subscription.planName,
+        billingCycleMonths,
+        amount: Number(subscription.amount),
+      },
+    },
+  });
+
+  return subscription;
 };
 
-const updateSubscription = async (
-  id: string,
-  payload: Partial<ISubscription>
-) => {
-  const updateData: any = {
-    ...payload,
-    updatedAt: new Date().toISOString(),
-  };
+const updateSubscription = async (id: string, payload: Record<string, any>) => {
+  const { plan, ...updateData } = payload;
 
-  delete updateData.id;
-  delete updateData.plan;
+  const subscription = await prisma.merchantSubscription.update({
+    where: { id },
+    data: updateData,
+    include: { plan: true },
+  });
 
-  const subscription = await Subscription.findOneAndUpdate(
-    { id },
-    { $set: updateData },
-    { new: true }
-  );
-  if (!subscription) {
-    throw new Error("Subscription not found");
-  }
-  return toPlainObject<ISubscription>(subscription);
+  return subscription;
 };
 
 const deleteSubscription = async (id: string) => {
-  const subscription = await Subscription.findOne({ id });
-  if (!subscription) {
-    throw new Error("Subscription not found");
-  }
-
-  await Subscription.deleteOne({ id });
+  await prisma.merchantSubscription.delete({ where: { id } });
   return { success: true, message: "Subscription deleted successfully" };
 };
 
-const getExpiringSubscriptions = async (daysAhead: number = 7) => {
+const getExpiringSubscriptions = async (daysAhead = 7) => {
   const now = new Date();
   const futureDate = new Date(now);
   futureDate.setDate(futureDate.getDate() + daysAhead);
 
-  const [subscriptions, plans, merchants] = await Promise.all([
-    Subscription.find({
-      status: "active",
+  const subscriptions = await prisma.merchantSubscription.findMany({
+    where: {
+      status: "ACTIVE",
       currentPeriodEnd: {
-        $gte: now.toISOString(),
-        $lte: futureDate.toISOString(),
+        gte: now,
+        lte: futureDate,
       },
-    }).sort({ currentPeriodEnd: 1 }),
-    Plan.find({}),
-    Merchant.find({}),
-  ]);
+    },
+    include: { plan: true },
+    orderBy: { currentPeriodEnd: "asc" },
+  });
+
+  const merchantIds = subscriptions.map((s) => s.merchantId);
+  const merchants = await prisma.merchant.findMany({
+    where: { id: { in: merchantIds } },
+  });
+  const merchantMap = new Map(merchants.map((m) => [m.id, m]));
 
   return subscriptions.map((sub) => {
-    const plan = plans.find((p) => p.id === sub.planId);
-    const merchant = merchants.find((m) => m.id === sub.merchantId);
-    const subData = toPlainObject<ISubscription>(sub);
-    const daysUntilExpiry = subData?.currentPeriodEnd
-      ? getDaysUntilExpiry(subData.currentPeriodEnd)
-      : 0;
-
+    const merchant = merchantMap.get(sub.merchantId);
     return {
-      ...subData,
-      daysUntilExpiry,
-      plan: plan ? { name: plan.name, price: plan.price } : null,
-      merchant: merchant
-        ? { name: merchant.name, email: merchant.email }
-        : null,
+      ...sub,
+      daysUntilExpiry: getDaysUntilExpiry(sub.currentPeriodEnd),
+      merchant: merchant ? { name: merchant.name, email: merchant.email } : null,
     };
   });
 };
@@ -264,57 +215,49 @@ const getExpiringSubscriptions = async (daysAhead: number = 7) => {
 const renewSubscription = async (
   subscriptionId: string,
   billingCycleMonths?: number,
-  paymentAmount?: number,
-  paymentMethod?: string,
-  transactionId?: string
+  paymentAmount?: number
 ) => {
-  const subscription = await Subscription.findOne({ id: subscriptionId });
+  const subscription = await prisma.merchantSubscription.findUnique({
+    where: { id: subscriptionId },
+  });
+
   if (!subscription) {
     throw new Error("Subscription not found");
   }
 
   const now = new Date();
-  const currentPeriodEnd = new Date(subscription.currentPeriodEnd);
+  const currentPeriodEnd = subscription.currentPeriodEnd;
   const newPeriodStart = currentPeriodEnd > now ? currentPeriodEnd : now;
-  const cycleMonths =
-    billingCycleMonths || subscription.billingCycleMonths || 1;
+  const cycleMonths = billingCycleMonths || subscription.billingCycleMonths || 1;
+  const newPeriodEnd = calculatePeriodEnd(newPeriodStart, cycleMonths);
 
-  const newPeriodEnd = new Date(newPeriodStart);
-  newPeriodEnd.setMonth(newPeriodEnd.getMonth() + cycleMonths);
-
-  await Subscription.findOneAndUpdate(
-    { id: subscriptionId },
-    {
-      $set: {
-        status: "active",
-        currentPeriodStart: newPeriodStart.toISOString(),
-        currentPeriodEnd: newPeriodEnd.toISOString(),
-        billingCycleMonths: cycleMonths,
-        lastPaymentDate: now.toISOString(),
-        nextBillingDate: newPeriodEnd.toISOString(),
-        updatedAt: now.toISOString(),
-      },
-      $inc: {
-        totalPaid: paymentAmount || 0,
-        renewalCount: 1,
-      },
-    }
-  );
-
-  // Log activity
-  await ActivityLog.create({
-    id: `log_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    type: "subscription",
-    action: "subscription_renewed",
-    entityId: subscriptionId,
-    details: {
-      subscriptionId,
-      merchantId: subscription.merchantId,
+  await prisma.merchantSubscription.update({
+    where: { id: subscriptionId },
+    data: {
+      status: "ACTIVE",
+      currentPeriodStart: newPeriodStart,
+      currentPeriodEnd: newPeriodEnd,
       billingCycleMonths: cycleMonths,
-      newPeriodEnd: newPeriodEnd.toISOString(),
-      paymentAmount,
+      lastPaymentDate: now,
+      nextBillingDate: newPeriodEnd,
+      totalPaid: { increment: paymentAmount || 0 },
+      renewalCount: { increment: 1 },
     },
-    createdAt: new Date().toISOString(),
+  });
+
+  await prisma.activityLog.create({
+    data: {
+      action: "subscription_renewed",
+      resource: "subscription",
+      resourceId: subscriptionId,
+      details: {
+        subscriptionId,
+        merchantId: subscription.merchantId,
+        billingCycleMonths: cycleMonths,
+        newPeriodEnd: newPeriodEnd.toISOString(),
+        paymentAmount,
+      },
+    },
   });
 
   return {

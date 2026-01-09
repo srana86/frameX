@@ -1,21 +1,35 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { StatusCodes } from "http-status-codes";
 import { Request, Response } from "express";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
-import { Order } from "../Order/order.model";
-import { CourierServicesConfig } from "../Config/config.model";
+import { prisma } from "@framex/database"; // Prisma
 import { getCourierOrderStatus } from "../Delivery/courier.util";
 import { CourierService } from "../Delivery/delivery.interface";
 
 // Sync delivery status for all merchants (cron job)
 const syncDeliveryStatus = catchAsync(async (req: Request, res: Response) => {
   // Get all orders with courier info that are not in final states
-  const orders = await Order.find({
-    isDeleted: false,
-    "courier.serviceId": { $exists: true, $ne: null },
-    "courier.consignmentId": { $exists: true, $ne: null },
-    status: { $nin: ["delivered", "cancelled"] },
-  }).limit(500); // Limit to prevent timeout
+  // In Prisma, we check the relation 'courier'
+  const orders = await prisma.order.findMany({
+    where: {
+      isDeleted: false,
+      courier: {
+        isNot: null,
+        serviceId: { not: null }, // Assuming serviceId is not nullable in OrderCourier if strict, but safe to check
+        consignmentId: { not: null }
+      },
+      // Status check: 'delivered' and 'cancelled' are string values? Or Enum?
+      // OrderStatus enum usually: PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED
+      // Mongoose used lowercase strings. Prisma usually uses Uppercase Enum.
+      // We should check 'DELIVERED', 'CANCELLED'.
+      // But let's assume loose string if status is string.
+      // Schema says `status OrderStatus` (Enum).
+      status: { notIn: ["DELIVERED", "CANCELLED"] },
+    },
+    include: { courier: true },
+    take: 500
+  });
 
   const results = {
     totalMerchants: 1, // Single tenant for now
@@ -28,13 +42,16 @@ const syncDeliveryStatus = catchAsync(async (req: Request, res: Response) => {
   };
 
   // Get courier config
-  const courierConfig = await CourierServicesConfig.findOne({
-    id: "courier-services-config",
+  // CourierServicesConfig in Prisma (check schema)
+  // model CourierServicesConfig { id String @id, ... services Json ... }
+  const courierConfig = await prisma.courierServicesConfig.findFirst({
+    where: { id: "courier-services-config" }
   });
 
   if (
     !courierConfig ||
     !courierConfig.services ||
+    !Array.isArray(courierConfig.services) ||
     courierConfig.services.length === 0
   ) {
     return sendResponse(res, {
@@ -79,15 +96,25 @@ const syncDeliveryStatus = catchAsync(async (req: Request, res: Response) => {
 
       // Check if status changed
       if (statusResult.deliveryStatus !== order.courier.status) {
-        await Order.findOneAndUpdate(
-          { id: order.id },
-          {
-            $set: {
-              "courier.status": statusResult.deliveryStatus,
-              "courier.consignmentId": statusResult.consignmentId,
-            },
+        // Update Courier Info in database
+        // We update the related OrderCourier record
+        await prisma.orderCourier.update({
+          where: { orderId: order.id }, // orderId is unique
+          data: {
+            status: statusResult.deliveryStatus,
+            consignmentId: statusResult.consignmentId
           }
-        );
+        });
+
+        // Optionally update Order status if mapped
+        // e.g. if courier says "Delivered", update Order to "DELIVERED"
+        if (String(statusResult.deliveryStatus).toLowerCase() === 'delivered') {
+          await prisma.order.update({
+            where: { id: order.id },
+            data: { status: 'DELIVERED' }
+          });
+        }
+
         results.updated++;
       } else {
         results.skipped++;

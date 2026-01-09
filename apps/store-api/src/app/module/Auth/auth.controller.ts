@@ -8,7 +8,7 @@ import AppError from "../../errors/AppError";
 
 // Login user
 const login = catchAsync(async (req: Request, res: Response) => {
-  const result = await AuthServices.loginUser(req.body);
+  const result = await AuthServices.loginUser(req.tenantId, req.body);
 
   // Set httpOnly cookie
   res.cookie("auth_token", result.accessToken, {
@@ -31,7 +31,7 @@ const login = catchAsync(async (req: Request, res: Response) => {
 
 // Register user
 const register = catchAsync(async (req: Request, res: Response) => {
-  const result = await AuthServices.registerUser(req.body);
+  const result = await AuthServices.registerUser(req.tenantId, req.body);
 
   // Set httpOnly cookie
   res.cookie("auth_token", result.accessToken, {
@@ -73,7 +73,7 @@ const getMe = catchAsync(async (req: Request, res: Response) => {
     throw new AppError(StatusCodes.UNAUTHORIZED, "Unauthorized");
   }
 
-  const result = await AuthServices.getCurrentUser(userId);
+  const result = await AuthServices.getCurrentUser(req.tenantId, userId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -103,6 +103,7 @@ const googleAuth = catchAsync(async (req: Request, res: Response) => {
 
   try {
     const result = await AuthServices.googleLogin(
+      req.tenantId,
       code as string,
       redirectUri as string
     );
@@ -146,7 +147,7 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
     throw new AppError(StatusCodes.UNAUTHORIZED, "Unauthorized");
   }
 
-  const result = await AuthServices.changePassword(userId, req.body);
+  const result = await AuthServices.changePassword(req.tenantId, userId, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -158,7 +159,7 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
 
 // Forgot password
 const forgotPassword = catchAsync(async (req: Request, res: Response) => {
-  const result = await AuthServices.forgotPassword(req.body);
+  const result = await AuthServices.forgotPassword(req.tenantId, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -176,7 +177,7 @@ const forgotPassword = catchAsync(async (req: Request, res: Response) => {
 
 // Reset password
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
-  const result = await AuthServices.resetPassword(req.body);
+  const result = await AuthServices.resetPassword(req.tenantId, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

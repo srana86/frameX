@@ -6,7 +6,7 @@ import { PageServices } from "./page.service";
 
 // Get all pages
 const getAllPages = catchAsync(async (req: Request, res: Response) => {
-  const result = await PageServices.getAllPagesFromDB();
+  const result = await PageServices.getAllPagesFromDB(req.tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -18,7 +18,7 @@ const getAllPages = catchAsync(async (req: Request, res: Response) => {
 
 // Get enabled pages
 const getEnabledPages = catchAsync(async (req: Request, res: Response) => {
-  const result = await PageServices.getEnabledPagesFromDB();
+  const result = await PageServices.getEnabledPagesFromDB(req.tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -31,7 +31,7 @@ const getEnabledPages = catchAsync(async (req: Request, res: Response) => {
 // Get page by slug
 const getPageBySlug = catchAsync(async (req: Request, res: Response) => {
   const { slug } = req.params;
-  const result = await PageServices.getPageBySlugFromDB(slug);
+  const result = await PageServices.getPageBySlugFromDB(req.tenantId, slug);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -43,7 +43,7 @@ const getPageBySlug = catchAsync(async (req: Request, res: Response) => {
 
 // Create page
 const createPage = catchAsync(async (req: Request, res: Response) => {
-  const result = await PageServices.createPageIntoDB(req.body);
+  const result = await PageServices.createPageIntoDB(req.tenantId, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,
@@ -56,7 +56,7 @@ const createPage = catchAsync(async (req: Request, res: Response) => {
 // Update page
 const updatePage = catchAsync(async (req: Request, res: Response) => {
   const { slug } = req.params;
-  const result = await PageServices.updatePageIntoDB(slug, req.body);
+  const result = await PageServices.updatePageIntoDB(req.tenantId, slug, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -69,7 +69,7 @@ const updatePage = catchAsync(async (req: Request, res: Response) => {
 // Delete page
 const deletePage = catchAsync(async (req: Request, res: Response) => {
   const { slug } = req.params;
-  const result = await PageServices.deletePageFromDB(slug);
+  const result = await PageServices.deletePageFromDB(req.tenantId, slug);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -81,7 +81,7 @@ const deletePage = catchAsync(async (req: Request, res: Response) => {
 
 // Get page categories
 const getPageCategories = catchAsync(async (req: Request, res: Response) => {
-  const result = await PageServices.getPageCategoriesFromDB();
+  const result = await PageServices.getPageCategoriesFromDB(req.tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -93,7 +93,7 @@ const getPageCategories = catchAsync(async (req: Request, res: Response) => {
 
 // Create page category
 const createPageCategory = catchAsync(async (req: Request, res: Response) => {
-  const result = await PageServices.createPageCategoryIntoDB(req.body);
+  const result = await PageServices.createPageCategoryIntoDB(req.tenantId, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,
@@ -106,7 +106,7 @@ const createPageCategory = catchAsync(async (req: Request, res: Response) => {
 // Update page category
 const updatePageCategory = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await PageServices.updatePageCategoryIntoDB(id, req.body);
+  const result = await PageServices.updatePageCategoryIntoDB(req.tenantId, id, req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -119,7 +119,7 @@ const updatePageCategory = catchAsync(async (req: Request, res: Response) => {
 // Delete page category
 const deletePageCategory = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await PageServices.deletePageCategoryFromDB(id);
+  const result = await PageServices.deletePageCategoryFromDB(req.tenantId, id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

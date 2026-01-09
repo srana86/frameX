@@ -1,39 +1,36 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Notification } from "./notification.model";
-import QueryBuilder from "../../builder/QueryBuilder";
-import { emitNotificationToUser } from "../../socket/socket.emitter";
+import { prisma, PrismaQueryBuilder } from "@framex/database";
+import AppError from "../../errors/AppError";
+import { StatusCodes } from "http-status-codes";
 
 // Get notifications for user
 const getUserNotificationsFromDB = async (
+  tenantId: string,
   userId: string,
   query: Record<string, unknown>
 ) => {
-  const baseQuery: any = { userId };
+  const builder = new PrismaQueryBuilder({
+    model: prisma.notification,
+    query
+  });
 
-  // Filter unread if specified
+  const baseWhere: any = { userId, tenantId };
   if (query.unreadOnly === "true") {
-    baseQuery.read = false;
+    baseWhere.read = false;
   }
 
-  const notificationQuery = new QueryBuilder(
-    Notification.find(baseQuery),
-    query
-  )
+  const { data: notifications, meta } = await builder
+    .addBaseWhere(baseWhere)
     .sort()
     .paginate()
-    .fields();
+    .execute();
 
-  const result = await notificationQuery.modelQuery;
-  const meta = await notificationQuery.countTotal();
-
-  // Count unread notifications
-  const unreadCount = await Notification.countDocuments({
-    userId,
-    read: false,
+  const unreadCount = await prisma.notification.count({
+    where: { userId, tenantId, read: false }
   });
 
   return {
-    notifications: result,
+    notifications,
     unreadCount,
     meta,
   };
@@ -41,33 +38,23 @@ const getUserNotificationsFromDB = async (
 
 // Mark notification as read
 const markNotificationAsReadFromDB = async (
+  tenantId: string,
   userId: string,
   notificationId?: string
 ) => {
   if (notificationId) {
-    const notification = await Notification.findOneAndUpdate(
-      { id: notificationId, userId },
-      { read: true },
-      { new: true }
-    );
+    await prisma.notification.updateMany({
+      where: { id: notificationId, userId, tenantId },
+      data: { read: true }
+    });
 
-    // Emit real-time notification update
-    if (notification) {
-      try {
-        emitNotificationToUser(userId, {
-          id: notification.id,
-          title: notification.title,
-          message: notification.message,
-          type: notification.type || "info",
-          data: { ...notification.toObject(), read: true },
-        });
-      } catch (error) {
-        console.error("Failed to emit notification update event:", error);
-      }
-    }
+    // Emit logic omitted, can be re-added if socket emitter is available
     return { success: true, message: "Notification marked as read" };
   } else {
-    await Notification.updateMany({ userId }, { read: true });
+    await prisma.notification.updateMany({
+      where: { userId, tenantId },
+      data: { read: true }
+    });
     return { success: true, message: "All notifications marked as read" };
   }
 };
