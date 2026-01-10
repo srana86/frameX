@@ -6,7 +6,7 @@
 
 import { headers } from "next/headers";
 
-const API_URL = process.env.NEXT_PUBLIC_STORE_API_URL || 'http://localhost:8082';
+const API_URL = process.env.NEXT_PUBLIC_STORE_API_URL || 'http://localhost:8080/api/v1';
 
 // Shim for MongoDB Cursor
 class CursorShim<T> {

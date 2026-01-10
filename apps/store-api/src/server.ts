@@ -1,3 +1,7 @@
+// IMPORTANT: Load environment variables FIRST, before any imports that use them
+import dotenv from "dotenv";
+dotenv.config();
+
 import { Server } from "http";
 import app from "./app";
 import config from "./config";

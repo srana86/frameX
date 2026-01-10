@@ -14,8 +14,8 @@ export async function getTenantById(tenantId: string): Promise<Tenant | null> {
  * Get tenant by domain (subdomain or custom domain)
  */
 export async function getTenantByDomain(domain: string): Promise<(TenantDomain & { tenant: Tenant }) | null> {
-    // Check if it's a subdomain (e.g., "acme" from acme.framextech.com)
-    const subdomainMatch = domain.match(/^([^.]+)\.framextech\.com$/);
+    // Check if it's a subdomain (e.g., "acme" from acme.framextech.com OR acme.localhost)
+    const subdomainMatch = domain.match(/^([^.]+)\.(framextech\.com|localhost)(:\d+)?$/);
     const subdomain = subdomainMatch ? subdomainMatch[1] : null;
 
     return prisma.tenantDomain.findFirst({

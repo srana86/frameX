@@ -15,7 +15,27 @@ const app: Application = express();
 app.use(express.json());
 app.use(cookieParser());
 
-app.use(cors({ origin: ['http://localhost:3000', 'http://localhost:5173'], credentials: true }));
+// CORS configuration - allow localhost subdomains for multi-tenant dev
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+
+    // Allow any localhost subdomain on any port (e.g., demo.localhost:3000)
+    const localhostPattern = /^https?:\/\/([a-z0-9-]+\.)?localhost(:\d+)?$/;
+    // Allow framextech.com subdomains
+    const prodPattern = /^https?:\/\/([a-z0-9-]+\.)?framextech\.com$/;
+
+    if (localhostPattern.test(origin) || prodPattern.test(origin)) {
+      return callback(null, true);
+    }
+
+    // Reject other origins
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+};
+app.use(cors(corsOptions));
 
 // Application routes
 app.use('/api/v1', router);

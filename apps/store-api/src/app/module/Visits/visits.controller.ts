@@ -13,8 +13,13 @@ const trackVisit = catchAsync(async (req: Request, res: Response) => {
     req.socket.remoteAddress ||
     "";
 
-  const tenantId = req.user?.merchantId;
-  const result = await VisitsServices.trackVisitFromDB(tenantId as string, {
+  const tenantId = req.tenantId;
+
+  if (!tenantId) {
+    throw new Error("Tenant ID is missing");
+  }
+
+  const result = await VisitsServices.trackVisitFromDB(tenantId, {
     ...req.body,
     ipAddress,
   });

@@ -6,7 +6,7 @@ import { TrackingServices } from "./tracking.service";
 
 // Track Facebook event
 const trackFBEvent = catchAsync(async (req: Request, res: Response) => {
-  const tenantId = (req as any).merchant?.id as string;
+  const tenantId = req.tenantId;
   const result = await TrackingServices.trackFBEventFromDB(tenantId, req.body);
 
   sendResponse(res, {
@@ -19,7 +19,7 @@ const trackFBEvent = catchAsync(async (req: Request, res: Response) => {
 
 // Get tracked Facebook events
 const getFBEvents = catchAsync(async (req: Request, res: Response) => {
-  const tenantId = (req as any).merchant?.id as string;
+  const tenantId = req.tenantId;
   const result = await TrackingServices.getFBEventsFromDB(tenantId, req.query);
 
   sendResponse(res, {
@@ -35,7 +35,7 @@ const getFBEvents = catchAsync(async (req: Request, res: Response) => {
 
 // Track Meta Pixel event
 const trackMetaPixel = catchAsync(async (req: Request, res: Response) => {
-  const tenantId = (req as any).merchant?.id as string;
+  const tenantId = req.tenantId;
   const result = await TrackingServices.trackMetaPixelEventFromDB(tenantId, req.body);
 
   sendResponse(res, {

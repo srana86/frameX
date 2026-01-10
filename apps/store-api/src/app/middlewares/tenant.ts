@@ -17,7 +17,7 @@ declare global {
 
 /**
  * Tenant middleware - extracts and validates tenant from request
- * Checks: x-merchant-id header, x-subdomain header, or domain lookup
+ * Priority: 1. x-domain header, 2. Origin header, 3. x-merchant-id header
  */
 export const tenantMiddleware = async (
     req: Request,
@@ -25,46 +25,58 @@ export const tenantMiddleware = async (
     next: NextFunction
 ) => {
     try {
-        // Priority 1: Direct merchant ID header (from proxy)
-        let tenantId = req.headers["x-merchant-id"] as string;
+        let tenantId: string | undefined;
 
-        // Priority 2: Subdomain header (from proxy)
+        // Helper to resolve tenant from a domain string
+        const resolveTenantFromDomain = async (domain: string) => {
+            if (!domain || domain === "localhost") return null;
+            return getTenantByDomain(domain);
+        };
+
+        // Priority 1: x-domain header (frontend sends current domain)
+        const xDomain = req.headers["x-domain"] as string;
+        if (xDomain) {
+            const tenantDomain = await resolveTenantFromDomain(xDomain);
+            if (tenantDomain) {
+                tenantId = tenantDomain.tenantId;
+                req.tenant = {
+                    id: tenantDomain.tenant.id,
+                    name: tenantDomain.tenant.name,
+                    status: tenantDomain.tenant.status,
+                };
+            }
+        }
+
+        // Priority 2: Origin header (for cross-origin API calls)
         if (!tenantId) {
-            const subdomain = req.headers["x-subdomain"] as string;
-            if (subdomain) {
-                const tenantDomain = await getTenantByDomain(`${subdomain}.framextech.com`);
-                if (tenantDomain) {
-                    tenantId = tenantDomain.tenantId;
-                    req.tenant = {
-                        id: tenantDomain.tenant.id,
-                        name: tenantDomain.tenant.name,
-                        status: tenantDomain.tenant.status,
-                    };
+            const origin = req.headers["origin"] as string;
+            if (origin) {
+                try {
+                    const originUrl = new URL(origin);
+                    const tenantDomain = await resolveTenantFromDomain(originUrl.hostname);
+                    if (tenantDomain) {
+                        tenantId = tenantDomain.tenantId;
+                        req.tenant = {
+                            id: tenantDomain.tenant.id,
+                            name: tenantDomain.tenant.name,
+                            status: tenantDomain.tenant.status,
+                        };
+                    }
+                } catch (e) {
+                    // Invalid origin URL, continue
                 }
             }
         }
 
-        // Priority 3: Look up tenant from host header
+        // Priority 3: x-merchant-id header (direct fallback)
         if (!tenantId) {
-            const host = req.headers["host"];
-            if (host) {
-                const domain = host.split(":")[0];
-                const tenantDomain = await getTenantByDomain(domain);
-                if (tenantDomain) {
-                    tenantId = tenantDomain.tenantId;
-                    req.tenant = {
-                        id: tenantDomain.tenant.id,
-                        name: tenantDomain.tenant.name,
-                        status: tenantDomain.tenant.status,
-                    };
-                }
-            }
+            tenantId = req.headers["x-merchant-id"] as string;
         }
 
         if (!tenantId) {
             return res.status(400).json({
                 success: false,
-                message: "Tenant identification required",
+                message: "Tenant identification required. Send x-domain or x-merchant-id header.",
             });
         }
 

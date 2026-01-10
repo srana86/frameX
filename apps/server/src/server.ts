@@ -24,13 +24,6 @@ async function main() {
     const connectionTime = Date.now() - startTime;
     console.log(`✅ [Database] PostgreSQL connected in ${connectionTime}ms`);
 
-    // Seed super admin
-    try {
-      const seedSuperAdmin = (await import("./app/DB")).default;
-      await seedSuperAdmin();
-    } catch (error) {
-      console.error("❌ [Database] Failed to seed Super Admin:", error);
-    }
 
     server = app.listen(config.port, () => {
       console.log(`🚀 [Server] App is listening on port ${config.port}`);

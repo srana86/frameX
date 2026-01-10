@@ -44,7 +44,8 @@ function OrderSuccessContent() {
 
     const fetchOrder = async () => {
       try {
-        const res = await fetch(`/api/orders/${orderId}`);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+        const res = await fetch(`${apiUrl}/orders/${orderId}`);
         if (!res.ok) {
           throw new Error("Failed to fetch order");
         }
@@ -126,13 +127,13 @@ function OrderSuccessContent() {
         quantity: item.quantity,
       }));
 
-      // Fetch brand config for currency
-      fetch("/api/brand-config", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      fetch(`${apiUrl}/brand-config`, {
         cache: "force-cache",
-        next: { revalidate: 300 },
       })
         .then((res) => res.json())
-        .then((brandConfig) => {
+        .then((response) => {
+          const brandConfig = response?.data || response;
           const currency = brandConfig?.currency?.iso || "USD";
 
           // Push purchase event to dataLayer (Google Analytics / GTM)
@@ -220,7 +221,7 @@ function OrderSuccessContent() {
             ]);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [order]);
 
@@ -336,10 +337,10 @@ function OrderSuccessContent() {
                       order.status === "delivered"
                         ? "default"
                         : order.status === "pending"
-                        ? "secondary"
-                        : order.status === "cancelled"
-                        ? "destructive"
-                        : "outline"
+                          ? "secondary"
+                          : order.status === "cancelled"
+                            ? "destructive"
+                            : "outline"
                     }
                     className="capitalize"
                   >
@@ -376,8 +377,8 @@ function OrderSuccessContent() {
                         order.paymentStatus === "completed"
                           ? "default"
                           : order.paymentStatus === "failed"
-                          ? "destructive"
-                          : "secondary"
+                            ? "destructive"
+                            : "secondary"
                       }
                       className="capitalize"
                     >

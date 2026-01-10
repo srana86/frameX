@@ -6,7 +6,13 @@ import { PromotionalBannerServices } from "./promotionalBanner.service";
 
 // Get promotional banner
 const getPromotionalBanner = catchAsync(async (req: Request, res: Response) => {
-  const result = await PromotionalBannerServices.getPromotionalBannerFromDB(req.tenantId);
+  const tenantId = req.tenantId || (req.user as any)?.merchantId;
+
+  if (!tenantId) {
+    throw new Error("Tenant ID is missing");
+  }
+
+  const result = await PromotionalBannerServices.getPromotionalBannerFromDB(tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -19,8 +25,14 @@ const getPromotionalBanner = catchAsync(async (req: Request, res: Response) => {
 // Update promotional banner
 const updatePromotionalBanner = catchAsync(
   async (req: Request, res: Response) => {
+    const tenantId = req.tenantId || (req.user as any)?.merchantId;
+
+    if (!tenantId) {
+      throw new Error("Tenant ID is missing");
+    }
+
     const result =
-      await PromotionalBannerServices.updatePromotionalBannerIntoDB(req.tenantId, req.body);
+      await PromotionalBannerServices.updatePromotionalBannerIntoDB(tenantId, req.body);
 
     sendResponse(res, {
       statusCode: StatusCodes.OK,

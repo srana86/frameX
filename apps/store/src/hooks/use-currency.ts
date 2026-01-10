@@ -23,11 +23,12 @@ async function loadCurrencyConfig(): Promise<{ iso: string; symbol: string }> {
 
   inflightCurrencyPromise = (async () => {
     try {
-      const res = await fetch("/api/brand-config", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const res = await fetch(`${apiUrl}/brand-config`, {
         cache: "force-cache",
-        next: { revalidate: 300 },
       });
-      const config: BrandConfig = await res.json();
+      const response = await res.json();
+      const config: BrandConfig = response?.data || response;
       const iso = config?.currency?.iso || DEFAULT_ISO;
       const symbol = getCurrencySymbol(iso);
       cachedCurrencyIso = iso;

@@ -1,7 +1,18 @@
+import { config } from "dotenv";
+import { resolve } from "path";
+
+// Load environment variables
+config({ path: resolve(__dirname, "../.env") });
+
 import { PrismaClient, TenantStatus, UserRole, ProductStatus, OrderStatus } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { hash } from "bcryptjs";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({
+    connectionString: process.env.DATABASE_URL,
+});
+
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
     console.log("🌱 Seeding database...");

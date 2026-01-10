@@ -6,9 +6,9 @@ import { ConfigServices } from "./config.service";
 
 // Brand Config
 const getBrandConfig = catchAsync(async (req: Request, res: Response) => {
-  const result = await ConfigServices.getBrandConfigFromDB(
-    req.user?.merchantId as string
-  );
+  // Use tenantId from tenantMiddleware, fallback to user's merchantId for authenticated routes
+  const tenantId = req.tenantId || (req.user?.merchantId as string);
+  const result = await ConfigServices.getBrandConfigFromDB(tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

@@ -7,7 +7,10 @@ import { ProductViewersServices } from "./productViewers.service";
 // Track product viewer
 const trackProductViewer = catchAsync(async (req: Request, res: Response) => {
   const { slug, sessionId } = req.body;
+  const tenantId = req.tenantId;
+
   const result = await ProductViewersServices.trackProductViewerFromDB(
+    tenantId!,
     slug,
     sessionId
   );
@@ -24,7 +27,10 @@ const trackProductViewer = catchAsync(async (req: Request, res: Response) => {
 const getProductViewerCount = catchAsync(
   async (req: Request, res: Response) => {
     const { slug } = req.query;
+    const tenantId = req.tenantId;
+
     const result = await ProductViewersServices.getProductViewerCountFromDB(
+      tenantId!,
       slug as string
     );
 
@@ -40,7 +46,10 @@ const getProductViewerCount = catchAsync(
 // Remove viewer
 const removeProductViewer = catchAsync(async (req: Request, res: Response) => {
   const { slug, sessionId } = req.body;
+  const tenantId = req.tenantId;
+
   const result = await ProductViewersServices.removeProductViewerFromDB(
+    tenantId!,
     slug,
     sessionId
   );

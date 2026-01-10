@@ -5,6 +5,34 @@ import {
 } from "./user-data-store";
 import { getAllMetaParams } from "./meta-param-builder";
 
+// Helper to get the Store-API base URL (works on both client and server)
+function getApiBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+}
+
+// Helper to get Merchant ID for tenant context
+function getMerchantId(): string {
+  return process.env.NEXT_PUBLIC_MERCHANT_ID || "";
+}
+
+// Helper to build headers with tenant context
+function getApiHeaders(contentType: string = "application/json"): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": contentType,
+  };
+  // For server-side, use NEXT_PUBLIC_DOMAIN env var
+  const domain = process.env.NEXT_PUBLIC_DOMAIN;
+  if (domain) {
+    headers["X-Domain"] = domain;
+  }
+  // Fallback to merchant ID
+  const merchantId = getMerchantId();
+  if (merchantId) {
+    headers["X-Merchant-ID"] = merchantId;
+  }
+  return headers;
+}
+
 export interface TrackingEventData {
   eventName: string;
   eventId?: string;
@@ -39,20 +67,15 @@ export interface TrackingEventData {
  */
 async function getCurrencyFromBrandConfig(): Promise<string> {
   try {
-    // Always use API endpoint to avoid MongoDB bundling issues
-    const isClient = typeof window !== "undefined";
-
-    const apiUrl = `/api/brand-config`;
-
-    const response = await fetch(apiUrl, {
+    const apiUrl = getApiBaseUrl();
+    const response = await fetch(`${apiUrl}/brand-config`, {
       cache: "no-store",
-      ...(isClient
-        ? {}
-        : { headers: { "User-Agent": "Server-Side-Tracking" } }),
+      headers: getApiHeaders(),
     });
 
     if (response.ok) {
-      const brandConfig = await response.json();
+      const json = await response.json();
+      const brandConfig = json?.data || json;
       return brandConfig?.currency?.iso || defaultBrandConfig.currency.iso;
     }
   } catch (error) {
@@ -173,9 +196,10 @@ export async function sendServerSideTracking(
           }
         }
 
-        const response = await fetch("/api/tracking/meta-pixel", {
+        const apiUrl = getApiBaseUrl();
+        const response = await fetch(`${apiUrl}/tracking/meta-pixel`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getApiHeaders(),
           body: JSON.stringify({
             eventName: event.eventName,
             eventId,
@@ -222,10 +246,11 @@ export async function sendServerSideTracking(
   );
 
   // TikTok Pixel
+  const apiUrl = getApiBaseUrl();
   promises.push(
-    fetch("/api/tracking/tiktok-pixel", {
+    fetch(`${apiUrl}/tracking/tiktok-pixel`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getApiHeaders(),
       body: JSON.stringify({
         event: event.eventName,
         event_id: eventId,
@@ -243,14 +268,14 @@ export async function sendServerSideTracking(
           console.warn("TikTok Pixel server-side tracking failed");
         }
       })
-      .catch(() => {})
+      .catch(() => { })
   );
 
   // Google Analytics 4
   promises.push(
-    fetch("/api/tracking/ga4", {
+    fetch(`${apiUrl}/tracking/ga4`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getApiHeaders(),
       body: JSON.stringify({
         client_id: `client-${Date.now()}`,
         events: [
@@ -279,7 +304,7 @@ export async function sendServerSideTracking(
           console.warn("GA4 server-side tracking failed");
         }
       })
-      .catch(() => {})
+      .catch(() => { })
   );
 
   // Execute all promises in parallel (failures are silently caught)

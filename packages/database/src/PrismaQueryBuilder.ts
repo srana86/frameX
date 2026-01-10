@@ -125,6 +125,7 @@ export class PrismaQueryBuilder<T = any> {
             "limit",
             "page",
             "fields",
+            "enabled", // Legacy field - use isActive instead
         ];
 
         excludedFields.forEach((field) => delete queryObj[field]);

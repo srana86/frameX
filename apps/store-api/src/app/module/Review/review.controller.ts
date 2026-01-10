@@ -6,7 +6,7 @@ import { ReviewServices } from "./review.service";
 
 // Get product reviews
 const getProductReviews = catchAsync(async (req: Request, res: Response) => {
-  const tenantId = req.headers["x-tenant-id"] as string;
+  const tenantId = req.tenantId;
   const { id } = req.params;
   const result = await ReviewServices.getProductReviewsFromDB(tenantId, id);
 
@@ -20,7 +20,7 @@ const getProductReviews = catchAsync(async (req: Request, res: Response) => {
 
 // Create product review
 const createProductReview = catchAsync(async (req: Request, res: Response) => {
-  const tenantId = req.headers["x-tenant-id"] as string;
+  const tenantId = req.tenantId;
   const { id } = req.params;
   const result = await ReviewServices.createProductReviewIntoDB(tenantId, id, req.body);
 
