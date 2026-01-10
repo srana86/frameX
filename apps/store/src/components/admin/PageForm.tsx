@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import RichTextEditor from "@/components/site/RichTextEditor";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { apiRequest } from "@/lib/api-client";
 
 type Draft = {
   slug: string;
@@ -39,9 +40,7 @@ export default function PageForm({ initial }: { initial?: FooterPage }) {
 
   const loadCategories = async () => {
     try {
-      const res = await fetch("/api/pages/categories");
-      if (!res.ok) throw new Error("Failed to load categories");
-      const data = await res.json();
+      const data = await apiRequest<FooterCategory[]>("GET", "/pages/categories");
       setCategories(data || []);
 
       // Set default category if none is selected and categories exist

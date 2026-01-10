@@ -17,6 +17,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ArrowLeft, Percent, DollarSign, Truck, Gift, Star, Tag, Save } from "lucide-react";
+import { apiRequest } from "@/lib/api-client";
 
 type CouponFormData = {
   code: string;
@@ -56,9 +57,7 @@ export default function EditCouponClient({ couponId }: EditCouponClientProps) {
 
   const loadCoupon = async () => {
     try {
-      const res = await fetch(`/api/coupons/${couponId}`);
-      if (!res.ok) throw new Error("Coupon not found");
-      const coupon: Coupon = await res.json();
+      const coupon = await apiRequest<Coupon>("GET", `/coupons/${couponId}`);
 
       setFormData({
         code: coupon.code,
@@ -148,22 +147,13 @@ export default function EditCouponClient({ couponId }: EditCouponClientProps) {
         buyXGetY:
           formData.type === "buy_x_get_y"
             ? {
-                buyQuantity: formData.buyQuantity || 2,
-                getQuantity: formData.getQuantity || 1,
-              }
+              buyQuantity: formData.buyQuantity || 2,
+              getQuantity: formData.getQuantity || 1,
+            }
             : undefined,
       };
 
-      const res = await fetch(`/api/coupons/${couponId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to update coupon");
-      }
+      await apiRequest<any>("PUT", `/coupons/${couponId}`, payload);
 
       toast.success("Coupon updated successfully");
       router.push("/merchant/coupons");

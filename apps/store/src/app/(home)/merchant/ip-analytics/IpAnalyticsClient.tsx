@@ -19,6 +19,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { apiRequest } from "@/lib/api-client";
 
 interface IpStat {
   ip: string;
@@ -49,9 +50,7 @@ export function IpAnalyticsClient() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/visits?limit=1000");
-      if (!res.ok) throw new Error("Failed to fetch data");
-      const result = await res.json();
+      const result = await apiRequest<any>("GET", "/visits?limit=1000");
       if (result.success) {
         setData(result.data || []);
       } else {

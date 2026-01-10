@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Save, Loader2, Plus, X, Truck, Package, MapPin, DollarSign, Settings2, CheckCircle2 } from "lucide-react";
 import { useCurrencySymbol } from "@/hooks/use-currency";
+import { apiRequest } from "@/lib/api-client";
 
 interface DeliveryServiceClientProps {
   initialConfig: DeliveryServiceConfig;
@@ -33,9 +34,7 @@ export function DeliveryServiceClient({ initialConfig }: DeliveryServiceClientPr
   const loadConfig = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/delivery-config");
-      if (!res.ok) throw new Error("Failed to load config");
-      const data = await res.json();
+      const data = await apiRequest<DeliveryServiceConfig>("GET", "/delivery-config");
       const newConfig = data || defaultDeliveryServiceConfig;
       setConfig(newConfig);
     } catch (error) {
@@ -49,15 +48,7 @@ export function DeliveryServiceClient({ initialConfig }: DeliveryServiceClientPr
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch("/api/delivery-config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to save config");
-      }
+      await apiRequest<any>("PUT", "/delivery-config", config);
       toast.success("Delivery charges updated successfully!");
       await loadConfig();
     } catch (error: any) {

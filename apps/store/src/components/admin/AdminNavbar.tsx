@@ -36,6 +36,7 @@ import { useNotificationsSocket } from "@/hooks/use-notifications-socket";
 import { CommandPalette } from "./CommandPalette";
 import { Search } from "lucide-react";
 import { useState } from "react";
+import { apiRequest } from "@/lib/api-client";
 
 interface Notification {
   id: string;
@@ -67,15 +68,9 @@ export default function AdminNavbar({ brandConfig }: AdminNavbarProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch("/api/auth/me");
-        if (res.ok) {
-          const data = await res.json();
-          setIsAuthenticated(!!data.user);
-          setUserId(data.user?.id || null);
-        } else {
-          setIsAuthenticated(false);
-          setUserId(null);
-        }
+        const data = await apiRequest<any>("GET", "/auth/me");
+        setIsAuthenticated(!!data.data);
+        setUserId(data.data?.id || null);
       } catch (error) {
         setIsAuthenticated(false);
         setUserId(null);
@@ -101,15 +96,9 @@ export default function AdminNavbar({ brandConfig }: AdminNavbarProps) {
   const fetchNotifications = async (limit: number = 15) => {
     if (!isAuthenticated) return;
     try {
-      const res = await fetch(`/api/notifications?limit=${limit}&page=1`, {
-        cache: "no-store",
-        next: { revalidate: 0 },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data.notifications || []);
-        setUnreadCount(data.unreadCount || 0);
-      }
+      const data = await apiRequest<any>("GET", `/notifications?limit=${limit}&page=1`);
+      setNotifications(data.notifications || []);
+      setUnreadCount(data.unreadCount || 0);
     } catch (error) {
       // Silently fail - notifications are optional
     }
@@ -139,16 +128,10 @@ export default function AdminNavbar({ brandConfig }: AdminNavbarProps) {
   // Mark notification as read
   const markAsRead = async (notificationId: string) => {
     try {
-      const res = await fetch("/api/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notificationId }),
-      });
-      if (res.ok) {
-        // Update local state
-        setNotifications((prev) => prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)));
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      }
+      await apiRequest<any>("PATCH", "/notifications", { notificationId });
+      // Update local state
+      setNotifications((prev) => prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
       toast.error("Failed to mark notification as read");
     }
@@ -157,16 +140,10 @@ export default function AdminNavbar({ brandConfig }: AdminNavbarProps) {
   // Mark all notifications as read
   const markAllAsRead = async () => {
     try {
-      const res = await fetch("/api/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ markAllAsRead: true }),
-      });
-      if (res.ok) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-        setUnreadCount(0);
-        toast.success("All notifications marked as read");
-      }
+      await apiRequest<any>("PATCH", "/notifications", { markAllAsRead: true });
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
+      toast.success("All notifications marked as read");
     } catch (error) {
       toast.error("Failed to mark all notifications as read");
     }
@@ -448,16 +425,14 @@ export default function AdminNavbar({ brandConfig }: AdminNavbarProps) {
                                 }}
                               >
                                 <div
-                                  className={`w-full mx-0.5 sm:mx-1 my-1 sm:my-1.5 px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg border border-gray-100/50 transition-all duration-200 ${
-                                    !notification.read ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted/50"
-                                  }`}
+                                  className={`w-full mx-0.5 sm:mx-1 my-1 sm:my-1.5 px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg border border-gray-100/50 transition-all duration-200 ${!notification.read ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted/50"
+                                    }`}
                                 >
                                   <div className='flex items-start gap-2 sm:gap-2.5'>
                                     {/* Icon */}
                                     <div
-                                      className={`mt-0.5 p-0.5 sm:p-1 rounded-md shrink-0 ${
-                                        !notification.read ? "bg-background/80" : "bg-muted/50"
-                                      }`}
+                                      className={`mt-0.5 p-0.5 sm:p-1 rounded-md shrink-0 ${!notification.read ? "bg-background/80" : "bg-muted/50"
+                                        }`}
                                     >
                                       {getNotificationIcon()}
                                     </div>
@@ -467,9 +442,8 @@ export default function AdminNavbar({ brandConfig }: AdminNavbarProps) {
                                       <div className='flex items-start sm:items-center justify-between gap-1.5 sm:gap-2 mb-0.5 sm:mb-1'>
                                         <div className='flex items-center gap-1 sm:gap-1.5 flex-1 min-w-0'>
                                           <p
-                                            className={`text-xs sm:text-sm font-semibold leading-tight line-clamp-1 ${
-                                              !notification.read ? "text-foreground" : "text-muted-foreground"
-                                            }`}
+                                            className={`text-xs sm:text-sm font-semibold leading-tight line-clamp-1 ${!notification.read ? "text-foreground" : "text-muted-foreground"
+                                              }`}
                                           >
                                             {notification.title}
                                           </p>

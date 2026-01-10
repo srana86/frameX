@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { apiRequest } from "@/lib/api-client";
 
 export function PagesClient() {
   const router = useRouter();
@@ -34,9 +35,7 @@ export function PagesClient() {
 
   const loadPages = async () => {
     try {
-      const res = await fetch("/api/pages");
-      if (!res.ok) throw new Error("Failed to load pages");
-      const data = await res.json();
+      const data = await apiRequest<FooterPage[]>("GET", "/pages");
       setPages(data || []);
     } catch (error) {
       toast.error("Failed to load pages");
@@ -55,15 +54,9 @@ export function PagesClient() {
 
   const handleToggleEnabled = async (page: FooterPage) => {
     try {
-      const res = await fetch(`/api/pages/${page.slug}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          enabled: !page.enabled,
-        }),
+      await apiRequest<any>("PUT", `/pages/${page.slug}`, {
+        enabled: !page.enabled,
       });
-
-      if (!res.ok) throw new Error("Failed to update page");
 
       toast.success(`Page ${!page.enabled ? "enabled" : "disabled"}`);
       loadPages();
@@ -77,11 +70,7 @@ export function PagesClient() {
     if (!slugToDelete) return;
 
     try {
-      const res = await fetch(`/api/pages/${slugToDelete}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("Failed to delete page");
+      await apiRequest<any>("DELETE", `/pages/${slugToDelete}`);
 
       toast.success("Page deleted successfully");
       setDeleteSlug(null);

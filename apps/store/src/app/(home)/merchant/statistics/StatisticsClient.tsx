@@ -28,6 +28,7 @@ import {
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
+import { apiRequest } from "@/lib/api-client";
 
 interface StatisticsData {
   orders: {
@@ -114,9 +115,7 @@ export function StatisticsClient({ initialData }: StatisticsClientProps) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/statistics", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to load statistics");
-      const newData = await res.json();
+      const newData = await apiRequest<StatisticsData>("GET", "/statistics");
       setData(newData);
       toast.success("Statistics updated");
     } catch (error: any) {
@@ -182,9 +181,8 @@ export function StatisticsClient({ initialData }: StatisticsClientProps) {
                   <TrendingDown className='h-4 w-4 text-red-600 dark:text-red-400' />
                 )}
                 <span
-                  className={`text-sm font-semibold ${
-                    data.revenue.growth >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-                  }`}
+                  className={`text-sm font-semibold ${data.revenue.growth >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                    }`}
                 >
                   {data.revenue.growth >= 0 ? "+" : ""}
                   {data.revenue.growth.toFixed(1)}%
@@ -215,9 +213,8 @@ export function StatisticsClient({ initialData }: StatisticsClientProps) {
                   <TrendingDown className='h-4 w-4 text-red-600 dark:text-red-400' />
                 )}
                 <span
-                  className={`text-sm font-semibold ${
-                    data.orders.growth >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-                  }`}
+                  className={`text-sm font-semibold ${data.orders.growth >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                    }`}
                 >
                   {data.orders.growth >= 0 ? "+" : ""}
                   {data.orders.growth.toFixed(1)}%

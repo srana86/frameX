@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { SubscriptionClient } from "./SubscriptionClient";
 import type { MerchantSubscription, SubscriptionPlan } from "@/lib/subscription-types";
 import { Loader2 } from "lucide-react";
+import { apiRequest } from "@/lib/api-client";
 
 interface SubscriptionData {
   subscription: MerchantSubscription | null;
@@ -30,20 +31,17 @@ export function SubscriptionPageClient() {
   const fetchData = async () => {
     try {
       // Fetch subscription status and available plans in parallel
-      const [statusRes, plansRes] = await Promise.all([fetch("/api/subscription/status"), fetch("/api/subscription/plans")]);
+      const [statusData, plansData] = await Promise.all([
+        apiRequest<SubscriptionData>("GET", "/subscription/status").catch(() => null),
+        apiRequest<SubscriptionPlan[]>("GET", "/subscription/plans").catch(() => [])
+      ]);
 
-      if (statusRes.ok) {
-        const statusData = await statusRes.json();
+      if (statusData) {
         console.log("[SubscriptionPageClient] Status data:", statusData);
         setData(statusData);
-      } else {
-        const errorData = await statusRes.json();
-        console.error("[SubscriptionPageClient] Status error:", errorData);
-        // Don't set error - just means no subscription yet
       }
 
-      if (plansRes.ok) {
-        const plansData = await plansRes.json();
+      if (plansData) {
         console.log("[SubscriptionPageClient] Plans data:", plansData);
         setAvailablePlans(plansData);
       }

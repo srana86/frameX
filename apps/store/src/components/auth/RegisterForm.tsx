@@ -66,7 +66,7 @@ export function RegisterForm({ googleOAuthEnabled = false }: RegisterFormProps) 
 
     try {
       // Call register API
-      await apiRequest<any>("POST", "/auth/register", {
+      const response = await apiRequest<any>("POST", "/auth/register", {
         method: "email",
         fullName: values.fullName,
         email: values.email,
@@ -76,8 +76,15 @@ export function RegisterForm({ googleOAuthEnabled = false }: RegisterFormProps) 
         ipAddress: userLocation?.ip || undefined,
       });
 
+      // Response structure: { success, message, data: { user, accessToken } }
+      const { accessToken } = response.data || response;
+
+      // Store token in localStorage for Authorization header
+      if (accessToken) {
+        localStorage.setItem("auth_token", accessToken);
+      }
+
       toast.success("Account created successfully!");
-      // JWT token is automatically set in httpOnly cookie by the API
       router.push("/account");
     } catch (error: any) {
       toast.error(error.message || "Registration failed. Please try again.");

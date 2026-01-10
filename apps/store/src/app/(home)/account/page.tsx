@@ -14,6 +14,7 @@ import { User, LogOut, Mail, Phone, MapPin, Package, ShoppingBag, LayoutDashboar
 import type { CustomerInfo } from "@/lib/types";
 import { toast } from "sonner";
 import { useCurrencySymbol } from "@/hooks/use-currency";
+import { apiRequest } from "@/lib/api-client";
 
 function AffiliateCard() {
   const [enabled, setEnabled] = useState<boolean | null>(null);
@@ -21,8 +22,7 @@ function AffiliateCard() {
   useEffect(() => {
     const checkAffiliateEnabled = async () => {
       try {
-        const res = await fetch("/api/affiliate/me");
-        const data = await res.json();
+        const data = await apiRequest<any>("GET", "/affiliate/me");
         setEnabled(data.enabled !== false);
       } catch {
         setEnabled(false);
@@ -76,34 +76,30 @@ export default function AccountPage() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch("/api/auth/me");
-        const data = await response.json();
+        const data = await apiRequest<any>("GET", "/auth/me");
 
-        if (!response.ok) {
-          if (response.status === 401) {
-            router.push("/login");
-            return;
-          }
-          throw new Error(data.error || "Failed to fetch user");
-        }
-
-        if (data.user) {
-          setUserProfile(data.user);
-          setUserRole(data.user.role || null);
+        if (data.data) {
+          const userData = data.data;
+          setUserProfile(userData);
+          setUserRole(userData.role || null);
           setFormData({
-            fullName: data.user.fullName || "",
-            email: data.user.email || "",
-            phone: data.user.phone || "",
-            addressLine1: data.user.addressLine1 || "",
-            addressLine2: data.user.addressLine2 || "",
-            city: data.user.city || "",
-            postalCode: data.user.postalCode || "",
-            notes: data.user.notes || "",
+            fullName: userData.fullName || "",
+            email: userData.email || "",
+            phone: userData.phone || "",
+            addressLine1: userData.addressLine1 || "",
+            addressLine2: userData.addressLine2 || "",
+            city: userData.city || "",
+            postalCode: userData.postalCode || "",
+            notes: userData.notes || "",
           });
-          localStorage.setItem("shoestore_user_profile", JSON.stringify(data.user));
+          localStorage.setItem("shoestore_user_profile", JSON.stringify(userData));
         }
       } catch (error: any) {
         console.error("Error fetching user:", error);
+        if (error?.response?.status === 401) {
+          router.push("/login");
+          return;
+        }
         toast.error("Failed to load user data");
         router.push("/login");
       } finally {
@@ -116,21 +112,12 @@ export default function AccountPage() {
 
   const handleSave = async () => {
     try {
-      const response = await fetch("/api/auth/update-profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update profile");
-      }
-
-      const updated = await response.json();
-      setUserProfile(updated.user);
+      const data = await apiRequest<any>("PUT", "/auth/update-profile", formData);
+      const userData = data.data;
+      setUserProfile(userData);
       setIsEditing(false);
       toast.success("Profile updated successfully!");
-      localStorage.setItem("shoestore_user_profile", JSON.stringify(updated.user));
+      localStorage.setItem("shoestore_user_profile", JSON.stringify(userData));
     } catch (error: any) {
       toast.error(error?.message || "Failed to update profile");
     }
@@ -138,16 +125,13 @@ export default function AccountPage() {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("/api/auth/logout", { method: "POST" });
-      if (response.ok) {
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("shoestore_user_profile");
-        }
-        toast.success("Logged out successfully");
-        router.push("/login");
-      } else {
-        throw new Error("Logout failed");
+      await apiRequest<any>("POST", "/auth/logout");
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("shoestore_user_profile");
+        localStorage.removeItem("auth_token");
       }
+      toast.success("Logged out successfully");
+      router.push("/login");
     } catch (error) {
       toast.error("Failed to logout");
     }

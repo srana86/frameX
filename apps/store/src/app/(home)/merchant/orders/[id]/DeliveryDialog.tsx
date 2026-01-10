@@ -13,6 +13,7 @@ import { CheckCircle2, ChevronsUpDown, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Order } from "@/lib/types";
+import { apiRequest } from "@/lib/api-client";
 
 interface PathaoCity {
   city_id: number;
@@ -118,11 +119,7 @@ export function DeliveryDialog({ open, onOpenChange, form, order, sendingCourier
   const fetchCities = async () => {
     setLoadingCities(true);
     try {
-      const res = await fetch("/api/pathao/cities");
-      if (!res.ok) {
-        throw new Error("Failed to fetch cities");
-      }
-      const data = await res.json();
+      const data = await apiRequest<any>("GET", "/pathao/cities");
       setCities(data.cities || []);
     } catch (error: any) {
       console.error("Failed to fetch Pathao cities:", error);
@@ -135,11 +132,7 @@ export function DeliveryDialog({ open, onOpenChange, form, order, sendingCourier
   const fetchZones = async (cityId: number) => {
     setLoadingZones(true);
     try {
-      const res = await fetch(`/api/pathao/zones?city_id=${cityId}`);
-      if (!res.ok) {
-        throw new Error("Failed to fetch zones");
-      }
-      const data = await res.json();
+      const data = await apiRequest<any>("GET", `/pathao/zones?city_id=${cityId}`);
       setZones(data.zones || []);
     } catch (error: any) {
       console.error("Failed to fetch Pathao zones:", error);
@@ -152,11 +145,7 @@ export function DeliveryDialog({ open, onOpenChange, form, order, sendingCourier
   const fetchAreas = async (zoneId: number) => {
     setLoadingAreas(true);
     try {
-      const res = await fetch(`/api/pathao/areas?zone_id=${zoneId}`);
-      if (!res.ok) {
-        throw new Error("Failed to fetch areas");
-      }
-      const data = await res.json();
+      const data = await apiRequest<any>("GET", `/pathao/areas?zone_id=${zoneId}`);
       setAreas(data.areas || []);
     } catch (error: any) {
       console.error("Failed to fetch Pathao areas:", error);

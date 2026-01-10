@@ -11,6 +11,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Save, Loader2, Shield, Eye, EyeOff } from "lucide-react";
+import { apiRequest } from "@/lib/api-client";
 
 interface OAuthConfigClientProps {
   initialConfig: OAuthConfig;
@@ -25,9 +26,7 @@ export function OAuthConfigClient({ initialConfig }: OAuthConfigClientProps) {
   const loadConfig = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/oauth-config");
-      if (!res.ok) throw new Error("Failed to load config");
-      const data = await res.json();
+      const data = await apiRequest<OAuthConfig>("GET", "/oauth-config");
       const newConfig = data || defaultOAuthConfig;
       setConfig(newConfig);
     } catch (error) {
@@ -42,15 +41,7 @@ export function OAuthConfigClient({ initialConfig }: OAuthConfigClientProps) {
     if (!config) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/oauth-config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to save config");
-      }
+      await apiRequest<any>("PUT", "/oauth-config", config);
       toast.success("OAuth configuration saved successfully!");
       await loadConfig();
     } catch (error: any) {

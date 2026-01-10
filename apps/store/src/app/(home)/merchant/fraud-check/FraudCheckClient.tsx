@@ -27,6 +27,7 @@ import { PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, C
 import type { CustomerFraudData, UsageStats, OnecodesoftFraudCheckResponse } from "@/lib/fraud-check/fraudshield-api";
 import { transformOnecodesoftResponse } from "@/lib/fraud-check/fraudshield-api";
 import { getRiskBadgeColor, calculateRiskLevel, type FraudRiskLevel } from "@/lib/fraud-check/common";
+import { apiRequest } from "@/lib/api-client";
 
 // New API response structure
 interface CourierDataItem {
@@ -51,13 +52,13 @@ interface NewAPIResponse {
   status: string;
   courierData: {
     [key: string]:
-      | CourierDataItem
-      | {
-          total_parcel: number;
-          success_parcel: number;
-          cancelled_parcel: number;
-          success_ratio: number;
-        };
+    | CourierDataItem
+    | {
+      total_parcel: number;
+      success_parcel: number;
+      cancelled_parcel: number;
+      success_ratio: number;
+    };
     summary: {
       total_parcel: number;
       success_parcel: number;
@@ -243,8 +244,7 @@ export function FraudCheckClient() {
   // Load usage stats on mount
   const loadUsageStats = async () => {
     try {
-      const res = await fetch("/api/merchant/fraud-check");
-      const data = await res.json();
+      const data = await apiRequest<any>("GET", "/merchant/fraud-check");
 
       if (data.success && data.data) {
         setUsageStats(data.data);
@@ -266,13 +266,7 @@ export function FraudCheckClient() {
     setCustomerData(null);
 
     try {
-      const res = await fetch("/api/merchant/fraud-check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: phone.trim() }),
-      });
-
-      const data = await res.json();
+      const data = await apiRequest<any>("POST", "/merchant/fraud-check", { phone: phone.trim() });
       console.log(data);
 
       // Handle Onecodesoft API response structure (from super-admin)
@@ -286,7 +280,7 @@ export function FraudCheckClient() {
           // Already in CustomerFraudData format (backward compatibility)
           setCustomerData(data.data as CustomerFraudData);
         }
-        
+
         toast.success("Customer data retrieved successfully");
         // Refresh usage stats
         loadUsageStats();
@@ -478,11 +472,10 @@ export function FraudCheckClient() {
                   <div className='grid grid-cols-1 gap-4'>
                     {/* Low Risk */}
                     <div
-                      className={`p-4 rounded-lg border-2 transition-all ${
-                        customerData.success_rate >= 90
+                      className={`p-4 rounded-lg border-2 transition-all ${customerData.success_rate >= 90
                           ? "border-green-500 bg-green-50 dark:bg-green-950/50"
                           : "border-gray-200 bg-gray-50 dark:bg-gray-900/50 opacity-50"
-                      }`}
+                        }`}
                     >
                       <div className='flex items-center gap-3'>
                         <CheckCircle2 className={`size-6 ${customerData.success_rate >= 90 ? "text-green-600" : "text-gray-400"}`} />
@@ -495,17 +488,15 @@ export function FraudCheckClient() {
 
                     {/* Medium Risk */}
                     <div
-                      className={`p-4 rounded-lg border-2 transition-all ${
-                        customerData.success_rate >= 70 && customerData.success_rate < 90
+                      className={`p-4 rounded-lg border-2 transition-all ${customerData.success_rate >= 70 && customerData.success_rate < 90
                           ? "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/50"
                           : "border-gray-200 bg-gray-50 dark:bg-gray-900/50 opacity-50"
-                      }`}
+                        }`}
                     >
                       <div className='flex items-center gap-3'>
                         <AlertTriangle
-                          className={`size-6 ${
-                            customerData.success_rate >= 70 && customerData.success_rate < 90 ? "text-yellow-600" : "text-gray-400"
-                          }`}
+                          className={`size-6 ${customerData.success_rate >= 70 && customerData.success_rate < 90 ? "text-yellow-600" : "text-gray-400"
+                            }`}
                         />
                         <div>
                           <div className='font-semibold'>Medium Risk (70-89%)</div>
@@ -516,11 +507,10 @@ export function FraudCheckClient() {
 
                     {/* High Risk */}
                     <div
-                      className={`p-4 rounded-lg border-2 transition-all ${
-                        customerData.success_rate < 70
+                      className={`p-4 rounded-lg border-2 transition-all ${customerData.success_rate < 70
                           ? "border-red-500 bg-red-50 dark:bg-red-950/50"
                           : "border-gray-200 bg-gray-50 dark:bg-gray-900/50 opacity-50"
-                      }`}
+                        }`}
                     >
                       <div className='flex items-center gap-3'>
                         <XCircle className={`size-6 ${customerData.success_rate < 70 ? "text-red-600" : "text-gray-400"}`} />
@@ -587,9 +577,8 @@ export function FraudCheckClient() {
                   </div>
                   <div className='relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden'>
                     <div
-                      className={`h-full transition-all duration-500 ${
-                        customerData.success_rate >= 90 ? "bg-green-500" : customerData.success_rate >= 70 ? "bg-yellow-500" : "bg-red-500"
-                      }`}
+                      className={`h-full transition-all duration-500 ${customerData.success_rate >= 90 ? "bg-green-500" : customerData.success_rate >= 70 ? "bg-yellow-500" : "bg-red-500"
+                        }`}
                       style={{ width: `${customerData.success_rate}%` }}
                     />
                   </div>

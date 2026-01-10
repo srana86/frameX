@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import { Save, Loader2 } from "lucide-react";
+import { apiRequest } from "@/lib/api-client";
 
 export function PromotionalBannerClient() {
   const [banner, setBanner] = useState<PromotionalBanner | null>(null);
@@ -22,9 +23,7 @@ export function PromotionalBannerClient() {
 
   const loadBanner = async () => {
     try {
-      const res = await fetch("/api/promotional-banner");
-      if (!res.ok) throw new Error("Failed to load banner");
-      const data = await res.json();
+      const data = await apiRequest<PromotionalBanner>("GET", "/promotional-banner");
       setBanner(data);
     } catch (error) {
       toast.error("Failed to load promotional banner");
@@ -44,12 +43,7 @@ export function PromotionalBannerClient() {
     if (!banner) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/promotional-banner", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(banner),
-      });
-      if (!res.ok) throw new Error("Failed to save banner");
+      await apiRequest<PromotionalBanner>("PUT", "/promotional-banner", banner);
       toast.success("Promotional banner saved successfully!");
       await loadBanner();
     } catch (error) {

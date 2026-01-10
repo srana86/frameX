@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell }
 import { Clock, TrendingUp, Loader2, AlertCircle, Sun, Moon, Sunrise, Sunset } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Order } from "@/lib/types";
+import { apiRequest } from "@/lib/api-client";
 
 interface OrderTimeAnalyticsProps {
   className?: string;
@@ -130,11 +131,7 @@ export function OrderTimeAnalytics({ className, orders: propOrders }: OrderTimeA
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/orders?limit=500");
-      if (!res.ok) {
-        throw new Error("Failed to fetch orders");
-      }
-      const data = await res.json();
+      const data = await apiRequest<any>("GET", "/orders?limit=500");
       setFetchedOrders(data.orders || data || []);
     } catch (err: any) {
       setError(err.message || "Failed to load order data");

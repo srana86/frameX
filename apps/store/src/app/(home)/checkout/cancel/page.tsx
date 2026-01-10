@@ -13,6 +13,7 @@ import { XCircle, Package, MapPin, Phone, Mail, CreditCard, Calendar, ShoppingBa
 import CloudImage from "@/components/site/CloudImage";
 import { format } from "date-fns";
 import { useCurrencySymbol } from "@/hooks/use-currency";
+import { apiRequest } from "@/lib/api-client";
 
 function PaymentCancelContent() {
   const params = useSearchParams();
@@ -30,11 +31,7 @@ function PaymentCancelContent() {
 
     const fetchOrder = async () => {
       try {
-        const res = await fetch(`/api/orders/${orderId}`);
-        if (!res.ok) {
-          throw new Error("Failed to fetch order");
-        }
-        const data = (await res.json()) as Order;
+        const data = await apiRequest<Order>("GET", `/orders/${orderId}`);
         setOrder(data);
       } catch (err: any) {
         setError(err?.message || "Failed to load order details");

@@ -24,22 +24,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  DollarSign,
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  Filter,
-  Calculator,
-  Target,
-  AlertTriangle,
-  Calendar,
-  Wallet,
-  BarChart3,
-  X,
-  RefreshCw,
-} from "lucide-react";
+import { ArrowUpDown, Calculator, ChevronDown, DollarSign, Edit, LineChart, Plus, Target, Trash2, Wallet, AlertTriangle, BarChart3, Search, Filter, RefreshCw, Calendar, X } from "lucide-react";
+import { apiRequest } from "@/lib/api-client";
 import { useCurrencySymbol } from "@/hooks/use-currency";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -549,11 +535,7 @@ export function InvestmentsClient() {
     if (!deleteInvestment) return;
 
     try {
-      const res = await fetch(`/api/investments/${deleteInvestment._id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("Failed to delete investment");
+      await apiRequest<any>("DELETE", `/investments/${deleteInvestment._id}`);
 
       toast.success("Investment deleted successfully");
       setDeleteInvestment(null);
@@ -841,10 +823,10 @@ export function InvestmentsClient() {
                 <div className='text-xl sm:text-2xl font-bold text-purple-700 dark:text-purple-300'>
                   {activeBudgets.length > 0
                     ? (
-                        (activeBudgets.reduce((sum, b) => sum + (b.actualSpending || 0), 0) /
-                          activeBudgets.reduce((sum, b) => sum + b.amount, 0)) *
-                        100
-                      ).toFixed(1)
+                      (activeBudgets.reduce((sum, b) => sum + (b.actualSpending || 0), 0) /
+                        activeBudgets.reduce((sum, b) => sum + b.amount, 0)) *
+                      100
+                    ).toFixed(1)
                     : "0.0"}
                   %
                 </div>
@@ -880,13 +862,12 @@ export function InvestmentsClient() {
                   {Object.entries(categoryAnalysis).map(([category, data]) => (
                     <div
                       key={category}
-                      className={`p-3 rounded-lg border transition-colors ${
-                        data.isOverBudget
-                          ? "border-destructive/50 bg-destructive/5"
-                          : data.isNearLimit
+                      className={`p-3 rounded-lg border transition-colors ${data.isOverBudget
+                        ? "border-destructive/50 bg-destructive/5"
+                        : data.isNearLimit
                           ? "border-orange-200/50 dark:border-orange-800/50 bg-orange-50/30 dark:bg-orange-950/10"
                           : "bg-card hover:bg-accent/50"
-                      }`}
+                        }`}
                     >
                       <div className='flex items-center justify-between mb-2'>
                         <span className='font-semibold text-sm sm:text-base truncate flex-1'>{category}</span>
@@ -948,8 +929,8 @@ export function InvestmentsClient() {
                             backgroundColor: data.isOverBudget
                               ? "rgb(239 68 68 / 0.2)"
                               : data.isNearLimit
-                              ? "rgb(251 146 60 / 0.2)"
-                              : "rgb(34 197 94 / 0.2)",
+                                ? "rgb(251 146 60 / 0.2)"
+                                : "rgb(34 197 94 / 0.2)",
                           }}
                         />
                         <div className='flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground mt-0.5'>
@@ -1509,13 +1490,12 @@ export function InvestmentsClient() {
                       {budgets.map((budget) => (
                         <div
                           key={budget._id}
-                          className={`p-3 rounded-lg border transition-colors ${
-                            budget.isOverBudget
-                              ? "border-destructive/50 bg-destructive/5"
-                              : budget.isNearLimit
+                          className={`p-3 rounded-lg border transition-colors ${budget.isOverBudget
+                            ? "border-destructive/50 bg-destructive/5"
+                            : budget.isNearLimit
                               ? "border-orange-200/50 dark:border-orange-800/50 bg-orange-50/30 dark:bg-orange-950/10"
                               : "bg-card hover:bg-accent/50"
-                          }`}
+                            }`}
                         >
                           <div className='flex items-start justify-between mb-2'>
                             <div className='flex-1 min-w-0'>
@@ -1579,8 +1559,8 @@ export function InvestmentsClient() {
                                 backgroundColor: budget.isOverBudget
                                   ? "rgb(239 68 68 / 0.2)"
                                   : budget.isNearLimit
-                                  ? "rgb(251 146 60 / 0.2)"
-                                  : "rgb(34 197 94 / 0.2)",
+                                    ? "rgb(251 146 60 / 0.2)"
+                                    : "rgb(34 197 94 / 0.2)",
                               }}
                             />
                             <div className='grid grid-cols-3 gap-2 text-xs'>
@@ -1607,9 +1587,8 @@ export function InvestmentsClient() {
                               <div>
                                 <div className='text-muted-foreground text-[10px]'>Remaining</div>
                                 <div
-                                  className={`font-semibold ${
-                                    budget.remaining && budget.remaining < 0 ? "text-destructive" : "text-green-600 dark:text-green-400"
-                                  }`}
+                                  className={`font-semibold ${budget.remaining && budget.remaining < 0 ? "text-destructive" : "text-green-600 dark:text-green-400"
+                                    }`}
                                 >
                                   {currencySymbol}
                                   {budget.remaining?.toLocaleString(undefined, {

@@ -7,6 +7,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import countries from "world-countries";
+import { apiRequest } from "@/lib/api-client";
 
 // Helper function to get flag emoji from country code
 function getFlagEmoji(countryCode: string): string {
@@ -86,12 +87,9 @@ export function CountryCodeSelect({ value, onValueChange, defaultCountryCode, au
       // Priority 2: Auto-detect if enabled
       else if (autoDetect) {
         try {
-          const response = await fetch("/api/geolocation");
-          if (response.ok) {
-            const data = await response.json();
-            if (data.countryCode) {
-              countryCodeToUse = data.countryCode.toUpperCase();
-            }
+          const data = await apiRequest<any>("GET", "/geolocation");
+          if (data.countryCode) {
+            countryCodeToUse = data.countryCode.toUpperCase();
           }
         } catch (error) {
           console.error("Failed to detect country:", error);

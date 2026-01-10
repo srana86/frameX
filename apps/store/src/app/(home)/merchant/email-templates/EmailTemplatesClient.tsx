@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmailTemplate, EmailEvent, emailEvents, defaultEmailTemplates } from "@/lib/email-types";
 import { toast } from "sonner";
 import { Loader2, Play, Save, Send, CheckCircle2 } from "lucide-react";
+import { apiRequest } from "@/lib/api-client";
 
 // Lazy load the email editor only when needed (it's a heavy component)
 const EmailEditor = dynamic(() => import("react-email-editor"), {
@@ -56,12 +57,7 @@ export function EmailTemplatesClient() {
   const loadTemplates = useCallback(async () => {
     setLoading(true);
     try {
-      // Use cache with revalidation for better performance
-      const res = await fetch("/api/merchant/email-templates", {
-        next: { revalidate: 30 }, // Cache for 30 seconds
-      });
-      if (!res.ok) throw new Error("Failed to load templates");
-      const data = await res.json();
+      const data = await apiRequest<any>("GET", "/merchant/email-templates");
       const list: EmailTemplate[] = data.templates || [];
       const map: TemplateMap = {};
       list.forEach((tpl) => {
@@ -141,18 +137,7 @@ export function EmailTemplatesClient() {
         design,
       };
 
-      const res = await fetch("/api/merchant/email-templates", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data?.error || "Failed to save template");
-      }
-
-      const updated: EmailTemplate = await res.json();
+      const updated = await apiRequest<EmailTemplate>("PUT", "/merchant/email-templates", payload);
       setTemplates((prev) => ({ ...prev, [selectedEvent]: updated }));
       toast.success("Template saved");
     } catch (error: any) {
@@ -170,25 +155,14 @@ export function EmailTemplatesClient() {
     setSendingTest(true);
     try {
       const { html, design } = await exportCurrentDesign();
-      const res = await fetch("/api/merchant/email-templates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "test",
-          event: selectedEvent,
-          to: form.testRecipient,
-          variables: Object.fromEntries(availableVariables.map((v) => [v, `{{${v}}}`])),
-          html,
-          design,
-        }),
+      const data = await apiRequest<any>("POST", "/merchant/email-templates", {
+        action: "test",
+        event: selectedEvent,
+        to: form.testRecipient,
+        variables: Object.fromEntries(availableVariables.map((v) => [v, `{{${v}}}`])),
+        html,
+        design,
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        const errorMsg = data?.result?.error || data?.error || "Failed to send test email";
-        throw new Error(errorMsg);
-      }
 
       if (!data.ok) {
         const errorMsg = data?.result?.error || data?.error || "Failed to send test email";

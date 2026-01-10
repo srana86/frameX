@@ -30,6 +30,8 @@ export interface MetaPixelServerEvent {
   actionSource?: "website" | "email" | "app" | "phone_call" | "chat" | "physical_store" | "system_generated" | "other";
 }
 
+import { apiRequest } from "@/lib/api-client";
+
 /**
  * Send a server-side Meta Pixel event
  *
@@ -38,18 +40,7 @@ export interface MetaPixelServerEvent {
  */
 export async function sendMetaPixelServerEvent(event: MetaPixelServerEvent): Promise<void> {
   try {
-    const response = await fetch("/api/tracking/meta-pixel", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(event),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      console.error("Failed to send Meta Pixel server event:", error);
-    }
+    await apiRequest<any>("POST", "/tracking/meta-pixel", event);
   } catch (error) {
     console.error("Error sending Meta Pixel server event:", error);
   }

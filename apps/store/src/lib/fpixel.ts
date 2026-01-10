@@ -1,4 +1,5 @@
 import { getAllMetaParams } from "./tracking/meta-param-builder";
+import { apiRequest } from "@/lib/api-client";
 
 export const FB_PIXEL_ID = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID;
 
@@ -101,19 +102,15 @@ export async function sendServerPageView(
   try {
     const { fbp, fbc, clientIpAddress } = getFacebookCookies();
 
-    await fetch("/api/tracking/meta-pixel", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        eventName: "PageView",
-        eventId,
-        userData,
-        fbp,
-        fbc,
-        clientIpAddress,
-        actionSource: "website",
-        eventSourceUrl: typeof window !== "undefined" ? window.location.href : undefined,
-      }),
+    await apiRequest<any>("POST", "/tracking/meta-pixel", {
+      eventName: "PageView",
+      eventId,
+      userData,
+      fbp,
+      fbc,
+      clientIpAddress,
+      actionSource: "website",
+      eventSourceUrl: typeof window !== "undefined" ? window.location.href : undefined,
     });
   } catch (error) {
     // Silently fail to not impact user experience
@@ -165,20 +162,16 @@ export async function trackEventWithServerSide(
   try {
     const { fbp, fbc, clientIpAddress } = getFacebookCookies();
 
-    await fetch("/api/tracking/meta-pixel", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        eventName,
-        eventId,
-        customData,
-        userData,
-        fbp,
-        fbc,
-        clientIpAddress,
-        actionSource: "website",
-        eventSourceUrl: typeof window !== "undefined" ? window.location.href : undefined,
-      }),
+    await apiRequest<any>("POST", "/tracking/meta-pixel", {
+      eventName,
+      eventId,
+      customData,
+      userData,
+      fbp,
+      fbc,
+      clientIpAddress,
+      actionSource: "website",
+      eventSourceUrl: typeof window !== "undefined" ? window.location.href : undefined,
     });
   } catch (error) {
     console.error(`[Meta Pixel] Server ${eventName} failed:`, error);
@@ -275,28 +268,24 @@ export const ecommerce = {
 
     // Server-side
     const { fbp, fbc, clientIpAddress } = getFacebookCookies();
-    fetch("/api/tracking/meta-pixel", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        eventName: "Purchase",
-        eventId,
-        customData: {
-          contentIds: params.contentIds,
-          contentName: params.contentName,
-          contentType: "product",
-          value: params.value,
-          currency: params.currency || "USD",
-          numItems: params.numItems,
-          orderId: params.orderId,
-        },
-        fbp,
-        fbc,
-        clientIpAddress,
-        actionSource: "website",
-        eventSourceUrl: typeof window !== "undefined" ? window.location.href : undefined,
-      }),
-    }).catch(() => {});
+    apiRequest<any>("POST", "/tracking/meta-pixel", {
+      eventName: "Purchase",
+      eventId,
+      customData: {
+        contentIds: params.contentIds,
+        contentName: params.contentName,
+        contentType: "product",
+        value: params.value,
+        currency: params.currency || "USD",
+        numItems: params.numItems,
+        orderId: params.orderId,
+      },
+      fbp,
+      fbc,
+      clientIpAddress,
+      actionSource: "website",
+      eventSourceUrl: typeof window !== "undefined" ? window.location.href : undefined,
+    }).catch(() => { });
 
     return eventId;
   },

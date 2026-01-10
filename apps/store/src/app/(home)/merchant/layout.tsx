@@ -3,12 +3,17 @@ import { serverSideApiClient } from "@/lib/api-client";
 import { defaultBrandConfig, type BrandConfig } from "@/lib/brand-config";
 import { requireAuth } from "@/lib/auth-helpers";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
 async function getBrandConfig(): Promise<BrandConfig> {
   try {
-    const client = serverSideApiClient();
+    const headersList = await headers();
+    const host = headersList.get("host") || headersList.get("x-forwarded-host") || "";
+    const domain = host.split(":")[0];
+
+    const client = serverSideApiClient(undefined, undefined, domain);
     const response = await client.get("/brand-config");
     if (response.data?.data) {
       const apiConfig = response.data.data;

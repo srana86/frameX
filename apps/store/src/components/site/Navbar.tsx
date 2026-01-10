@@ -94,6 +94,7 @@ export function Navbar({ brandConfig }: NavbarProps) {
       // Clear localStorage
       if (typeof window !== "undefined") {
         localStorage.removeItem("shoestore_user_profile");
+        localStorage.removeItem("auth_token");
       }
       setIsAuthenticated(false);
       setUserName(null);

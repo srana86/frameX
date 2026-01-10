@@ -20,6 +20,7 @@ import type {
 } from "@/lib/email-types";
 import { toast } from "sonner";
 import { Loader2, Plug, Save, Send } from "lucide-react";
+import { apiRequest } from "@/lib/api-client";
 
 type ProviderForm = EmailProviderConfig;
 
@@ -50,9 +51,7 @@ export function EmailSettingsClient() {
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/merchant/email-settings", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to load settings");
-      const data: EmailProviderSettings = await res.json();
+      const data = await apiRequest<EmailProviderSettings>("GET", "/merchant/email-settings");
       setProviders(data.providers || []);
       setDefaultProviderId(data.defaultProviderId || data.providers?.[0]?.id);
       setFallbackProviderId(data.fallbackProviderId || undefined);
@@ -100,18 +99,7 @@ export function EmailSettingsClient() {
         updatedAt: new Date().toISOString(),
       };
 
-      const res = await fetch("/api/merchant/email-settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data?.error || "Failed to save settings");
-      }
-
-      const saved: EmailProviderSettings = await res.json();
+      const saved = await apiRequest<EmailProviderSettings>("PUT", "/merchant/email-settings", payload);
       setProviders(saved.providers || []);
       setDefaultProviderId(saved.defaultProviderId || saved.providers?.[0]?.id);
       setFallbackProviderId(saved.fallbackProviderId || undefined);
@@ -133,18 +121,8 @@ export function EmailSettingsClient() {
       }
 
       // First test the connection
-      const connectionRes = await fetch("/api/merchant/email-settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "test", providerId }),
-      });
+      const connectionData = await apiRequest<any>("POST", "/merchant/email-settings", { action: "test", providerId });
 
-      if (!connectionRes.ok) {
-        const data = await connectionRes.json();
-        throw new Error(data?.error || "Connection test failed");
-      }
-
-      const connectionData = await connectionRes.json();
       if (!connectionData.ok) {
         throw new Error(connectionData.result?.error || "Connection test failed");
       }
@@ -156,15 +134,9 @@ export function EmailSettingsClient() {
         return;
       }
 
-      const emailRes = await fetch("/api/merchant/email-settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "send-test", providerId, to: testEmail }),
-      });
+      const emailData = await apiRequest<any>("POST", "/merchant/email-settings", { action: "send-test", providerId, to: testEmail });
 
-      const emailData = await emailRes.json();
-
-      if (!emailRes.ok || !emailData.ok) {
+      if (!emailData.ok) {
         const errorMsg = emailData?.result?.error || emailData?.error || "Failed to send test email";
         throw new Error(errorMsg);
       }

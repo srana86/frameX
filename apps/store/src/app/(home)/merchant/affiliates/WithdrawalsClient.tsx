@@ -33,6 +33,7 @@ import { CheckCircle, XCircle, Clock, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrencySymbol } from "@/hooks/use-currency";
 import type { AffiliateWithdrawal } from "@/lib/affiliate-types";
+import { apiRequest } from "@/lib/api-client";
 
 interface WithdrawalWithAffiliate extends AffiliateWithdrawal {
   affiliate?: {
@@ -62,11 +63,8 @@ export default function WithdrawalsClient() {
   const loadWithdrawals = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/affiliate/withdrawals");
-      if (response.ok) {
-        const data = await response.json();
-        setWithdrawals(data.withdrawals || []);
-      }
+      const data = await apiRequest<any>("GET", "/affiliate/withdrawals");
+      setWithdrawals(data.withdrawals || []);
     } catch (error) {
       console.error("Error loading withdrawals:", error);
       toast.error("Failed to load withdrawals");
@@ -87,20 +85,12 @@ export default function WithdrawalsClient() {
 
     try {
       setProcessing(true);
-      const response = await fetch("/api/affiliate/withdrawals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "update",
-          withdrawalId: selectedWithdrawal.id,
-          status: newStatus,
-          notes,
-        }),
+      await apiRequest<any>("POST", "/affiliate/withdrawals", {
+        action: "update",
+        withdrawalId: selectedWithdrawal.id,
+        status: newStatus,
+        notes,
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to update withdrawal");
-      }
 
       toast.success("Withdrawal updated successfully!");
       setDialogOpen(false);

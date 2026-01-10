@@ -4,6 +4,7 @@ import { StatusCodes } from "http-status-codes";
 import { prisma, StoreUserRole, StoreUserStatus } from "@framex/database";
 import { createToken } from "../../utils/tokenGenerateFunction";
 import config from "../../../config";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import axios from "axios";
 import {
@@ -94,6 +95,12 @@ const loginUser = async (tenantId: string, payload: TLoginPayload) => {
     config.jwt_access_expires_in as string
   );
 
+  const refreshToken = createToken(
+    jwtPayload,
+    config.jwt_refresh_secret as string,
+    config.jwt_refresh_expires_in as string
+  );
+
   // Return user data without password
   const userData = {
     id: user.id,
@@ -107,6 +114,7 @@ const loginUser = async (tenantId: string, payload: TLoginPayload) => {
   return {
     user: userData,
     accessToken,
+    refreshToken,
   };
 };
 
@@ -170,6 +178,12 @@ const registerUser = async (tenantId: string, payload: TRegisterPayload) => {
     config.jwt_access_expires_in as string
   );
 
+  const refreshToken = createToken(
+    jwtPayload,
+    config.jwt_refresh_secret as string,
+    config.jwt_refresh_expires_in as string
+  );
+
   // Return user data without password and access token
   const userResponse = {
     id: user.id,
@@ -182,6 +196,7 @@ const registerUser = async (tenantId: string, payload: TRegisterPayload) => {
   return {
     user: userResponse,
     accessToken,
+    refreshToken,
   };
 };
 
@@ -214,7 +229,7 @@ const googleLogin = async (
   tenantId: string,
   code: string,
   redirectUri: string
-): Promise<{ user: any; accessToken: string }> => {
+): Promise<{ user: any; accessToken: string; refreshToken: string }> => {
   // Get OAuth config from database
   // Config services likely need tenantId too, assume migrated elsewhere or global?
   // Checking `ConfigServices.getOAuthConfigFromDB()`... if not migrated it might fail.
@@ -330,6 +345,12 @@ const googleLogin = async (
       config.jwt_access_expires_in as string
     );
 
+    const refreshToken = createToken(
+      jwtPayload,
+      config.jwt_refresh_secret as string,
+      config.jwt_refresh_expires_in as string
+    );
+
     return {
       user: {
         id: user.id,
@@ -339,6 +360,7 @@ const googleLogin = async (
         role: user.role,
       },
       accessToken,
+      refreshToken,
     };
   } catch (error: any) {
     console.error("Google OAuth Error:", error.response?.data || error.message);
@@ -518,6 +540,56 @@ const resetPassword = async (tenantId: string, payload: TResetPasswordPayload) =
   };
 };
 
+// Refresh Token
+const refreshToken = async (token: string) => {
+  // Verify token
+  let decoded: JwtPayload;
+  try {
+    decoded = jwt.verify(
+      token,
+      config.jwt_refresh_secret as string
+    ) as JwtPayload;
+  } catch (error) {
+    throw new AppError(StatusCodes.UNAUTHORIZED, "Invalid refresh token");
+  }
+
+  const { userId, tenantId } = decoded;
+
+  // Check if user exists
+  const user = await prisma.storeUser.findUnique({
+    where: {
+      id: userId,
+      tenantId,
+      isDeleted: false,
+    },
+  });
+
+  if (!user) {
+    throw new AppError(StatusCodes.NOT_FOUND, "User not found");
+  }
+
+  if (user.status === StoreUserStatus.BLOCKED) {
+    throw new AppError(StatusCodes.FORBIDDEN, "Your account is blocked");
+  }
+
+  // Generate new Access Token
+  const jwtPayload = {
+    userId: user.id,
+    role: user.role,
+    tenantId: user.tenantId,
+  };
+
+  const accessToken = createToken(
+    jwtPayload,
+    config.jwt_access_secret as string,
+    config.jwt_access_expires_in as string
+  );
+
+  return {
+    accessToken,
+  };
+};
+
 export const AuthServices = {
   loginUser,
   registerUser,
@@ -526,4 +598,5 @@ export const AuthServices = {
   changePassword,
   forgotPassword,
   resetPassword,
+  refreshToken,
 };

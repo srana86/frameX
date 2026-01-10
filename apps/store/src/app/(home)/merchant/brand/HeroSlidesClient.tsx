@@ -15,6 +15,7 @@ import { Save, Loader2, Plus, Trash2, GripVertical, ArrowUp, ArrowDown } from "l
 import CloudImage from "@/components/site/CloudImage";
 import { Slider } from "@/components/ui/slider";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { apiRequest } from "@/lib/api-client";
 
 export function HeroSlidesClient() {
   const [slides, setSlides] = useState<HeroSlide[]>([]);
@@ -28,9 +29,7 @@ export function HeroSlidesClient() {
 
   const loadSlides = async () => {
     try {
-      const res = await fetch("/api/hero-slides/all");
-      if (!res.ok) throw new Error("Failed to load slides");
-      const data = await res.json();
+      const data = await apiRequest<HeroSlide[]>("GET", "/hero-slides/all");
       setSlides(data || []);
     } catch (error) {
       toast.error("Failed to load hero slides");
@@ -76,8 +75,7 @@ export function HeroSlidesClient() {
     }
 
     try {
-      const res = await fetch(`/api/hero-slides/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete slide");
+      await apiRequest<any>("DELETE", `/hero-slides/${id}`);
       toast.success("Slide deleted successfully");
       await loadSlides();
       setEditingIndex(null);
@@ -95,7 +93,6 @@ export function HeroSlidesClient() {
     setSaving(true);
     try {
       const method = slide.id ? "PUT" : "POST";
-      const url = "/api/hero-slides";
 
       // Only image is required, all other fields are optional
       const body: any = {
@@ -119,16 +116,7 @@ export function HeroSlidesClient() {
         body.id = slide.id;
       }
 
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to save slide");
-      }
+      await apiRequest<any>(method, "/hero-slides", body);
 
       toast.success("Slide saved successfully");
       await loadSlides();
@@ -161,11 +149,7 @@ export function HeroSlidesClient() {
       await Promise.all(
         updated.map((slide) => {
           if (!slide.id) return Promise.resolve();
-          return fetch("/api/hero-slides", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...slide, order: slide.order }),
-          });
+          return apiRequest<any>("PUT", "/hero-slides", { ...slide, order: slide.order });
         })
       );
       toast.success("Slides reordered successfully");
@@ -454,10 +438,10 @@ export function HeroSlidesClient() {
                                   )}
                                   <div
                                     className={`absolute inset-0 flex flex-col justify-center p-4 ${slide.textPosition === "left"
-                                        ? "items-start text-left"
-                                        : slide.textPosition === "right"
-                                          ? "items-end text-right"
-                                          : "items-center text-center"
+                                      ? "items-start text-left"
+                                      : slide.textPosition === "right"
+                                        ? "items-end text-right"
+                                        : "items-center text-center"
                                       }`}
                                     style={{ color: slide.textColor }}
                                   >
@@ -504,10 +488,10 @@ export function HeroSlidesClient() {
                                   )}
                                   <div
                                     className={`absolute inset-0 flex flex-col justify-center p-4 ${slide.textPosition === "left"
-                                        ? "items-start text-left"
-                                        : slide.textPosition === "right"
-                                          ? "items-end text-right"
-                                          : "items-center text-center"
+                                      ? "items-start text-left"
+                                      : slide.textPosition === "right"
+                                        ? "items-end text-right"
+                                        : "items-center text-center"
                                       }`}
                                     style={{ color: slide.textColor }}
                                   >

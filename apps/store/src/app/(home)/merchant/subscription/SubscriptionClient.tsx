@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Check, CreditCard, Calendar, Loader2 } from "lucide-react";
 import type { MerchantSubscription, SubscriptionPlan } from "@/lib/subscription-types";
 import { Separator } from "@/components/ui/separator";
+import { apiRequest } from "@/lib/api-client";
 
 // Helper to get billing cycle label
 function getBillingCycleLabel(months: number | undefined): string {
@@ -61,20 +62,9 @@ export function SubscriptionClient({ currentSubscription, currentPlan, available
 
     setLoading(true);
     try {
-      const res = await fetch("/api/subscription/renew", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subscriptionId: currentSubscription.id,
-        }),
+      const data = await apiRequest<any>("POST", "/subscription/renew", {
+        subscriptionId: currentSubscription.id,
       });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to initiate renewal");
-      }
-
-      const data = await res.json();
 
       if (data.GatewayPageURL) {
         // Redirect to payment gateway
@@ -213,8 +203,8 @@ export function SubscriptionClient({ currentSubscription, currentPlan, available
                     {currentSubscription.billingCycleMonths === 1
                       ? "Monthly"
                       : currentSubscription.billingCycleMonths === 6
-                      ? "6 Months"
-                      : "Yearly"}
+                        ? "6 Months"
+                        : "Yearly"}
                   </p>
                 </div>
                 <div>

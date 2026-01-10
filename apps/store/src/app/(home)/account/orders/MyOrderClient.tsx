@@ -28,6 +28,7 @@ import { format } from "date-fns";
 import { useCurrencySymbol } from "@/hooks/use-currency";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
+import { apiRequest } from "@/lib/api-client";
 
 const statusColors: Record<string, string> = {
   pending: "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border-amber-200 dark:border-amber-800",
@@ -66,34 +67,26 @@ export default function MyOrdersClient() {
     const fetchUserAndOrders = async () => {
       try {
         // Fetch user profile first
-        const userRes = await fetch("/api/auth/me");
-        if (!userRes.ok) {
-          if (userRes.status === 401) {
-            router.push("/login");
-            return;
-          }
-          throw new Error("Failed to fetch user");
-        }
-        const userData = await userRes.json();
-        if (!userData.user) {
+        const userData = await apiRequest<any>("GET", "/auth/me");
+        if (!userData.data) {
           router.push("/login");
           return;
         }
-        setUserProfile(userData.user);
+        setUserProfile(userData.data);
 
         // Fetch orders
         const params = new URLSearchParams();
-        if (userData.user.email) params.append("email", userData.user.email);
-        if (userData.user.phone) params.append("phone", userData.user.phone);
+        if (userData.data.email) params.append("email", userData.data.email);
+        if (userData.data.phone) params.append("phone", userData.data.phone);
 
-        const ordersRes = await fetch(`/api/orders/user?${params.toString()}`);
-        if (!ordersRes.ok) {
-          throw new Error("Failed to fetch orders");
-        }
-        const ordersData = await ordersRes.json();
+        const ordersData = await apiRequest<any>("GET", `/orders/user?${params.toString()}`);
         setOrders(ordersData);
         setError(null);
       } catch (err: any) {
+        if (err?.response?.status === 401) {
+          router.push("/login");
+          return;
+        }
         setError(err?.message || "Failed to load orders");
         toast.error(err?.message || "Failed to load orders");
       } finally {
@@ -291,18 +284,16 @@ export default function MyOrdersClient() {
                       <div className='pt-3 flex flex-wrap items-center justify-between gap-3'>
                         <div className='flex items-center gap-2 flex-wrap'>
                           <Badge
-                            className={`${
-                              statusColors[order.status] || ""
-                            } border font-medium px-2.5 py-1 text-xs flex items-center gap-1.5`}
+                            className={`${statusColors[order.status] || ""
+                              } border font-medium px-2.5 py-1 text-xs flex items-center gap-1.5`}
                           >
                             {statusIcons[order.status]}
                             <span className='capitalize'>{order.status}</span>
                           </Badge>
                           {order.paymentMethod === "online" && order.paymentStatus && (
                             <Badge
-                              className={`${
-                                paymentStatusColors[order.paymentStatus] || paymentStatusColors.pending
-                              } border font-medium px-2.5 py-1 text-xs flex items-center gap-1.5`}
+                              className={`${paymentStatusColors[order.paymentStatus] || paymentStatusColors.pending
+                                } border font-medium px-2.5 py-1 text-xs flex items-center gap-1.5`}
                             >
                               <DollarSign className='w-3 h-3' />
                               <span className='capitalize'>{order.paymentStatus}</span>

@@ -38,15 +38,23 @@ function GoogleCallbackContent() {
                 const origin = window.location.origin;
                 const redirectUri = `${origin}/google-callback`;
 
-                const data = await apiRequest<any>(
+                const response = await apiRequest<any>(
                     "GET",
                     `/auth/google?code=${code}&redirectUri=${encodeURIComponent(redirectUri)}`
                 );
 
+                // Response structure: { success, message, data: { user, accessToken } }
+                const { user, accessToken } = response.data || response;
+
+                // Store token in localStorage for Authorization header
+                if (accessToken) {
+                    localStorage.setItem("auth_token", accessToken);
+                }
+
                 toast.success("Login successful!");
 
                 // Redirect based on user role
-                const userRole = data.user?.role || "customer";
+                const userRole = user?.role || "customer";
                 if (userRole === "admin") {
                     router.push("/admin");
                 } else if (userRole === "merchant") {

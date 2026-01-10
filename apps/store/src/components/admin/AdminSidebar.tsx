@@ -163,6 +163,7 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
       // Clear any stored user data
       if (typeof window !== "undefined") {
         localStorage.removeItem("shoestore_user_profile");
+        localStorage.removeItem("auth_token");
       }
       toast.success("Logged out successfully");
       router.push("/login");

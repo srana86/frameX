@@ -8,8 +8,8 @@ import { TJwtPayload } from "../module/Auth/auth.interface";
 
 const auth = (...requiredRoles: string[]) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    // Get token from cookie
-    const token = req.headers.authorization;
+    // Get token from cookie or Authorization header
+    const token = req.cookies?.auth_token || req.headers.authorization?.replace("Bearer ", "");
 
     // Check if token exists
     if (!token) {
@@ -23,11 +23,16 @@ const auth = (...requiredRoles: string[]) => {
     ) as TJwtPayload;
 
     // Check if required roles are specified
-    if (requiredRoles.length > 0 && !requiredRoles.includes(decoded.role)) {
-      throw new AppError(
-        StatusCodes.FORBIDDEN,
-        "You are not authorized to access this resource!"
-      );
+    if (requiredRoles.length > 0) {
+      const userRole = decoded.role.toLowerCase();
+      const allowedRoles = requiredRoles.map((role) => role.toLowerCase());
+
+      if (!allowedRoles.includes(userRole)) {
+        throw new AppError(
+          StatusCodes.FORBIDDEN,
+          "You are not authorized to access this resource!"
+        );
+      }
     }
 
     // Attach user to request

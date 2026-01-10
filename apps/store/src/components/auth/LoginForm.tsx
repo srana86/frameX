@@ -46,17 +46,24 @@ export function LoginForm({ googleOAuthEnabled = false }: LoginFormProps) {
 
     try {
       // Call login API
-      const data = await apiRequest<any>("POST", "/auth/login", {
+      const response = await apiRequest<any>("POST", "/auth/login", {
         method: "email",
         email: values.email,
         password: values.password,
         rememberMe: values.rememberMe,
       });
 
+      // Response structure: { success, message, data: { user, accessToken } }
+      const { user, accessToken } = response.data || response;
+
+      // Store token in localStorage for Authorization header
+      if (accessToken) {
+        localStorage.setItem("auth_token", accessToken);
+      }
+
       toast.success("Login successful!");
-      // JWT token is automatically set in httpOnly cookie by the API
       // Redirect based on user role
-      const userRole = data.user?.role || "customer";
+      const userRole = user?.role || "customer";
       if (userRole === "admin") {
         router.push("/admin");
       } else if (userRole === "merchant") {

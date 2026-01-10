@@ -17,6 +17,8 @@ interface FbEventOptions {
   enableStandardPixel?: boolean; // Optional (for future pixel integration)
 }
 
+import { apiRequest } from "@/lib/api-client";
+
 /**
  * Send a Facebook Conversion API event
  *
@@ -37,31 +39,20 @@ export async function fbEvent(options: FbEventOptions): Promise<void> {
     }
 
     // Send event to our API route which handles the Meta Conversions API call
-    const response = await fetch("/api/fb-events", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        eventName: options.eventName,
-        eventId: options.eventId,
-        emails: options.emails,
-        phones: options.phones,
-        firstName: options.firstName,
-        lastName: options.lastName,
-        country: options.country,
-        city: options.city,
-        zipCode: options.zipCode,
-        products: options.products,
-        value: options.value,
-        currency: options.currency,
-      }),
+    await apiRequest<any>("POST", "/fb-events", {
+      eventName: options.eventName,
+      eventId: options.eventId,
+      emails: options.emails,
+      phones: options.phones,
+      firstName: options.firstName,
+      lastName: options.lastName,
+      country: options.country,
+      city: options.city,
+      zipCode: options.zipCode,
+      products: options.products,
+      value: options.value,
+      currency: options.currency,
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.warn("[FB Tracking] Failed to send event:", errorData);
-    }
   } catch (error) {
     console.error("[FB Tracking] Error sending Facebook event:", error);
     // Fail silently to not break user experience
@@ -73,10 +64,7 @@ export async function fbEvent(options: FbEventOptions): Promise<void> {
  */
 export async function isFbTrackingEnabled(): Promise<boolean> {
   try {
-    const response = await fetch("/api/ads-config", { cache: "no-store" });
-    if (!response.ok) return false;
-
-    const adsConfig = await response.json();
+    const adsConfig = await apiRequest<any>("GET", "/ads-config");
     return (
       adsConfig.metaPixel?.enabled === true && !!adsConfig.metaPixel?.pixelId && adsConfig.metaPixel?.serverSideTracking?.enabled === true
     );

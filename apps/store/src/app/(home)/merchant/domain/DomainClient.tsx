@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { apiRequest } from "@/lib/api-client";
 
 interface DomainClientProps {
   domainConfig: DomainConfiguration | null;
@@ -45,27 +46,20 @@ export function DomainClient({ domainConfig: initialConfig, deployment }: Domain
   const refreshStatus = async () => {
     setRefreshing(true);
     try {
-      const res = await fetch("/api/merchant/domain/configure", {
-        method: "GET",
-        cache: "no-store",
-      });
+      const data = await apiRequest<any>("GET", "/merchant/domain/configure");
+      if (data.domain) {
+        setDomainConfig(data.domain);
+      }
+      if (data.dnsStatus) {
+        setDnsStatus(data.dnsStatus);
+      }
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.domain) {
-          setDomainConfig(data.domain);
-        }
-        if (data.dnsStatus) {
-          setDnsStatus(data.dnsStatus);
-        }
-
-        if (data.domain?.verified) {
-          toast.success("Domain is connected!");
-        } else if (data.dnsStatus?.configuredCorrectly === false) {
-          toast.error("DNS not configured correctly. Check your records.");
-        } else {
-          toast.info("DNS not propagated yet. Try again in a few minutes.");
-        }
+      if (data.domain?.verified) {
+        toast.success("Domain is connected!");
+      } else if (data.dnsStatus?.configuredCorrectly === false) {
+        toast.error("DNS not configured correctly. Check your records.");
+      } else {
+        toast.info("DNS not propagated yet. Try again in a few minutes.");
       }
     } catch (error) {
       toast.error("Failed to refresh status");
@@ -95,16 +89,7 @@ export function DomainClient({ domainConfig: initialConfig, deployment }: Domain
 
     setLoading(true);
     try {
-      const res = await fetch("/api/merchant/domain/configure", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain: domain.toLowerCase().trim() }),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to add domain");
-      }
+      await apiRequest<any>("POST", "/merchant/domain/configure", { domain: domain.toLowerCase().trim() });
 
       toast.success("Domain added! Configure DNS records below.");
       window.location.reload();
@@ -120,13 +105,7 @@ export function DomainClient({ domainConfig: initialConfig, deployment }: Domain
 
     setChecking(true);
     try {
-      const res = await fetch("/api/merchant/domain/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain: domainConfig.domain }),
-      });
-
-      const data = await res.json();
+      const data = await apiRequest<any>("POST", "/merchant/domain/verify", { domain: domainConfig.domain });
 
       if (data.verified) {
         toast.success("Domain connected successfully!");
@@ -146,14 +125,7 @@ export function DomainClient({ domainConfig: initialConfig, deployment }: Domain
 
     setRemoving(true);
     try {
-      const res = await fetch(`/api/merchant/domain/remove?domain=${encodeURIComponent(domainConfig.domain)}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to remove domain");
-      }
+      await apiRequest<any>("DELETE", `/merchant/domain/remove?domain=${encodeURIComponent(domainConfig.domain)}`);
 
       toast.success("Domain removed");
       window.location.reload();

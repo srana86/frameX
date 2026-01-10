@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, ChevronDown, Eye, EyeOff, Save, Package2, CheckCircle2 } from "lucide-react";
+import { apiRequest } from "@/lib/api-client";
 
 interface CourierServicesClientProps {
   initialConfig: CourierServicesConfig;
@@ -62,9 +63,7 @@ export function CourierServicesClient({ initialConfig }: CourierServicesClientPr
   const loadConfig = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/delivery-config?type=courier");
-      if (!res.ok) throw new Error("Failed to load config");
-      const data = await res.json();
+      const data = await apiRequest<CourierServicesConfig>("GET", "/delivery-config?type=courier");
       const newConfig = data || defaultCourierServicesConfig;
       setConfig(newConfig);
       const newCredentials: Record<string, Record<string, string>> = {};
@@ -93,16 +92,7 @@ export function CourierServicesClient({ initialConfig }: CourierServicesClientPr
     setConfig(updatedConfig);
 
     try {
-      const res = await fetch("/api/delivery-config?type=courier", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedConfig),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to save config");
-      }
+      await apiRequest<any>("PUT", "/delivery-config?type=courier", updatedConfig);
 
       toast.success(`${enabled ? "Enabled" : "Disabled"} ${updatedServices.find((s) => s.id === serviceId)?.name} successfully!`);
     } catch (error: any) {
@@ -135,16 +125,7 @@ export function CourierServicesClient({ initialConfig }: CourierServicesClientPr
         services: updatedServices,
       };
 
-      const res = await fetch("/api/delivery-config?type=courier", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedConfig),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to save credentials");
-      }
+      await apiRequest<any>("PUT", "/delivery-config?type=courier", updatedConfig);
 
       toast.success(`${service.name} credentials saved successfully!`);
       await loadConfig();

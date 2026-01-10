@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { apiRequest } from "@/lib/api-client";
 
 // Primary nav items (shown in bottom bar)
 const primaryNavItems = [
@@ -98,13 +99,9 @@ export function MobileBottomNav() {
   useEffect(() => {
     const fetchNotificationCount = async () => {
       try {
-        const res = await fetch("/api/notifications?limit=1&page=1");
-        if (res.ok) {
-          const data = await res.json();
-          // Count unread from first page (approximation)
-          const unread = data.notifications?.filter((n: any) => !n.read).length || 0;
-          setUnreadCount(unread > 0 ? unread : 0);
-        }
+        const data = await apiRequest<any>("GET", "/notifications?limit=1&page=1");
+        const unread = data.notifications?.filter((n: any) => !n.read).length || 0;
+        setUnreadCount(unread > 0 ? unread : 0);
       } catch (error) {
         // Silently fail
       }
@@ -120,11 +117,8 @@ export function MobileBottomNav() {
   useEffect(() => {
     const fetchPendingOrders = async () => {
       try {
-        const res = await fetch("/api/orders?status=pending&limit=1");
-        if (res.ok) {
-          const data = await res.json();
-          setPendingOrdersCount(data.pagination?.total || 0);
-        }
+        const data = await apiRequest<any>("GET", "/orders?status=pending&limit=1");
+        setPendingOrdersCount(data.pagination?.total || 0);
       } catch (error) {
         // Silently fail
       }

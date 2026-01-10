@@ -8,14 +8,25 @@ import AppError from "../../errors/AppError";
 
 // Login user
 const login = catchAsync(async (req: Request, res: Response) => {
+  if (!req.tenantId) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Tenant ID is missing");
+  }
   const result = await AuthServices.loginUser(req.tenantId, req.body);
 
   // Set httpOnly cookie
   res.cookie("auth_token", result.accessToken, {
     httpOnly: true,
     secure: config.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: config.NODE_ENV === "production" ? "strict" : "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+
+  // Set refresh token cookie
+  res.cookie("refresh_token", result.refreshToken, {
+    httpOnly: true,
+    secure: config.NODE_ENV === "production",
+    sameSite: config.NODE_ENV === "production" ? "strict" : "lax",
+    maxAge: 365 * 24 * 60 * 60 * 1000, // 365 days
   });
 
   sendResponse(res, {
@@ -25,6 +36,7 @@ const login = catchAsync(async (req: Request, res: Response) => {
     data: {
       user: result.user,
       accessToken: result.accessToken,
+      refreshToken: result.refreshToken, // Included as per request
     },
   });
 });
@@ -37,8 +49,16 @@ const register = catchAsync(async (req: Request, res: Response) => {
   res.cookie("auth_token", result.accessToken, {
     httpOnly: true,
     secure: config.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: config.NODE_ENV === "production" ? "strict" : "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+
+  // Set refresh token cookie
+  res.cookie("refresh_token", result.refreshToken, {
+    httpOnly: true,
+    secure: config.NODE_ENV === "production",
+    sameSite: config.NODE_ENV === "production" ? "strict" : "lax",
+    maxAge: 365 * 24 * 60 * 60 * 1000, // 365 days
   });
 
   sendResponse(res, {
@@ -48,6 +68,7 @@ const register = catchAsync(async (req: Request, res: Response) => {
     data: {
       user: result.user,
       accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
     },
   });
 });
@@ -112,8 +133,16 @@ const googleAuth = catchAsync(async (req: Request, res: Response) => {
     res.cookie("auth_token", result.accessToken, {
       httpOnly: true,
       secure: config.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: config.NODE_ENV === "production" ? "strict" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // Set refresh token cookie
+    res.cookie("refresh_token", result.refreshToken, {
+      httpOnly: true,
+      secure: config.NODE_ENV === "production",
+      sameSite: config.NODE_ENV === "production" ? "strict" : "lax",
+      maxAge: 365 * 24 * 60 * 60 * 1000, // 365 days
     });
 
     sendResponse(res, {
@@ -122,6 +151,8 @@ const googleAuth = catchAsync(async (req: Request, res: Response) => {
       message: "Google authentication successful",
       data: {
         user: result.user,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
       },
     });
   } catch (error: any) {
@@ -187,6 +218,24 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Refresh Token
+const refreshToken = catchAsync(async (req: Request, res: Response) => {
+  const { refresh_token } = req.cookies;
+
+  if (!refresh_token) {
+    throw new AppError(StatusCodes.UNAUTHORIZED, "Refresh token is missing");
+  }
+
+  const result = await AuthServices.refreshToken(refresh_token);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Access token refreshed successfully",
+    data: result,
+  });
+});
+
 export const AuthControllers = {
   login,
   register,
@@ -196,4 +245,5 @@ export const AuthControllers = {
   changePassword,
   forgotPassword,
   resetPassword,
+  refreshToken,
 };

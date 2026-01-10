@@ -9,6 +9,7 @@ import CloudImage from "@/components/site/CloudImage";
 import { Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import imageCompression from "browser-image-compression";
+import apiClient from "@/lib/api-client";
 
 interface ImageUploadProps {
   value: string;
@@ -103,19 +104,15 @@ export function ImageUpload({
         folder,
       });
 
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: form,
+      // Use apiClient directly for FormData uploads (apiRequest sets Content-Type to JSON)
+      const response = await apiClient.post("/upload", form, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
-      const data = await res.json();
-      console.log("[ImageUpload] Upload response:", { status: res.status, ok: res.ok, data });
-
-      if (!res.ok) {
-        const errorMsg = data?.error?.message || data?.error || "Upload failed";
-        console.error("[ImageUpload] Upload failed:", errorMsg);
-        throw new Error(errorMsg);
-      }
+      const data = response.data;
+      console.log("[ImageUpload] Upload response:", { status: response.status, data });
 
       // Cloudinary returns secure_url in the response
       const url = data?.secure_url || data?.url;

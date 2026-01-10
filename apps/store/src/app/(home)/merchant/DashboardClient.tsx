@@ -7,6 +7,7 @@ import type { Investment } from "@/app/(home)/merchant/investments/actions";
 import { useCurrencySymbol } from "@/hooks/use-currency";
 import { useOrdersSocket } from "@/hooks/use-orders-socket";
 import { toast } from "sonner";
+import { apiRequest } from "@/lib/api-client";
 
 import {
   DollarSign,
@@ -67,8 +68,7 @@ export function DashboardClient({ initialData, brandName = "E-Commerce Store" }:
 
   // Get merchant ID
   useEffect(() => {
-    fetch("/api/merchant/context")
-      .then((res) => res.json())
+    apiRequest<any>("GET", "/merchant/context")
       .then((data) => {
         if (data.success && data.data?.merchant?.id) {
           setMerchantId(data.data.merchant.id);
@@ -689,10 +689,7 @@ export function DashboardClient({ initialData, brandName = "E-Commerce Store" }:
   const syncAllCourierStatus = async () => {
     setIsSyncingCourier(true);
     try {
-      const response = await fetch("/api/orders/sync-courier-status", {
-        method: "POST",
-      });
-      const data = await response.json();
+      const data = await apiRequest<any>("POST", "/orders/sync-courier-status");
 
       if (data.success) {
         const { updated, skipped, failed, totalOrders } = data.results;

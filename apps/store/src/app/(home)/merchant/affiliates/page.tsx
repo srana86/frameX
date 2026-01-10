@@ -17,6 +17,7 @@ import { useCurrencySymbol } from "@/hooks/use-currency";
 import type { AffiliateSettings, CommissionLevel } from "@/lib/affiliate-types";
 import AffiliatesListClient from "./AffiliatesListClient";
 import WithdrawalsClient from "./WithdrawalsClient";
+import { apiRequest } from "@/lib/api-client";
 
 export default function AffiliatesPage() {
   const currencySymbol = useCurrencySymbol();
@@ -30,11 +31,8 @@ export default function AffiliatesPage() {
 
   const loadSettings = async () => {
     try {
-      const response = await fetch("/api/affiliate/settings");
-      if (response.ok) {
-        const data = await response.json();
-        setSettings(data.settings);
-      }
+      const data = await apiRequest<any>("GET", "/affiliate/settings");
+      setSettings(data.settings);
     } catch (error) {
       console.error("Error loading settings:", error);
       toast.error("Failed to load affiliate settings");
@@ -46,16 +44,7 @@ export default function AffiliatesPage() {
   const saveSettings = async () => {
     try {
       setSaving(true);
-      const response = await fetch("/api/affiliate/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save settings");
-      }
-
+      await apiRequest<any>("PUT", "/affiliate/settings", settings);
       toast.success("Settings saved successfully!");
     } catch (error: any) {
       toast.error(error.message || "Failed to save settings");
