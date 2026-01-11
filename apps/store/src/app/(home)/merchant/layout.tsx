@@ -1,19 +1,14 @@
 import { AdminLayoutClient } from "@/components/admin/AdminLayoutClient";
-import { serverSideApiClient } from "@/lib/api-client";
+import { getPublicServerClient } from "@/lib/server-utils";
 import { defaultBrandConfig, type BrandConfig } from "@/lib/brand-config";
 import { requireAuth } from "@/lib/auth-helpers";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
 async function getBrandConfig(): Promise<BrandConfig> {
   try {
-    const headersList = await headers();
-    const host = headersList.get("host") || headersList.get("x-forwarded-host") || "";
-    const domain = host.split(":")[0];
-
-    const client = serverSideApiClient(undefined, undefined, domain);
+    const client = await getPublicServerClient();
     const response = await client.get("/brand-config");
     if (response.data?.data) {
       const apiConfig = response.data.data;
@@ -36,7 +31,11 @@ async function getBrandConfig(): Promise<BrandConfig> {
   return defaultBrandConfig;
 }
 
-export default async function MerchantLayout({ children }: { children: React.ReactNode }) {
+export default async function MerchantLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const user = await requireAuth("merchant");
 
   if (user.role !== "merchant" && user.role !== "admin") {
@@ -45,5 +44,7 @@ export default async function MerchantLayout({ children }: { children: React.Rea
 
   const brandConfig = await getBrandConfig();
 
-  return <AdminLayoutClient brandConfig={brandConfig}>{children}</AdminLayoutClient>;
+  return (
+    <AdminLayoutClient brandConfig={brandConfig}>{children}</AdminLayoutClient>
+  );
 }

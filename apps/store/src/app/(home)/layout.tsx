@@ -4,7 +4,7 @@ import AdminAwareFooter from "@/components/site/AdminAwareFooter";
 import { FloatingCart } from "@/components/site/FloatingCart";
 import { MobileBottomNav } from "@/components/site/MobileBottomNav";
 import { AffiliatePromoHandler } from "@/components/site/AffiliatePromoHandler";
-import { serverSideApiClient } from "@/lib/api-client";
+import { getPublicServerClient } from "@/lib/server-utils";
 import { defaultBrandConfig, type BrandConfig } from "@/lib/brand-config";
 
 interface EnabledFooterPage {
@@ -15,7 +15,7 @@ interface EnabledFooterPage {
 
 async function getBrandConfig(): Promise<BrandConfig> {
   try {
-    const client = serverSideApiClient();
+    const client = await getPublicServerClient();
     const response = await client.get("/brand-config");
     if (response.data?.data) {
       // Merge with defaultBrandConfig to ensure all required fields are present
@@ -41,7 +41,7 @@ async function getBrandConfig(): Promise<BrandConfig> {
 
 async function getEnabledPages(): Promise<EnabledFooterPage[]> {
   try {
-    const client = serverSideApiClient();
+    const client = await getPublicServerClient();
     const response = await client.get("/pages/enabled");
     if (response.data?.data && Array.isArray(response.data.data)) {
       return response.data.data.map((page: any) => ({
@@ -57,13 +57,16 @@ async function getEnabledPages(): Promise<EnabledFooterPage[]> {
 }
 
 async function HomeLayoutContent({ children }: { children: React.ReactNode }) {
-  const [brandConfig, enabledPages] = await Promise.all([getBrandConfig(), getEnabledPages()]);
+  const [brandConfig, enabledPages] = await Promise.all([
+    getBrandConfig(),
+    getEnabledPages(),
+  ]);
 
   return (
     <>
       <AffiliatePromoHandler />
       <TopNav brandConfig={brandConfig} />
-      <main className='min-h-[calc(100vh-64px-200px)] pb-safe'>{children}</main>
+      <main className="min-h-[calc(100vh-64px-200px)] pb-safe">{children}</main>
       <AdminAwareFooter brandConfig={brandConfig} enabledPages={enabledPages} />
       <FloatingCart />
       <MobileBottomNav />
@@ -79,8 +82,8 @@ export default function HomeLayout({
   return (
     <Suspense
       fallback={
-        <div className='min-h-screen flex items-center justify-center'>
-          <div className='text-muted-foreground'>Loading...</div>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-muted-foreground">Loading...</div>
         </div>
       }
     >

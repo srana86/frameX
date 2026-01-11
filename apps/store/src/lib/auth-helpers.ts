@@ -6,7 +6,10 @@ export type UserRole = "customer" | "merchant" | "admin";
 /**
  * Check if user has required role
  */
-export function hasRole(user: CurrentUser | null, requiredRole: UserRole): boolean {
+export function hasRole(
+  user: CurrentUser | null,
+  requiredRole: UserRole
+): boolean {
   if (!user) return false;
 
   const roleHierarchy: Record<UserRole, number> = {
@@ -15,7 +18,14 @@ export function hasRole(user: CurrentUser | null, requiredRole: UserRole): boole
     admin: 3,
   };
 
-  return roleHierarchy[user.role] >= roleHierarchy[requiredRole];
+  // Normalize role to lowercase in case it wasn't normalized earlier
+  const userRole = user.role.toLowerCase() as UserRole;
+  const normalizedRequiredRole = requiredRole.toLowerCase() as UserRole;
+
+  return (
+    (roleHierarchy[userRole] || 0) >=
+    (roleHierarchy[normalizedRequiredRole] || 0)
+  );
 }
 
 /**
@@ -23,7 +33,9 @@ export function hasRole(user: CurrentUser | null, requiredRole: UserRole): boole
  * Redirects to login if not authenticated
  * Redirects to appropriate page if role doesn't match
  */
-export async function requireAuth(requiredRole?: UserRole): Promise<CurrentUser> {
+export async function requireAuth(
+  requiredRole?: UserRole
+): Promise<CurrentUser> {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -31,12 +43,13 @@ export async function requireAuth(requiredRole?: UserRole): Promise<CurrentUser>
   }
 
   if (requiredRole && !hasRole(user, requiredRole)) {
-    // Redirect based on user's actual role
-    if (user.role === "customer") {
+    // Redirect based on user's actual role (normalize to lowercase)
+    const userRole = user.role.toLowerCase();
+    if (userRole === "customer") {
       redirect("/account");
-    } else if (user.role === "merchant") {
+    } else if (userRole === "merchant") {
       redirect("/merchant");
-    } else if (user.role === "admin") {
+    } else if (userRole === "admin") {
       redirect("/admin");
     }
     redirect("/");
@@ -60,4 +73,3 @@ export function getRoleRedirectUrl(role: UserRole): string {
       return "/";
   }
 }
-

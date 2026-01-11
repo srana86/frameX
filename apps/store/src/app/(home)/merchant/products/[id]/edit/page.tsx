@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { serverSideApiClient } from "@/lib/api-client";
+import { getServerClient } from "@/lib/server-utils";
 import ProductForm from "@/components/admin/ProductForm";
 import type { Product } from "@/lib/types";
 
@@ -18,8 +18,10 @@ export default async function AdminEditProductPage({ params }: Props) {
   const product = await getProduct(id);
   if (!product) notFound();
   return (
-    <div className='w-full px-4 py-8 sm:px-6 lg:px-8'>
-      <h1 className='mb-6 text-2xl font-semibold tracking-tight'>Edit Product</h1>
+    <div className="w-full px-4 py-8 sm:px-6 lg:px-8">
+      <h1 className="mb-6 text-2xl font-semibold tracking-tight">
+        Edit Product
+      </h1>
       <ProductForm initial={product} />
     </div>
   );
@@ -27,7 +29,7 @@ export default async function AdminEditProductPage({ params }: Props) {
 
 async function getProduct(id: string): Promise<Product | null> {
   try {
-    const client = serverSideApiClient();
+    const client = await getServerClient();
     const response = await client.get(`/products/${id}`);
     if (response.data?.data) {
       const d = response.data.data;
@@ -50,7 +52,10 @@ async function getProduct(id: string): Promise<Product | null> {
         condition: d.condition || undefined,
         warranty: d.warranty || undefined,
         tags: Array.isArray(d.tags) ? d.tags : [],
-        discountPercentage: d.discountPercentage !== undefined ? Number(d.discountPercentage) : undefined,
+        discountPercentage:
+          d.discountPercentage !== undefined
+            ? Number(d.discountPercentage)
+            : undefined,
         featured: Boolean(d.featured ?? false),
         stock: d.stock !== undefined ? Number(d.stock) : undefined,
       } as Product;
@@ -60,4 +65,3 @@ async function getProduct(id: string): Promise<Product | null> {
   }
   return null;
 }
-

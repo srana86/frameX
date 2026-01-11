@@ -218,10 +218,9 @@ export function SearchDropdown({ onClose }: SearchDropdownProps) {
               <div className='overflow-y-auto max-h-[200px] sm:max-h-60 md:max-h-[280px]'>
                 <div className='p-0.5'>
                   {displayProducts.map((product) => {
-                    const finalPrice =
-                      product.discountPercentage && product.discountPercentage > 0
-                        ? product.price * (1 - product.discountPercentage / 100)
-                        : product.price;
+                    const price = Number(product.price) || 0;
+                    const discount = Number(product.discountPercentage) || 0;
+                    const finalPrice = discount > 0 ? price * (1 - discount / 100) : price;
                     const image = product.images[0] ?? "/file.svg";
 
                     return (
@@ -246,7 +245,7 @@ export function SearchDropdown({ onClose }: SearchDropdownProps) {
                               </p>
                             </div>
                             <div className='text-right shrink-0 ml-1'>
-                              {product.discountPercentage && product.discountPercentage > 0 ? (
+                              {discount > 0 ? (
                                 <div className='flex flex-col items-end'>
                                   <span className='font-bold text-[10px] sm:text-[11px] text-foreground leading-tight'>
                                     {currencySymbol}
@@ -254,20 +253,20 @@ export function SearchDropdown({ onClose }: SearchDropdownProps) {
                                   </span>
                                   <span className='text-[7px] sm:text-[8px] text-muted-foreground line-through leading-tight'>
                                     {currencySymbol}
-                                    {product.price.toFixed(2)}
+                                    {price.toFixed(2)}
                                   </span>
                                 </div>
                               ) : (
                                 <span className='font-bold text-[10px] sm:text-[11px] text-foreground leading-tight'>
                                   {currencySymbol}
-                                  {product.price.toFixed(2)}
+                                  {price.toFixed(2)}
                                 </span>
                               )}
                             </div>
                           </div>
-                          {product.discountPercentage && product.discountPercentage > 0 && (
+                          {discount > 0 && (
                             <Badge variant='secondary' className='text-[7px] sm:text-[8px] px-1 py-0 h-3 mt-0.5'>
-                              -{product.discountPercentage}%
+                              -{discount}%
                             </Badge>
                           )}
                         </div>

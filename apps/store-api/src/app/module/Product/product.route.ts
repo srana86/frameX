@@ -9,50 +9,71 @@ import { ReviewValidation } from "../Review/review.validation";
 
 const router = express.Router();
 
-// Product routes (public but need tenant context)
+// =====================
+// Public routes (tenant context required, no auth)
+// =====================
 router.get("/", tenantMiddleware, ProductControllers.getAllProducts);
 router.get("/brands", tenantMiddleware, ProductControllers.getBrands);
 router.get("/categories", tenantMiddleware, ProductControllers.getCategories);
-router.get("/most-loved", tenantMiddleware, ProductControllers.getMostLovedProducts);
+router.get(
+  "/most-loved",
+  tenantMiddleware,
+  ProductControllers.getMostLovedProducts
+);
 router.get("/search", tenantMiddleware, ProductControllers.searchProducts);
 router.get("/:id", tenantMiddleware, ProductControllers.getSingleProduct);
+
+// Review routes - public with tenant context
+router.get(
+  "/:id/reviews",
+  tenantMiddleware,
+  ProductControllers.getProductReviews
+);
+router.post(
+  "/:id/reviews",
+  tenantMiddleware,
+  validateRequest(ReviewValidation.createReviewValidationSchema),
+  ProductControllers.createProductReview
+);
+
+// =====================
+// Protected routes (tenant + auth required)
+// tenantMiddleware MUST come before auth
+// =====================
 
 // Product category routes
 router.post(
   "/categories",
+  tenantMiddleware,
   auth("admin", "merchant"),
   validateRequest(ProductValidation.createCategoryValidationSchema),
   ProductControllers.createCategory
 );
 router.put(
   "/categories",
+  tenantMiddleware,
   auth("admin", "merchant"),
   validateRequest(ProductValidation.updateCategoryOrderValidationSchema),
   ProductControllers.updateCategoryOrder
 );
 router.put(
   "/categories/:id",
+  tenantMiddleware,
   auth("admin", "merchant"),
   validateRequest(ProductValidation.updateCategoryValidationSchema),
   ProductControllers.updateCategory
 );
 router.delete(
   "/categories/:id",
+  tenantMiddleware,
   auth("admin", "merchant"),
   ProductControllers.deleteCategory
-);
-
-// Review routes - using Review module
-router.get("/:id/reviews", ProductControllers.getProductReviews);
-router.post(
-  "/:id/reviews",
-  validateRequest(ReviewValidation.createReviewValidationSchema),
-  ProductControllers.createProductReview
 );
 
 // Product CRUD routes
 router.post(
   "/",
+  tenantMiddleware,
   auth("admin", "merchant"),
   upload.array("images", 20),
   validateRequest(ProductValidation.createProductValidationSchema),
@@ -60,6 +81,7 @@ router.post(
 );
 router.put(
   "/:id",
+  tenantMiddleware,
   auth("admin", "merchant"),
   upload.array("images", 20),
   validateRequest(ProductValidation.updateProductValidationSchema),
@@ -67,11 +89,13 @@ router.put(
 );
 router.delete(
   "/:id",
+  tenantMiddleware,
   auth("admin", "merchant"),
   ProductControllers.deleteProduct
 );
 router.put(
   "/:id/order",
+  tenantMiddleware,
   auth("admin", "merchant"),
   validateRequest(ProductValidation.updateProductOrderValidationSchema),
   ProductControllers.updateProductOrder

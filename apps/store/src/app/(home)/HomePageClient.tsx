@@ -126,10 +126,9 @@ export function HomePageClient({ categories, productsByCategory, allProducts, mo
             <h2 className='text-xl font-bold mb-4'>Most Loved</h2>
             <div className='grid grid-cols-2 gap-3'>
               {displayMostLovedProducts.map((product) => {
-                const finalPrice =
-                  product.discountPercentage && product.discountPercentage > 0
-                    ? product.price * (1 - product.discountPercentage / 100)
-                    : product.price;
+                const price = Number(product.price) || 0;
+                const discount = Number(product.discountPercentage) || 0;
+                const finalPrice = discount > 0 ? price * (1 - discount / 100) : price;
 
                 return (
                   <div
@@ -154,10 +153,10 @@ export function HomePageClient({ categories, productsByCategory, allProducts, mo
                         <p className='text-base font-semibold text-foreground'>
                           {currencySymbol}
                           {finalPrice.toFixed(2)}
-                          {product.discountPercentage && product.discountPercentage > 0 && (
+                          {discount > 0 && (
                             <span className='text-xs text-muted-foreground line-through ml-1'>
                               {currencySymbol}
-                              {product.price.toFixed(2)}
+                              {price.toFixed(2)}
                             </span>
                           )}
                         </p>
@@ -214,10 +213,9 @@ export function HomePageClient({ categories, productsByCategory, allProducts, mo
             <h2 className='text-xl font-bold mb-4'>Popular Collection</h2>
             <div className='grid grid-cols-2 gap-3'>
               {popularProducts.map((product) => {
-                const finalPrice =
-                  product.discountPercentage && product.discountPercentage > 0
-                    ? product.price * (1 - product.discountPercentage / 100)
-                    : product.price;
+                const price = Number(product.price) || 0;
+                const discount = Number(product.discountPercentage) || 0;
+                const finalPrice = discount > 0 ? price * (1 - discount / 100) : price;
 
                 return (
                   <div
@@ -242,10 +240,10 @@ export function HomePageClient({ categories, productsByCategory, allProducts, mo
                         <p className='text-base font-semibold text-foreground'>
                           {currencySymbol}
                           {finalPrice.toFixed(2)}
-                          {product.discountPercentage && product.discountPercentage > 0 && (
+                          {discount > 0 && (
                             <span className='text-xs text-muted-foreground line-through ml-1'>
                               {currencySymbol}
-                              {product.price.toFixed(2)}
+                              {price.toFixed(2)}
                             </span>
                           )}
                         </p>

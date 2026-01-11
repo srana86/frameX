@@ -142,7 +142,7 @@ export function FloatingCart() {
                       <div className='mt-1 flex items-center gap-2'>
                         <span className='text-sm font-bold text-primary'>
                           {currencySymbol}
-                          {item.price.toFixed(2)}
+                          {(Number(item.price) || 0).toFixed(2)}
                         </span>
                         {item.size && (
                           <Badge variant='outline' className='px-1 py-0 text-xs'>

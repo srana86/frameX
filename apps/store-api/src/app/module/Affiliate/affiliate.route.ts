@@ -1,14 +1,33 @@
 import express from "express";
 import validateRequest from "../../middlewares/validateRequest";
 import auth from "../../middlewares/auth";
+import { tenantMiddleware } from "../../middlewares/tenant";
 import { AffiliateControllers } from "./affiliate.controller";
 import { AffiliateValidation } from "./affiliate.validation";
 
 const router = express.Router();
 
+// =====================
+// Public routes (tenant context required)
+// =====================
+
+// Set affiliate cookie (public)
+router.post(
+  "/set-cookie",
+  tenantMiddleware,
+  validateRequest(AffiliateValidation.setCookieValidationSchema),
+  AffiliateControllers.setCookie
+);
+
+// =====================
+// Protected routes (tenant + auth required)
+// tenantMiddleware MUST come before auth
+// =====================
+
 // Get current user's affiliate info
 router.get(
   "/me",
+  tenantMiddleware,
   auth("customer", "merchant", "admin"),
   AffiliateControllers.getMyAffiliate
 );
@@ -16,13 +35,15 @@ router.get(
 // Create affiliate account
 router.post(
   "/me",
+  tenantMiddleware,
   auth("customer", "merchant", "admin"),
   AffiliateControllers.createMyAffiliate
 );
 
-// Get all affiliates (admin)
+// Get all affiliates (admin/merchant only)
 router.get(
   "/list",
+  tenantMiddleware,
   auth("admin", "merchant"),
   AffiliateControllers.getAllAffiliates
 );
@@ -30,6 +51,7 @@ router.get(
 // Get commissions
 router.get(
   "/commissions",
+  tenantMiddleware,
   auth("admin", "merchant", "customer"),
   AffiliateControllers.getCommissions
 );
@@ -37,6 +59,7 @@ router.get(
 // Get affiliate progress (uses current user)
 router.get(
   "/progress",
+  tenantMiddleware,
   auth("admin", "merchant", "customer"),
   AffiliateControllers.getAffiliateProgress
 );
@@ -44,6 +67,7 @@ router.get(
 // Get withdrawals
 router.get(
   "/withdrawals",
+  tenantMiddleware,
   auth("admin", "merchant", "customer"),
   AffiliateControllers.getWithdrawals
 );
@@ -51,36 +75,33 @@ router.get(
 // Create/Update withdrawal
 router.post(
   "/withdrawals",
+  tenantMiddleware,
   auth("customer", "merchant", "admin"),
   validateRequest(AffiliateValidation.createWithdrawalValidationSchema),
   AffiliateControllers.handleWithdrawal
 );
 
-// Get affiliate settings
+// Get affiliate settings (admin/merchant only)
 router.get(
   "/settings",
+  tenantMiddleware,
   auth("admin", "merchant"),
   AffiliateControllers.getSettings
 );
 
-// Update affiliate settings
+// Update affiliate settings (admin/merchant only)
 router.put(
   "/settings",
+  tenantMiddleware,
   auth("admin", "merchant"),
   validateRequest(AffiliateValidation.updateSettingsValidationSchema),
   AffiliateControllers.updateSettings
 );
 
-// Set affiliate cookie (public)
-router.post(
-  "/set-cookie",
-  validateRequest(AffiliateValidation.setCookieValidationSchema),
-  AffiliateControllers.setCookie
-);
-
-// Assign coupon to affiliate
+// Assign coupon to affiliate (admin/merchant only)
 router.post(
   "/assign-coupon",
+  tenantMiddleware,
   auth("admin", "merchant"),
   validateRequest(AffiliateValidation.assignCouponValidationSchema),
   AffiliateControllers.assignCoupon

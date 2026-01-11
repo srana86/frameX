@@ -1,6 +1,6 @@
 "use server";
 
-import { serverSideApiClient } from "@/lib/api-client";
+import { getServerClient } from "@/lib/server-utils";
 import type { Coupon, CouponStatus } from "@/lib/coupon-types";
 
 type PaginationData = {
@@ -25,9 +25,14 @@ type CouponsResponse = {
   statistics: CouponStatistics;
 };
 
-export async function getCoupons(page: number = 1, limit: number = 30, status?: string, search?: string): Promise<CouponsResponse> {
+export async function getCoupons(
+  page: number = 1,
+  limit: number = 30,
+  status?: string,
+  search?: string
+): Promise<CouponsResponse> {
   try {
-    const client = serverSideApiClient();
+    const client = await getServerClient();
     const params: Record<string, any> = { page, limit };
     if (status && status !== "all") params.status = status;
     if (search && search.trim()) params.search = search.trim();
@@ -36,7 +41,11 @@ export async function getCoupons(page: number = 1, limit: number = 30, status?: 
 
     if (response.data?.data) {
       const data = response.data.data;
-      const coupons = Array.isArray(data.coupons) ? data.coupons : (Array.isArray(data) ? data : []);
+      const coupons = Array.isArray(data.coupons)
+        ? data.coupons
+        : Array.isArray(data)
+          ? data
+          : [];
 
       // Update expired status for old coupons
       const now = new Date();
@@ -44,7 +53,11 @@ export async function getCoupons(page: number = 1, limit: number = 30, status?: 
         if (coupon.status === "active" && new Date(coupon.endDate) < now) {
           return { ...coupon, status: "expired" as CouponStatus };
         }
-        if (coupon.status === "scheduled" && new Date(coupon.startDate) <= now && new Date(coupon.endDate) > now) {
+        if (
+          coupon.status === "scheduled" &&
+          new Date(coupon.startDate) <= now &&
+          new Date(coupon.endDate) > now
+        ) {
           return { ...coupon, status: "active" as CouponStatus };
         }
         return coupon;
@@ -52,9 +65,17 @@ export async function getCoupons(page: number = 1, limit: number = 30, status?: 
 
       // Calculate statistics
       const total = updatedCoupons.length;
-      const active = updatedCoupons.filter((c: Coupon) => c.status === "active").length;
-      const totalRevenue = updatedCoupons.reduce((sum: number, c: Coupon) => sum + (c.totalRevenue || 0), 0);
-      const totalUsage = updatedCoupons.reduce((sum: number, c: Coupon) => sum + (c.usageLimit?.currentUses || 0), 0);
+      const active = updatedCoupons.filter(
+        (c: Coupon) => c.status === "active"
+      ).length;
+      const totalRevenue = updatedCoupons.reduce(
+        (sum: number, c: Coupon) => sum + (c.totalRevenue || 0),
+        0
+      );
+      const totalUsage = updatedCoupons.reduce(
+        (sum: number, c: Coupon) => sum + (c.usageLimit?.currentUses || 0),
+        0
+      );
 
       return {
         coupons: updatedCoupons,
@@ -66,13 +87,25 @@ export async function getCoupons(page: number = 1, limit: number = 30, status?: 
           hasNextPage: page * limit < coupons.length,
           hasPrevPage: page > 1,
         },
-        statistics: data.statistics || { total, active, totalRevenue, totalUsage },
+        statistics: data.statistics || {
+          total,
+          active,
+          totalRevenue,
+          totalUsage,
+        },
       };
     }
 
     return {
       coupons: [],
-      pagination: { page, limit, total: 0, totalPages: 0, hasNextPage: false, hasPrevPage: false },
+      pagination: {
+        page,
+        limit,
+        total: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPrevPage: false,
+      },
       statistics: { total: 0, active: 0, totalRevenue: 0, totalUsage: 0 },
     };
   } catch (error: any) {
@@ -83,11 +116,10 @@ export async function getCoupons(page: number = 1, limit: number = 30, status?: 
 
 export async function deleteCoupon(id: string): Promise<void> {
   try {
-    const client = serverSideApiClient();
+    const client = await getServerClient();
     await client.delete(`/coupons/${id}`);
   } catch (error: any) {
     console.error("Failed to delete coupon:", error);
     throw new Error(error?.message || "Failed to delete coupon");
   }
 }
-

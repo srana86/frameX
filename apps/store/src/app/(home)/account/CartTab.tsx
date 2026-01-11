@@ -64,7 +64,7 @@ export default function CartTab() {
                       <div className='flex items-center gap-2 mt-1'>
                         <span className='text-lg font-bold text-primary'>
                           {currencySymbol}
-                          {item.price.toFixed(2)}
+                          {(Number(item.price) || 0).toFixed(2)}
                         </span>
                         {item.size && (
                           <Badge variant='outline' className='text-xs'>

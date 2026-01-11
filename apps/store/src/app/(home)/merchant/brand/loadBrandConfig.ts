@@ -1,9 +1,9 @@
-import { serverSideApiClient } from "@/lib/api-client";
+import { getServerClient } from "@/lib/server-utils";
 import { defaultBrandConfig, type BrandConfig } from "@/lib/brand-config";
 
 export async function loadBrandConfig(): Promise<BrandConfig> {
   try {
-    const client = serverSideApiClient();
+    const client = await getServerClient();
     const response = await client.get("/brand-config");
     if (response.data?.data) {
       const apiConfig = response.data.data;
@@ -26,4 +26,3 @@ export async function loadBrandConfig(): Promise<BrandConfig> {
 
   return defaultBrandConfig;
 }
-

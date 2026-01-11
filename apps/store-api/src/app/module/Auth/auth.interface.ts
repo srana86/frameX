@@ -19,6 +19,7 @@ export interface TRegisterPayload {
 export interface TJwtPayload extends JwtPayload {
   userId: string;
   role: string;
+  tenantId: string;
 }
 
 export interface TChangePasswordPayload {

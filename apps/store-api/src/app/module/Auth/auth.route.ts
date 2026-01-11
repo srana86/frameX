@@ -7,6 +7,8 @@ import { tenantMiddleware } from "../../middlewares/tenant";
 
 const router = express.Router();
 
+// Public routes (no auth required)
+
 // Register user
 router.post(
   "/register",
@@ -23,26 +25,8 @@ router.post(
   AuthControllers.login
 );
 
-// Logout user
-router.post("/logout", tenantMiddleware, AuthControllers.logout);
-
-// Refresh Token
-router.post("/refresh-token", tenantMiddleware, AuthControllers.refreshToken);
-
-// Get current user (protected route)
-router.get("/me", auth(), tenantMiddleware, AuthControllers.getMe);
-
 // Google OAuth callback
 router.get("/google", tenantMiddleware, AuthControllers.googleAuth);
-
-// Change password (protected route)
-router.post(
-  "/change-password",
-  auth(),
-  tenantMiddleware,
-  validateRequest(AuthValidation.changePasswordValidationSchema),
-  AuthControllers.changePassword
-);
 
 // Forgot password
 router.post(
@@ -58,6 +42,27 @@ router.post(
   tenantMiddleware,
   validateRequest(AuthValidation.resetPasswordValidationSchema),
   AuthControllers.resetPassword
+);
+
+// Refresh Token (uses refresh_token cookie, not auth middleware)
+router.post("/refresh-token", tenantMiddleware, AuthControllers.refreshToken);
+
+// Protected routes (auth required) - tenantMiddleware MUST come before auth
+// so that auth can validate the user belongs to the tenant
+
+// Logout user (protected to ensure we're clearing the right user's tokens)
+router.post("/logout", tenantMiddleware, auth(), AuthControllers.logout);
+
+// Get current user
+router.get("/me", tenantMiddleware, auth(), AuthControllers.getMe);
+
+// Change password
+router.post(
+  "/change-password",
+  tenantMiddleware,
+  auth(),
+  validateRequest(AuthValidation.changePasswordValidationSchema),
+  AuthControllers.changePassword
 );
 
 export const AuthRoutes = router;

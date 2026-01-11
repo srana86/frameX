@@ -7,6 +7,7 @@ export interface AuthenticatedSocket extends ServerSocket {
   userId?: string;
   userRole?: string;
   merchantId?: string;
+  tenantId?: string;
 }
 
 export interface SocketConfig {

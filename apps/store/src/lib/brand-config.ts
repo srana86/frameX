@@ -10,7 +10,13 @@ export interface BrandConfig {
   logo: {
     type: "image" | "text";
     // Logo style for text logos: "default" | "icon-text" | "gradient" | "minimal" | "badge" | "monogram"
-    style?: "default" | "icon-text" | "gradient" | "minimal" | "badge" | "monogram";
+    style?:
+      | "default"
+      | "icon-text"
+      | "gradient"
+      | "minimal"
+      | "badge"
+      | "monogram";
     // If type is 'image', provide the path to the logo image
     imagePath?: string;
     // If type is 'text', provide the text to display
@@ -136,13 +142,22 @@ export const defaultBrandConfig: BrandConfig = {
       default: "ShoeStore – Modern Footwear Shop",
       template: "%s – ShoeStore",
     },
-    description: "Discover sleek and comfortable shoes. Shop sneakers, runners, and classics with fast checkout and cash on delivery.",
-    keywords: ["shoes", "sneakers", "footwear", "running shoes", "casual", "ecommerce"],
-    metadataBase: "https://shoestore.local",
+    description:
+      "Discover sleek and comfortable shoes. Shop sneakers, runners, and classics with fast checkout and cash on delivery.",
+    keywords: [
+      "shoes",
+      "sneakers",
+      "footwear",
+      "running shoes",
+      "casual",
+      "ecommerce",
+    ],
+    metadataBase: "", // Dynamic: determined from request headers
     socialShareImage: "",
     openGraph: {
       title: "ShoeStore – Modern Footwear Shop",
-      description: "Discover sleek and comfortable shoes. Shop sneakers, runners, and classics with fast checkout and cash on delivery.",
+      description:
+        "Discover sleek and comfortable shoes. Shop sneakers, runners, and classics with fast checkout and cash on delivery.",
       type: "website",
       locale: "en_US",
       siteName: "ShoeStore",
@@ -151,7 +166,8 @@ export const defaultBrandConfig: BrandConfig = {
     twitter: {
       card: "summary_large_image",
       title: "ShoeStore – Modern Footwear Shop",
-      description: "Discover sleek and comfortable shoes. Shop sneakers, runners, and classics with fast checkout and cash on delivery.",
+      description:
+        "Discover sleek and comfortable shoes. Shop sneakers, runners, and classics with fast checkout and cash on delivery.",
       image: "",
     },
   },
@@ -170,7 +186,8 @@ export const defaultBrandConfig: BrandConfig = {
   },
 
   footer: {
-    description: "Discover premium footwear that combines style, comfort, and quality. Your perfect pair awaits.",
+    description:
+      "Discover premium footwear that combines style, comfort, and quality. Your perfect pair awaits.",
     copyrightText: "All rights reserved.",
   },
 

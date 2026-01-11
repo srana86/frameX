@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { serverSideApiClient } from "@/lib/api-client";
+import { getServerClient } from "@/lib/server-utils";
 import PageForm from "@/components/admin/PageForm";
 import type { FooterPage } from "@/lib/types";
 
@@ -27,7 +27,7 @@ export default async function AdminEditPagePage({ params }: Props) {
 
 async function getPage(slug: string): Promise<FooterPage | null> {
   try {
-    const client = serverSideApiClient();
+    const client = await getServerClient();
     const response = await client.get(`/pages/${slug}`);
     if (response.data?.data) {
       return response.data.data as FooterPage;
@@ -37,4 +37,3 @@ async function getPage(slug: string): Promise<FooterPage | null> {
   }
   return null;
 }
-

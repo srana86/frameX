@@ -54,8 +54,17 @@ import {
   useSidebar,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Logo } from "@/components/site/Logo";
 import CloudImage from "@/components/site/CloudImage";
 import { apiRequest } from "@/lib/api-client";
@@ -68,7 +77,9 @@ interface AdminSidebarProps {
   brandConfig: BrandConfig;
 }
 
-const storeMenuItems = [{ title: "Dashboard", url: "/merchant", icon: LayoutDashboard }];
+const storeMenuItems = [
+  { title: "Dashboard", url: "/merchant", icon: LayoutDashboard },
+];
 
 const salesMenuItems = [
   { title: "Orders", url: "/merchant/orders", icon: ShoppingBag },
@@ -77,15 +88,25 @@ const salesMenuItems = [
 
 const financeMenuItems = [
   { title: "Payment History", url: "/merchant/payments", icon: CreditCard },
-  { title: "Currency & Symbols", url: "/merchant/payments/currency", icon: Coins },
+  {
+    title: "Currency & Symbols",
+    url: "/merchant/payments/currency",
+    icon: Coins,
+  },
   { title: "Payment Gateway", url: "/merchant/payment-config", icon: Settings },
 ];
 
-const financeStandaloneItems = [{ title: "Investments", url: "/merchant/investments", icon: TrendingUp }];
+const financeStandaloneItems = [
+  { title: "Investments", url: "/merchant/investments", icon: TrendingUp },
+];
 
 const productMenuItems = [
   { title: "Products", url: "/merchant/products", icon: Package },
-  { title: "Categories", url: "/merchant/products/categories", icon: FolderTree },
+  {
+    title: "Categories",
+    url: "/merchant/products/categories",
+    icon: FolderTree,
+  },
   { title: "Inventory", url: "/merchant/inventory", icon: Warehouse },
 ];
 
@@ -120,7 +141,11 @@ const brandSettingsMenuItems = [
   { title: "Social", url: "/merchant/brand/social", icon: Globe },
   { title: "Theme", url: "/merchant/brand/theme", icon: Settings },
   { title: "Hero Slides", url: "/merchant/brand/hero-slides", icon: Image },
-  { title: "Promotional Banner", url: "/merchant/brand/banner", icon: Megaphone },
+  {
+    title: "Promotional Banner",
+    url: "/merchant/brand/banner",
+    icon: Megaphone,
+  },
 ];
 
 const accountMenuItems = [
@@ -129,11 +154,21 @@ const accountMenuItems = [
 ];
 
 const configMenuItems = [
-  { title: "OAuth Configuration", url: "/merchant/oauth-config", icon: Settings },
+  {
+    title: "OAuth Configuration",
+    url: "/merchant/oauth-config",
+    icon: Settings,
+  },
   { title: "Delivery Support", url: "/merchant/delivery-support", icon: Truck },
 ];
 
-const supportMenuItems = [{ title: "Feature Request", url: "/support/feature-request", icon: HelpCircle }];
+const supportMenuItems = [
+  {
+    title: "Feature Request",
+    url: "/support/feature-request",
+    icon: HelpCircle,
+  },
+];
 
 export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
   const pathname = usePathname();
@@ -148,7 +183,11 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
       try {
         const data = await apiRequest<any>("GET", "/auth/me");
         if (data?.user) {
-          setUserProfile(data.user);
+          // Normalize role to lowercase (backend returns uppercase like "MERCHANT")
+          setUserProfile({
+            ...data.user,
+            role: data.user.role?.toLowerCase() || "customer",
+          });
         }
       } catch (error) {
         console.error("Failed to fetch user profile:", error);
@@ -176,30 +215,39 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
 
   return (
     <Sidebar
-      collapsible='icon'
-      className='**:data-[sidebar=sidebar]:bg-linear-to-b! from-slate-50/50 to-white dark:from-slate-950 dark:to-slate-900 border-r-2 border-slate-200/50 dark:border-slate-800/50'
+      collapsible="icon"
+      className="**:data-[sidebar=sidebar]:bg-linear-to-b! from-slate-50/50 to-white dark:from-slate-950 dark:to-slate-900 border-r-2 border-slate-200/50 dark:border-slate-800/50"
     >
-      <SidebarHeader className='h-16 border-b-2 border-slate-200/50 dark:border-slate-800/50 bg-linear-to-r from-slate-50/80 to-white dark:from-slate-900/40 dark:to-slate-950/20 flex items-center'>
-        <div className='px-4 w-full h-full flex items-center justify-between'>
+      <SidebarHeader className="h-16 border-b-2 border-slate-200/50 dark:border-slate-800/50 bg-linear-to-r from-slate-50/80 to-white dark:from-slate-900/40 dark:to-slate-950/20 flex items-center">
+        <div className="px-4 w-full h-full flex items-center justify-between">
           {isCollapsed ? (
             // Collapsed: Show image logo or 5-letter brand name
-            <Link href='/' className='flex items-center justify-center w-full h-full min-w-0'>
-              {(brandConfig.logo.type === "image" && brandConfig.logo.imagePath) ||
-                (brandConfig.logo.type === "text" && brandConfig.logo.icon?.imagePath) ? (
-                <div className='relative h-10 w-10 rounded-md flex items-center justify-center shrink-0'>
+            <Link
+              href="/"
+              className="flex items-center justify-center w-full h-full min-w-0"
+            >
+              {(brandConfig.logo.type === "image" &&
+                brandConfig.logo.imagePath) ||
+              (brandConfig.logo.type === "text" &&
+                brandConfig.logo.icon?.imagePath) ? (
+                <div className="relative h-10 w-10 rounded-md flex items-center justify-center shrink-0">
                   <CloudImage
                     src={
-                      brandConfig.logo.type === "image" && brandConfig.logo.imagePath
+                      brandConfig.logo.type === "image" &&
+                      brandConfig.logo.imagePath
                         ? brandConfig.logo.imagePath
                         : brandConfig.logo.icon?.imagePath || ""
                     }
-                    alt={brandConfig.logo.altText || `${brandConfig.brandName} Logo`}
+                    alt={
+                      brandConfig.logo.altText ||
+                      `${brandConfig.brandName} Logo`
+                    }
                     fill
-                    className='object-contain rounded-sm'
+                    className="object-contain rounded-sm"
                   />
                 </div>
               ) : (
-                <div className='flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold text-xs shrink-0 min-w-10'>
+                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold text-xs shrink-0 min-w-10">
                   {brandConfig.brandName?.slice(0, 5).toUpperCase() || "STORE"}
                 </div>
               )}
@@ -207,16 +255,21 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
           ) : (
             // Expanded: Show full logo with toggle button on mobile
             <>
-              <Logo brandConfig={brandConfig} href='/' className='h-8 flex-1' showTagline={false} />
+              <Logo
+                brandConfig={brandConfig}
+                href="/"
+                className="h-8 flex-1"
+                showTagline={false}
+              />
             </>
           )}
         </div>
       </SidebarHeader>
-      <SidebarContent className='bg-white gap-0'>
+      <SidebarContent className="bg-white gap-0">
         {/* Overview */}
-        <SidebarGroup className='px-2 py-1'>
+        <SidebarGroup className="px-2 py-1">
           {!isCollapsed && (
-            <SidebarGroupLabel className='text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3'>
+            <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3">
               Overview
             </SidebarGroupLabel>
           )}
@@ -230,13 +283,21 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
                       asChild
                       isActive={isActive}
                       tooltip={item.title}
-                      className='h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                      className="h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                     >
-                      <Link href={item.url} className='flex items-center gap-3 relative z-10'>
-                        <item.icon className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                        <span className='relative group-data-[collapsible=icon]:hidden'>{item.title}</span>
+                      <Link
+                        href={item.url}
+                        className="flex items-center gap-3 relative z-10"
+                      >
+                        <item.icon className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                        <span className="relative group-data-[collapsible=icon]:hidden">
+                          {item.title}
+                        </span>
                         {isActive && (
-                          <div className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse' style={{ animationDuration: "2s" }} />
+                          <div
+                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
                         )}
                       </Link>
                     </SidebarMenuButton>
@@ -248,14 +309,14 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
         </SidebarGroup>
 
         {/* Sales & Customers */}
-        <SidebarGroup className='px-2 py-1'>
+        <SidebarGroup className="px-2 py-1">
           {!isCollapsed && (
-            <SidebarGroupLabel className='text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3'>
+            <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3">
               Sales & Customers
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            <SidebarMenu className='space-y-1'>
+            <SidebarMenu className="space-y-1">
               {/* Orders with Sub-items */}
               {isCollapsed ? (
                 // Collapsed: Show sub-items as flat menu items
@@ -264,14 +325,22 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
                     <SidebarMenuButton
                       asChild
                       isActive={pathname === "/merchant/orders"}
-                      tooltip='All Orders'
-                      className='font-semibold h-10 w-full px-2.5 md:px-4 rounded-[5px] transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                      tooltip="All Orders"
+                      className="font-semibold h-10 w-full px-2.5 md:px-4 rounded-[5px] transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                     >
-                      <Link href='/merchant/orders' className='flex items-center gap-3 relative z-10'>
-                        <ShoppingBag className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                        <span className='relative group-data-[collapsible=icon]:hidden'>All Orders</span>
+                      <Link
+                        href="/merchant/orders"
+                        className="flex items-center gap-3 relative z-10"
+                      >
+                        <ShoppingBag className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                        <span className="relative group-data-[collapsible=icon]:hidden">
+                          All Orders
+                        </span>
                         {pathname === "/merchant/orders" && (
-                          <div className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse' style={{ animationDuration: "2s" }} />
+                          <div
+                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
                         )}
                       </Link>
                     </SidebarMenuButton>
@@ -280,14 +349,22 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
                     <SidebarMenuButton
                       asChild
                       isActive={pathname === "/merchant/orders/categories"}
-                      tooltip='Category Statistics'
-                      className='font-semibold h-10 w-full px-2.5 md:px-4 rounded-[5px] transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                      tooltip="Category Statistics"
+                      className="font-semibold h-10 w-full px-2.5 md:px-4 rounded-[5px] transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                     >
-                      <Link href='/merchant/orders/categories' className='flex items-center gap-3 relative z-10'>
-                        <BarChart3 className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                        <span className='relative group-data-[collapsible=icon]:hidden'>Category Statistics</span>
+                      <Link
+                        href="/merchant/orders/categories"
+                        className="flex items-center gap-3 relative z-10"
+                      >
+                        <BarChart3 className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                        <span className="relative group-data-[collapsible=icon]:hidden">
+                          Category Statistics
+                        </span>
                         {pathname === "/merchant/orders/categories" && (
-                          <div className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse' style={{ animationDuration: "2s" }} />
+                          <div
+                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
                         )}
                       </Link>
                     </SidebarMenuButton>
@@ -295,45 +372,62 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
                 </>
               ) : (
                 // Expanded: Show collapsible menu
-                <Collapsible asChild defaultOpen={pathname?.startsWith("/merchant/orders")} className='group/collapsible'>
+                <Collapsible
+                  asChild
+                  defaultOpen={pathname?.startsWith("/merchant/orders")}
+                  className="group/collapsible"
+                >
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton
                         isActive={pathname?.startsWith("/merchant/orders")}
-                        tooltip='Orders'
-                        className='font-semibold h-10 w-full px-2.5 md:px-4 rounded-[5px] transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                        tooltip="Orders"
+                        className="font-semibold h-10 w-full px-2.5 md:px-4 rounded-[5px] transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                       >
-                        <ShoppingBag className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                        <span className='relative'>Orders</span>
-                        <ChevronRight className='ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90' />
+                        <ShoppingBag className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                        <span className="relative">Orders</span>
+                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                         {pathname?.startsWith("/merchant/orders") && (
-                          <div className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse' style={{ animationDuration: "2s" }} />
+                          <div
+                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
                         )}
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <SidebarMenuSub className='mt-1 space-y-1'>
+                      <SidebarMenuSub className="mt-1 space-y-1">
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton
                             asChild
                             isActive={pathname === "/merchant/orders"}
-                            className='h-10 w-full px-2.5 md:px-4 rounded-[5px] font-medium transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                            className="h-10 w-full px-2.5 md:px-4 rounded-[5px] font-medium transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                           >
-                            <Link href='/merchant/orders' className='flex items-center gap-3 relative z-10'>
-                              <ShoppingBag className='w-4 h-4 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                              <span className='relative'>All Orders</span>
+                            <Link
+                              href="/merchant/orders"
+                              className="flex items-center gap-3 relative z-10"
+                            >
+                              <ShoppingBag className="w-4 h-4 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                              <span className="relative">All Orders</span>
                             </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton
                             asChild
-                            isActive={pathname === "/merchant/orders/categories"}
-                            className='h-10 w-full px-2.5 md:px-4 rounded-[5px] font-medium transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                            isActive={
+                              pathname === "/merchant/orders/categories"
+                            }
+                            className="h-10 w-full px-2.5 md:px-4 rounded-[5px] font-medium transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                           >
-                            <Link href='/merchant/orders/categories' className='flex items-center gap-3 relative z-10'>
-                              <BarChart3 className='w-4 h-4 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                              <span className='relative'>Category Statistics</span>
+                            <Link
+                              href="/merchant/orders/categories"
+                              className="flex items-center gap-3 relative z-10"
+                            >
+                              <BarChart3 className="w-4 h-4 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                              <span className="relative">
+                                Category Statistics
+                              </span>
                             </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
@@ -345,20 +439,29 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
 
               {/* Customers */}
               {salesMenuItems.slice(1).map((item) => {
-                const isActive = pathname === item.url || pathname?.startsWith(item.url + "/");
+                const isActive =
+                  pathname === item.url || pathname?.startsWith(item.url + "/");
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
                       isActive={isActive}
                       tooltip={item.title}
-                      className='h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                      className="h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                     >
-                      <Link href={item.url} className='flex items-center gap-3 relative z-10'>
-                        <item.icon className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                        <span className='relative group-data-[collapsible=icon]:hidden'>{item.title}</span>
+                      <Link
+                        href={item.url}
+                        className="flex items-center gap-3 relative z-10"
+                      >
+                        <item.icon className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                        <span className="relative group-data-[collapsible=icon]:hidden">
+                          {item.title}
+                        </span>
                         {isActive && (
-                          <div className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse' style={{ animationDuration: "2s" }} />
+                          <div
+                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
                         )}
                       </Link>
                     </SidebarMenuButton>
@@ -370,33 +473,40 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
         </SidebarGroup>
 
         {/* Finance */}
-        <SidebarGroup className='px-2 py-1'>
+        <SidebarGroup className="px-2 py-1">
           {!isCollapsed && (
-            <SidebarGroupLabel className='text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3'>
+            <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3">
               Finance
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            <SidebarMenu className='space-y-1'>
+            <SidebarMenu className="space-y-1">
               {isCollapsed ? (
                 // Collapsed: Show sub-items as flat menu items
                 <>
                   {financeMenuItems.map((item) => {
-                    const isActive = pathname === item.url || pathname?.startsWith(`${item.url}/`);
+                    const isActive =
+                      pathname === item.url ||
+                      pathname?.startsWith(`${item.url}/`);
                     return (
                       <SidebarMenuItem key={item.url}>
                         <SidebarMenuButton
                           asChild
                           isActive={isActive}
                           tooltip={item.title}
-                          className='font-semibold h-10 w-full px-2.5 md:px-4 rounded-[5px] transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                          className="font-semibold h-10 w-full px-2.5 md:px-4 rounded-[5px] transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                         >
-                          <Link href={item.url} className='flex items-center gap-3 relative z-10'>
-                            <item.icon className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                            <span className='relative group-data-[collapsible=icon]:hidden'>{item.title}</span>
+                          <Link
+                            href={item.url}
+                            className="flex items-center gap-3 relative z-10"
+                          >
+                            <item.icon className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                            <span className="relative group-data-[collapsible=icon]:hidden">
+                              {item.title}
+                            </span>
                             {isActive && (
                               <div
-                                className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse'
+                                className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
                                 style={{ animationDuration: "2s" }}
                               />
                             )}
@@ -410,7 +520,10 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
                 // Expanded: Show collapsible menu
                 <Collapsible
                   asChild
-                  defaultOpen={pathname?.startsWith("/merchant/payments") || pathname?.startsWith("/merchant/payment-config")}
+                  defaultOpen={
+                    pathname?.startsWith("/merchant/payments") ||
+                    pathname?.startsWith("/merchant/payment-config")
+                  }
                 >
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
@@ -420,31 +533,40 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
                           pathname?.startsWith("/merchant/payment-config") ||
                           pathname === "/merchant/payment-config"
                         }
-                        tooltip='Payments'
-                        className='font-semibold h-10 w-full px-2.5 md:px-4 rounded-[5px] transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                        tooltip="Payments"
+                        className="font-semibold h-10 w-full px-2.5 md:px-4 rounded-[5px] transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                       >
-                        <CreditCard className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                        <span className='relative'>Payments</span>
-                        <ChevronRight className='ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90' />
-                        {(pathname?.startsWith("/merchant/payments") || pathname?.startsWith("/merchant/payment-config")) && (
-                          <div className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse' style={{ animationDuration: "2s" }} />
+                        <CreditCard className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                        <span className="relative">Payments</span>
+                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        {(pathname?.startsWith("/merchant/payments") ||
+                          pathname?.startsWith("/merchant/payment-config")) && (
+                          <div
+                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
                         )}
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <SidebarMenuSub className='mt-1 space-y-1'>
+                      <SidebarMenuSub className="mt-1 space-y-1">
                         {financeMenuItems.map((item) => {
-                          const isActive = pathname === item.url || pathname?.startsWith(`${item.url}/`);
+                          const isActive =
+                            pathname === item.url ||
+                            pathname?.startsWith(`${item.url}/`);
                           return (
                             <SidebarMenuSubItem key={item.url}>
                               <SidebarMenuSubButton
                                 asChild
                                 isActive={isActive}
-                                className='h-10 w-full px-2.5 md:px-4 rounded-[5px] font-medium transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                                className="h-10 w-full px-2.5 md:px-4 rounded-[5px] font-medium transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                               >
-                                <Link href={item.url} className='flex items-center gap-3 relative z-10'>
-                                  <item.icon className='w-4 h-4 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                                  <span className='relative'>{item.title}</span>
+                                <Link
+                                  href={item.url}
+                                  className="flex items-center gap-3 relative z-10"
+                                >
+                                  <item.icon className="w-4 h-4 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                                  <span className="relative">{item.title}</span>
                                 </Link>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
@@ -457,20 +579,29 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
               )}
 
               {financeStandaloneItems.map((item) => {
-                const isActive = pathname === item.url || pathname?.startsWith(item.url + "/");
+                const isActive =
+                  pathname === item.url || pathname?.startsWith(item.url + "/");
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
                       isActive={isActive}
                       tooltip={item.title}
-                      className='h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                      className="h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                     >
-                      <Link href={item.url} className='flex items-center gap-3 relative z-10'>
-                        <item.icon className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                        <span className='relative group-data-[collapsible=icon]:hidden'>{item.title}</span>
+                      <Link
+                        href={item.url}
+                        className="flex items-center gap-3 relative z-10"
+                      >
+                        <item.icon className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                        <span className="relative group-data-[collapsible=icon]:hidden">
+                          {item.title}
+                        </span>
                         {isActive && (
-                          <div className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse' style={{ animationDuration: "2s" }} />
+                          <div
+                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
                         )}
                       </Link>
                     </SidebarMenuButton>
@@ -482,24 +613,29 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
         </SidebarGroup>
 
         {/* Products & Inventory */}
-        <SidebarGroup className='px-2 py-1'>
+        <SidebarGroup className="px-2 py-1">
           {!isCollapsed && (
-            <SidebarGroupLabel className='text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3'>
+            <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3">
               Products & Inventory
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            <SidebarMenu className='space-y-1'>
+            <SidebarMenu className="space-y-1">
               {productMenuItems.map((item) => {
                 let isActive = false;
                 if (item.url === "/merchant/products") {
                   isActive =
                     pathname === item.url ||
-                    (pathname?.startsWith("/merchant/products/") && !pathname?.startsWith("/merchant/products/categories"));
+                    (pathname?.startsWith("/merchant/products/") &&
+                      !pathname?.startsWith("/merchant/products/categories"));
                 } else if (item.url === "/merchant/products/categories") {
-                  isActive = pathname === item.url || pathname?.startsWith("/merchant/products/categories");
+                  isActive =
+                    pathname === item.url ||
+                    pathname?.startsWith("/merchant/products/categories");
                 } else {
-                  isActive = pathname === item.url || pathname?.startsWith(item.url + "/");
+                  isActive =
+                    pathname === item.url ||
+                    pathname?.startsWith(item.url + "/");
                 }
 
                 return (
@@ -508,13 +644,21 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
                       asChild
                       isActive={isActive}
                       tooltip={item.title}
-                      className='h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                      className="h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                     >
-                      <Link href={item.url} className='flex items-center gap-3 relative z-10'>
-                        <item.icon className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                        <span className='relative group-data-[collapsible=icon]:hidden'>{item.title}</span>
+                      <Link
+                        href={item.url}
+                        className="flex items-center gap-3 relative z-10"
+                      >
+                        <item.icon className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                        <span className="relative group-data-[collapsible=icon]:hidden">
+                          {item.title}
+                        </span>
                         {isActive && (
-                          <div className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse' style={{ animationDuration: "2s" }} />
+                          <div
+                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
                         )}
                       </Link>
                     </SidebarMenuButton>
@@ -526,29 +670,38 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
         </SidebarGroup>
 
         {/* Marketing & Growth */}
-        <SidebarGroup className='px-2 py-1'>
+        <SidebarGroup className="px-2 py-1">
           {!isCollapsed && (
-            <SidebarGroupLabel className='text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3'>
+            <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3">
               Marketing & Growth
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            <SidebarMenu className='space-y-1'>
+            <SidebarMenu className="space-y-1">
               {marketingMenuItems.map((item) => {
-                const isActive = pathname === item.url || pathname?.startsWith(item.url + "/");
+                const isActive =
+                  pathname === item.url || pathname?.startsWith(item.url + "/");
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
                       isActive={isActive}
                       tooltip={item.title}
-                      className='h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                      className="h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                     >
-                      <Link href={item.url} className='flex items-center gap-3 relative z-10'>
-                        <item.icon className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                        <span className='relative group-data-[collapsible=icon]:hidden'>{item.title}</span>
+                      <Link
+                        href={item.url}
+                        className="flex items-center gap-3 relative z-10"
+                      >
+                        <item.icon className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                        <span className="relative group-data-[collapsible=icon]:hidden">
+                          {item.title}
+                        </span>
                         {isActive && (
-                          <div className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse' style={{ animationDuration: "2s" }} />
+                          <div
+                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
                         )}
                       </Link>
                     </SidebarMenuButton>
@@ -560,29 +713,38 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
         </SidebarGroup>
 
         {/* Analytics & Risk */}
-        <SidebarGroup className='px-2 py-1'>
+        <SidebarGroup className="px-2 py-1">
           {!isCollapsed && (
-            <SidebarGroupLabel className='text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3'>
+            <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3">
               Analytics & Risk
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            <SidebarMenu className='space-y-1'>
+            <SidebarMenu className="space-y-1">
               {analyticsMenuItems.map((item) => {
-                const isActive = pathname === item.url || pathname?.startsWith(item.url + "/");
+                const isActive =
+                  pathname === item.url || pathname?.startsWith(item.url + "/");
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
                       isActive={isActive}
                       tooltip={item.title}
-                      className='h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                      className="h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                     >
-                      <Link href={item.url} className='flex items-center gap-3 relative z-10'>
-                        <item.icon className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                        <span className='relative group-data-[collapsible=icon]:hidden'>{item.title}</span>
+                      <Link
+                        href={item.url}
+                        className="flex items-center gap-3 relative z-10"
+                      >
+                        <item.icon className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                        <span className="relative group-data-[collapsible=icon]:hidden">
+                          {item.title}
+                        </span>
                         {isActive && (
-                          <div className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse' style={{ animationDuration: "2s" }} />
+                          <div
+                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
                         )}
                       </Link>
                     </SidebarMenuButton>
@@ -594,29 +756,38 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
         </SidebarGroup>
 
         {/* Email */}
-        <SidebarGroup className='px-2 py-1'>
+        <SidebarGroup className="px-2 py-1">
           {!isCollapsed && (
-            <SidebarGroupLabel className='text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3'>
+            <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3">
               Email
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            <SidebarMenu className='space-y-1'>
+            <SidebarMenu className="space-y-1">
               {emailMenuItems.map((item) => {
-                const isActive = pathname === item.url || pathname?.startsWith(item.url + "/");
+                const isActive =
+                  pathname === item.url || pathname?.startsWith(item.url + "/");
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
                       isActive={isActive}
                       tooltip={item.title}
-                      className='h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                      className="h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                     >
-                      <Link href={item.url} className='flex items-center gap-3 relative z-10'>
-                        <item.icon className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                        <span className='relative group-data-[collapsible=icon]:hidden'>{item.title}</span>
+                      <Link
+                        href={item.url}
+                        className="flex items-center gap-3 relative z-10"
+                      >
+                        <item.icon className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                        <span className="relative group-data-[collapsible=icon]:hidden">
+                          {item.title}
+                        </span>
                         {isActive && (
-                          <div className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse' style={{ animationDuration: "2s" }} />
+                          <div
+                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
                         )}
                       </Link>
                     </SidebarMenuButton>
@@ -628,34 +799,41 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
         </SidebarGroup>
 
         {/* Brand & Content */}
-        <SidebarGroup className='px-2 py-1'>
+        <SidebarGroup className="px-2 py-1">
           {!isCollapsed && (
-            <SidebarGroupLabel className='text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3'>
+            <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3">
               Brand & Content
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            <SidebarMenu className='space-y-1'>
+            <SidebarMenu className="space-y-1">
               {/* Brand Settings with Sub-items */}
               {isCollapsed ? (
                 // Collapsed: Show sub-items as flat menu items
                 <>
                   {brandSettingsMenuItems.map((item) => {
-                    const isActive = pathname === item.url || pathname?.startsWith(`${item.url}/`);
+                    const isActive =
+                      pathname === item.url ||
+                      pathname?.startsWith(`${item.url}/`);
                     return (
                       <SidebarMenuItem key={item.url}>
                         <SidebarMenuButton
                           asChild
                           isActive={isActive}
                           tooltip={item.title}
-                          className='font-semibold h-10 w-full px-2.5 md:px-4 rounded-[5px] transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                          className="font-semibold h-10 w-full px-2.5 md:px-4 rounded-[5px] transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                         >
-                          <Link href={item.url} className='flex items-center gap-3 relative z-10'>
-                            <item.icon className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                            <span className='relative group-data-[collapsible=icon]:hidden'>{item.title}</span>
+                          <Link
+                            href={item.url}
+                            className="flex items-center gap-3 relative z-10"
+                          >
+                            <item.icon className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                            <span className="relative group-data-[collapsible=icon]:hidden">
+                              {item.title}
+                            </span>
                             {isActive && (
                               <div
-                                className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse'
+                                className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
                                 style={{ animationDuration: "2s" }}
                               />
                             )}
@@ -667,36 +845,48 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
                 </>
               ) : (
                 // Expanded: Show collapsible menu
-                <Collapsible asChild defaultOpen={pathname?.startsWith("/merchant/brand")} className='group/collapsible'>
+                <Collapsible
+                  asChild
+                  defaultOpen={pathname?.startsWith("/merchant/brand")}
+                  className="group/collapsible"
+                >
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton
                         isActive={pathname?.startsWith("/merchant/brand")}
-                        tooltip='Brand Settings'
-                        className='font-semibold h-10 w-full px-2.5 md:px-4 rounded-[5px] transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                        tooltip="Brand Settings"
+                        className="font-semibold h-10 w-full px-2.5 md:px-4 rounded-[5px] transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                       >
-                        <Palette className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                        <span className='relative'>Brand Settings</span>
-                        <ChevronRight className='ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90' />
+                        <Palette className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                        <span className="relative">Brand Settings</span>
+                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                         {pathname?.startsWith("/merchant/brand") && (
-                          <div className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse' style={{ animationDuration: "2s" }} />
+                          <div
+                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
                         )}
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <SidebarMenuSub className='mt-1 space-y-1'>
+                      <SidebarMenuSub className="mt-1 space-y-1">
                         {brandSettingsMenuItems.map((item) => {
-                          const isActive = pathname === item.url || pathname?.startsWith(`${item.url}/`);
+                          const isActive =
+                            pathname === item.url ||
+                            pathname?.startsWith(`${item.url}/`);
                           return (
                             <SidebarMenuSubItem key={item.url}>
                               <SidebarMenuSubButton
                                 asChild
                                 isActive={isActive}
-                                className='h-10 w-full px-2.5 md:px-4 rounded-[5px] font-medium transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                                className="h-10 w-full px-2.5 md:px-4 rounded-[5px] font-medium transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                               >
-                                <Link href={item.url} className='flex items-center gap-3 relative z-10'>
-                                  <item.icon className='w-4 h-4 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                                  <span className='relative'>{item.title}</span>
+                                <Link
+                                  href={item.url}
+                                  className="flex items-center gap-3 relative z-10"
+                                >
+                                  <item.icon className="w-4 h-4 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                                  <span className="relative">{item.title}</span>
                                 </Link>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
@@ -710,20 +900,29 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
 
               {/* Footer Pages */}
               {brandMenuItems.slice(1).map((item) => {
-                const isActive = pathname === item.url || pathname?.startsWith(item.url + "/");
+                const isActive =
+                  pathname === item.url || pathname?.startsWith(item.url + "/");
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
                       isActive={isActive}
                       tooltip={item.title}
-                      className='h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                      className="h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                     >
-                      <Link href={item.url} className='flex items-center gap-3 relative z-10'>
-                        <item.icon className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                        <span className='relative group-data-[collapsible=icon]:hidden'>{item.title}</span>
+                      <Link
+                        href={item.url}
+                        className="flex items-center gap-3 relative z-10"
+                      >
+                        <item.icon className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                        <span className="relative group-data-[collapsible=icon]:hidden">
+                          {item.title}
+                        </span>
                         {isActive && (
-                          <div className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse' style={{ animationDuration: "2s" }} />
+                          <div
+                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
                         )}
                       </Link>
                     </SidebarMenuButton>
@@ -735,29 +934,38 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
         </SidebarGroup>
 
         {/* Account & Domains */}
-        <SidebarGroup className='px-2 py-1'>
+        <SidebarGroup className="px-2 py-1">
           {!isCollapsed && (
-            <SidebarGroupLabel className='text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3'>
+            <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3">
               Account & Domains
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            <SidebarMenu className='space-y-1'>
+            <SidebarMenu className="space-y-1">
               {accountMenuItems.map((item) => {
-                const isActive = pathname === item.url || pathname?.startsWith(item.url + "/");
+                const isActive =
+                  pathname === item.url || pathname?.startsWith(item.url + "/");
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
                       isActive={isActive}
                       tooltip={item.title}
-                      className='h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                      className="h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                     >
-                      <Link href={item.url} className='flex items-center gap-3 relative z-10'>
-                        <item.icon className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                        <span className='relative group-data-[collapsible=icon]:hidden'>{item.title}</span>
+                      <Link
+                        href={item.url}
+                        className="flex items-center gap-3 relative z-10"
+                      >
+                        <item.icon className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                        <span className="relative group-data-[collapsible=icon]:hidden">
+                          {item.title}
+                        </span>
                         {isActive && (
-                          <div className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse' style={{ animationDuration: "2s" }} />
+                          <div
+                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
                         )}
                       </Link>
                     </SidebarMenuButton>
@@ -769,29 +977,38 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
         </SidebarGroup>
 
         {/* Settings & Delivery */}
-        <SidebarGroup className='px-2 py-1'>
+        <SidebarGroup className="px-2 py-1">
           {!isCollapsed && (
-            <SidebarGroupLabel className='text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3'>
+            <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3">
               Settings & Delivery
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            <SidebarMenu className='space-y-1'>
+            <SidebarMenu className="space-y-1">
               {configMenuItems.map((item) => {
-                const isActive = pathname === item.url || pathname?.startsWith(item.url + "/");
+                const isActive =
+                  pathname === item.url || pathname?.startsWith(item.url + "/");
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
                       isActive={isActive}
                       tooltip={item.title}
-                      className='h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                      className="h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                     >
-                      <Link href={item.url} className='flex items-center gap-3 relative z-10'>
-                        <item.icon className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                        <span className='relative group-data-[collapsible=icon]:hidden'>{item.title}</span>
+                      <Link
+                        href={item.url}
+                        className="flex items-center gap-3 relative z-10"
+                      >
+                        <item.icon className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                        <span className="relative group-data-[collapsible=icon]:hidden">
+                          {item.title}
+                        </span>
                         {isActive && (
-                          <div className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse' style={{ animationDuration: "2s" }} />
+                          <div
+                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
                         )}
                       </Link>
                     </SidebarMenuButton>
@@ -803,29 +1020,38 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
         </SidebarGroup>
 
         {/* Support */}
-        <SidebarGroup className='px-2 py-1'>
+        <SidebarGroup className="px-2 py-1">
           {!isCollapsed && (
-            <SidebarGroupLabel className='text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3'>
+            <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 px-3">
               Support
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            <SidebarMenu className='space-y-1'>
+            <SidebarMenu className="space-y-1">
               {supportMenuItems.map((item) => {
-                const isActive = pathname === item.url || pathname?.startsWith(item.url + "/");
+                const isActive =
+                  pathname === item.url || pathname?.startsWith(item.url + "/");
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
                       isActive={isActive}
                       tooltip={item.title}
-                      className='h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20'
+                      className="h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-300 group relative overflow-hidden data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:dark:text-primary hover:bg-accent/50 dark:hover:bg-accent/20"
                     >
-                      <Link href={item.url} className='flex items-center gap-3 relative z-10'>
-                        <item.icon className='w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0' />
-                        <span className='relative group-data-[collapsible=icon]:hidden'>{item.title}</span>
+                      <Link
+                        href={item.url}
+                        className="flex items-center gap-3 relative z-10"
+                      >
+                        <item.icon className="w-5 h-5 transition-transform duration-300 data-[active=true]:scale-110 shrink-0" />
+                        <span className="relative group-data-[collapsible=icon]:hidden">
+                          {item.title}
+                        </span>
                         {isActive && (
-                          <div className='absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse' style={{ animationDuration: "2s" }} />
+                          <div
+                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
                         )}
                       </Link>
                     </SidebarMenuButton>
@@ -837,18 +1063,20 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
         </SidebarGroup>
 
         {/* Back to Store */}
-        <SidebarGroup className='px-2 py-1'>
+        <SidebarGroup className="px-2 py-1">
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  tooltip='Back to Store'
-                  className='h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-200 hover:bg-accent/50 dark:hover:bg-accent/20'
+                  tooltip="Back to Store"
+                  className="h-10 w-full px-2.5 md:px-4 rounded-[5px] font-semibold transition-all duration-200 hover:bg-accent/50 dark:hover:bg-accent/20"
                 >
-                  <Link href='/' className='flex items-center gap-3'>
-                    <Home className='w-5 h-5 shrink-0' />
-                    <span className='group-data-[collapsible=icon]:hidden'>Back to Store</span>
+                  <Link href="/" className="flex items-center gap-3">
+                    <Home className="w-5 h-5 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">
+                      Back to Store
+                    </span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -856,78 +1084,106 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className='border-t-2 border-slate-200/50 dark:border-slate-800/50 bg-linear-to-r from-slate-50/80 to-white dark:from-slate-900/40 dark:to-slate-950/20'>
-        <SidebarGroup className='px-2 py-1'>
+      <SidebarFooter className="border-t-2 border-slate-200/50 dark:border-slate-800/50 bg-linear-to-r from-slate-50/80 to-white dark:from-slate-900/40 dark:to-slate-950/20">
+        <SidebarGroup className="px-2 py-1">
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 {userProfile ? (
-                  <div className='flex items-center gap-2 w-full px-2'>
-                    <SidebarMenuButton size='lg' className='data-[collapsible=icon]:size-8 flex-1 rounded-[5px]' asChild>
-                      <Link href='/account' className='cursor-pointer'>
-                        <div className='flex aspect-square size-8 items-center justify-center rounded-[5px] bg-primary text-primary-foreground shadow-sm'>
-                          <User className='size-4' />
+                  <div className="flex items-center gap-2 w-full px-2">
+                    <SidebarMenuButton
+                      size="lg"
+                      className="data-[collapsible=icon]:size-8 flex-1 rounded-[5px]"
+                      asChild
+                    >
+                      <Link href="/account" className="cursor-pointer">
+                        <div className="flex aspect-square size-8 items-center justify-center rounded-[5px] bg-primary text-primary-foreground shadow-sm">
+                          <User className="size-4" />
                         </div>
-                        <div className='grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden'>
-                          <span className='truncate font-bold text-slate-900 dark:text-slate-100'>
-                            {userProfile.fullName || userProfile.email?.split("@")[0] || "User"}
+                        <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                          <span className="truncate font-bold text-slate-900 dark:text-slate-100">
+                            {userProfile.fullName ||
+                              userProfile.email?.split("@")[0] ||
+                              "User"}
                           </span>
-                          <span className='truncate text-xs text-slate-600 dark:text-slate-400 font-medium'>
-                            {userProfile.email || userProfile.phone || userProfile.role || ""}
+                          <span className="truncate text-xs text-slate-600 dark:text-slate-400 font-medium">
+                            {userProfile.email ||
+                              userProfile.phone ||
+                              userProfile.role ||
+                              ""}
                           </span>
                         </div>
                       </Link>
                     </SidebarMenuButton>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className='flex aspect-square size-8 items-center justify-center rounded-[5px] hover:bg-accent text-muted-foreground hover:text-foreground transition-colors outline-hidden'>
-                          <MoreVertical className='size-4' />
-                          <span className='sr-only'>More options</span>
+                        <button className="flex aspect-square size-8 items-center justify-center rounded-[5px] hover:bg-accent text-muted-foreground hover:text-foreground transition-colors outline-hidden">
+                          <MoreVertical className="size-4" />
+                          <span className="sr-only">More options</span>
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
-                        align='end'
+                        align="end"
                         side={isCollapsed ? "right" : "top"}
-                        className='border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
+                        className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                       >
-                        {userProfile.role === "merchant" || userProfile.role === "admin" ? (
+                        {userProfile.role === "merchant" ||
+                        userProfile.role === "admin" ? (
                           <DropdownMenuItem asChild>
-                            <Link href='/merchant' className='cursor-pointer font-semibold'>
-                              <LayoutDashboard className='w-4 h-4' />
+                            <Link
+                              href="/merchant"
+                              className="cursor-pointer font-semibold"
+                            >
+                              <LayoutDashboard className="w-4 h-4" />
                               <span>Dashboard</span>
                             </Link>
                           </DropdownMenuItem>
                         ) : null}
                         <DropdownMenuItem asChild>
-                          <Link href='/account' className='cursor-pointer font-semibold'>
-                            <User className='w-4 h-4' />
+                          <Link
+                            href="/account"
+                            className="cursor-pointer font-semibold"
+                          >
+                            <User className="w-4 h-4" />
                             <span>My Account</span>
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleLogout} variant='destructive' className='cursor-pointer font-semibold'>
-                          <LogOut className='w-4 h-4' />
+                        <DropdownMenuItem
+                          onClick={handleLogout}
+                          variant="destructive"
+                          className="cursor-pointer font-semibold"
+                        >
+                          <LogOut className="w-4 h-4" />
                           <span>Logout</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
                 ) : (
-                  <div className='flex items-center gap-2 w-full p-2'>
-                    <SidebarMenuButton size='lg' className='data-[collapsible=icon]:size-8 flex-1 rounded-[5px]' disabled>
-                      <div className='flex aspect-square size-8 items-center justify-center rounded-[5px] bg-muted text-muted-foreground'>
-                        <User className='size-4' />
+                  <div className="flex items-center gap-2 w-full p-2">
+                    <SidebarMenuButton
+                      size="lg"
+                      className="data-[collapsible=icon]:size-8 flex-1 rounded-[5px]"
+                      disabled
+                    >
+                      <div className="flex aspect-square size-8 items-center justify-center rounded-[5px] bg-muted text-muted-foreground">
+                        <User className="size-4" />
                       </div>
-                      <div className='grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden'>
-                        <span className='truncate font-bold text-slate-900 dark:text-slate-100'>Admin Panel</span>
-                        <span className='truncate text-xs text-slate-600 dark:text-slate-400 font-medium'>Loading...</span>
+                      <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                        <span className="truncate font-bold text-slate-900 dark:text-slate-100">
+                          Admin Panel
+                        </span>
+                        <span className="truncate text-xs text-slate-600 dark:text-slate-400 font-medium">
+                          Loading...
+                        </span>
                       </div>
                     </SidebarMenuButton>
                     <button
-                      className='flex aspect-square size-8 items-center justify-center rounded-[5px] hover:bg-accent text-muted-foreground transition-colors outline-hidden opacity-50'
+                      className="flex aspect-square size-8 items-center justify-center rounded-[5px] hover:bg-accent text-muted-foreground transition-colors outline-hidden opacity-50"
                       disabled
                     >
-                      <MoreVertical className='size-4' />
-                      <span className='sr-only'>More options</span>
+                      <MoreVertical className="size-4" />
+                      <span className="sr-only">More options</span>
                     </button>
                   </div>
                 )}

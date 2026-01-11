@@ -75,7 +75,18 @@ const register = catchAsync(async (req: Request, res: Response) => {
 
 // Logout user
 const logout = catchAsync(async (req: Request, res: Response) => {
-  res.clearCookie("auth_token");
+  // Clear both auth token and refresh token cookies
+  res.clearCookie("auth_token", {
+    httpOnly: true,
+    secure: config.NODE_ENV === "production",
+    sameSite: config.NODE_ENV === "production" ? "strict" : "lax",
+  });
+
+  res.clearCookie("refresh_token", {
+    httpOnly: true,
+    secure: config.NODE_ENV === "production",
+    sameSite: config.NODE_ENV === "production" ? "strict" : "lax",
+  });
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -116,10 +127,7 @@ const googleAuth = catchAsync(async (req: Request, res: Response) => {
   }
 
   if (!redirectUri) {
-    throw new AppError(
-      StatusCodes.BAD_REQUEST,
-      "Redirect URI is required"
-    );
+    throw new AppError(StatusCodes.BAD_REQUEST, "Redirect URI is required");
   }
 
   try {
@@ -178,7 +186,11 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
     throw new AppError(StatusCodes.UNAUTHORIZED, "Unauthorized");
   }
 
-  const result = await AuthServices.changePassword(req.tenantId, userId, req.body);
+  const result = await AuthServices.changePassword(
+    req.tenantId,
+    userId,
+    req.body
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -199,9 +211,9 @@ const forgotPassword = catchAsync(async (req: Request, res: Response) => {
     data:
       process.env.NODE_ENV === "development"
         ? {
-          resetToken: result.resetToken,
-          resetLink: result.resetLink,
-        }
+            resetToken: result.resetToken,
+            resetLink: result.resetLink,
+          }
         : null,
   });
 });
@@ -227,6 +239,14 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
   }
 
   const result = await AuthServices.refreshToken(refresh_token);
+
+  // Set the new access token as httpOnly cookie
+  res.cookie("auth_token", result.accessToken, {
+    httpOnly: true,
+    secure: config.NODE_ENV === "production",
+    sameSite: config.NODE_ENV === "production" ? "strict" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

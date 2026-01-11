@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { serverSideApiClient } from "./api-client";
+import { getServerClient } from "./server-utils";
 
 export interface CurrentUser {
   id: string;
@@ -20,19 +20,25 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
       return null;
     }
 
-    const client = serverSideApiClient(token);
+    const client = await getServerClient();
     const response = await client.get("/auth/me");
 
     if (response.data && response.data.success !== false) {
-      // Backend might return user directly or inside a user property
-      const userData = response.data.user || response.data;
+      // Backend might return user directly or inside a user property or inside data
+      const userData =
+        response.data.data || response.data.user || response.data;
+      // Normalize role to lowercase (backend returns uppercase like "MERCHANT")
+      const normalizedRole = (userData.role || "customer").toLowerCase() as
+        | "customer"
+        | "merchant"
+        | "admin";
       return {
         id: userData.id || userData._id,
         fullName: userData.fullName,
         email: userData.email,
         phone: userData.phone,
-        role: userData.role || "customer",
-        merchantId: userData.merchantId,
+        role: normalizedRole,
+        merchantId: userData.merchantId || userData.tenantId,
         createdAt: userData.createdAt,
       };
     }

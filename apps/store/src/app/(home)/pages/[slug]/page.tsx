@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { brandConfig } from "@/lib/brand-config";
-import { serverSideApiClient } from "@/lib/api-client";
+import { getPublicServerClient } from "@/lib/server-utils";
 import type { FooterPage } from "@/lib/types";
 
 async function getPage(slug: string): Promise<FooterPage | null> {
   try {
-    const client = serverSideApiClient();
+    const client = await getPublicServerClient();
     const response = await client.get(`/pages/${slug}`);
     if (response.data?.data) {
       return response.data.data as FooterPage;
@@ -17,7 +17,11 @@ async function getPage(slug: string): Promise<FooterPage | null> {
   return null;
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
   const { slug } = await params;
   const page = await getPage(slug);
 
@@ -33,7 +37,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
   const page = await getPage(slug);
 
@@ -42,10 +50,13 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   }
 
   return (
-    <div className='mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8'>
-      <article className='prose prose-lg dark:prose-invert max-w-none'>
-        <h1 className='text-4xl font-bold mb-8'>{page.title}</h1>
-        <div className='prose prose-lg dark:prose-invert max-w-none' dangerouslySetInnerHTML={{ __html: page.content }} />
+    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+      <article className="prose prose-lg dark:prose-invert max-w-none">
+        <h1 className="text-4xl font-bold mb-8">{page.title}</h1>
+        <div
+          className="prose prose-lg dark:prose-invert max-w-none"
+          dangerouslySetInnerHTML={{ __html: page.content }}
+        />
       </article>
     </div>
   );

@@ -31,7 +31,9 @@ const BRAND_CONFIG_ID = "brand_config_v1";
 async function getBrandConfig(): Promise<BrandConfig> {
   try {
     // Use merchant-aware loader to get the correct brand config for the current merchant
-    const doc = await loadMerchantDocument<any>("brand_config", { id: BRAND_CONFIG_ID });
+    const doc = await loadMerchantDocument<any>("brand_config", {
+      id: BRAND_CONFIG_ID,
+    });
     if (doc) {
       const { _id, ...config } = doc;
       return config as BrandConfig;
@@ -43,7 +45,10 @@ async function getBrandConfig(): Promise<BrandConfig> {
 }
 
 // Helper function to convert relative URLs to absolute URLs
-function getAbsoluteUrl(url: string | undefined, metadataBase: URL): string | undefined {
+function getAbsoluteUrl(
+  url: string | undefined,
+  metadataBase: URL
+): string | undefined {
   if (!url || url.trim() === "") return undefined;
   const trimmedUrl = url.trim();
   if (trimmedUrl.startsWith("http://") || trimmedUrl.startsWith("https://")) {
@@ -54,7 +59,10 @@ function getAbsoluteUrl(url: string | undefined, metadataBase: URL): string | un
     return new URL(trimmedUrl, metadataBase).toString();
   }
   // Otherwise, assume it's already absolute or treat as relative
-  return new URL(trimmedUrl.startsWith("./") ? trimmedUrl.slice(2) : trimmedUrl, metadataBase).toString();
+  return new URL(
+    trimmedUrl.startsWith("./") ? trimmedUrl.slice(2) : trimmedUrl,
+    metadataBase
+  ).toString();
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -63,34 +71,47 @@ export async function generateMetadata(): Promise<Metadata> {
   // Get current host from request headers for dynamic metadataBase
   const headersList = await headers();
   const host = headersList.get("host") || "localhost:3000";
-  const protocol = headersList.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
+  const protocol =
+    headersList.get("x-forwarded-proto") ||
+    (host.includes("localhost") ? "http" : "https");
   const metadataBase = new URL(`${protocol}://${host}`);
 
   // Get absolute URLs for images (filter out empty strings)
-  const socialShareImage = brandConfig.meta.socialShareImage || brandConfig.meta.openGraph.image || brandConfig.meta.twitter.image;
+  const socialShareImage =
+    brandConfig.meta.socialShareImage ||
+    brandConfig.meta.openGraph.image ||
+    brandConfig.meta.twitter.image;
   const absoluteSocialImage =
-    socialShareImage && socialShareImage.trim() !== "" ? getAbsoluteUrl(socialShareImage, metadataBase) : undefined;
+    socialShareImage && socialShareImage.trim() !== ""
+      ? getAbsoluteUrl(socialShareImage, metadataBase)
+      : undefined;
 
   // Get absolute URLs for favicons
   const faviconPath = brandConfig.favicon.path
-    ? getAbsoluteUrl(brandConfig.favicon.path, metadataBase) || brandConfig.favicon.path
+    ? getAbsoluteUrl(brandConfig.favicon.path, metadataBase) ||
+      brandConfig.favicon.path
     : "/favicon.ico";
   const appleTouchIcon = brandConfig.favicon.appleTouchIcon
-    ? getAbsoluteUrl(brandConfig.favicon.appleTouchIcon, metadataBase) || brandConfig.favicon.appleTouchIcon
+    ? getAbsoluteUrl(brandConfig.favicon.appleTouchIcon, metadataBase) ||
+      brandConfig.favicon.appleTouchIcon
     : faviconPath;
   const manifestIcon = brandConfig.favicon.manifestIcon
-    ? getAbsoluteUrl(brandConfig.favicon.manifestIcon, metadataBase) || brandConfig.favicon.manifestIcon
+    ? getAbsoluteUrl(brandConfig.favicon.manifestIcon, metadataBase) ||
+      brandConfig.favicon.manifestIcon
     : null;
 
   // Build icons array
-  const iconArray: Array<{ url: string; type?: string; sizes?: string }> = [{ url: faviconPath, type: "image/x-icon" }];
+  const iconArray: Array<{ url: string; type?: string; sizes?: string }> = [
+    { url: faviconPath, type: "image/x-icon" },
+  ];
   if (manifestIcon) {
     iconArray.push({ url: manifestIcon, sizes: "192x192", type: "image/png" });
   }
 
   const openGraph: Metadata["openGraph"] = {
     title: brandConfig.meta.openGraph.title || brandConfig.meta.title.default,
-    description: brandConfig.meta.openGraph.description || brandConfig.meta.description,
+    description:
+      brandConfig.meta.openGraph.description || brandConfig.meta.description,
     type: (brandConfig.meta.openGraph.type || "website") as "website",
     locale: brandConfig.meta.openGraph.locale || "en_US",
     url: "/",
@@ -102,9 +123,11 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
   const twitter: Metadata["twitter"] = {
-    card: (brandConfig.meta.twitter.card || "summary_large_image") as "summary_large_image",
+    card: (brandConfig.meta.twitter.card ||
+      "summary_large_image") as "summary_large_image",
     title: brandConfig.meta.twitter.title || brandConfig.meta.title.default,
-    description: brandConfig.meta.twitter.description || brandConfig.meta.description,
+    description:
+      brandConfig.meta.twitter.description || brandConfig.meta.description,
   };
 
   if (absoluteSocialImage) {
@@ -118,7 +141,9 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: brandConfig.meta.description,
     metadataBase,
-    keywords: Array.isArray(brandConfig.meta.keywords) ? brandConfig.meta.keywords.join(", ") : brandConfig.meta.keywords,
+    keywords: Array.isArray(brandConfig.meta.keywords)
+      ? brandConfig.meta.keywords.join(", ")
+      : brandConfig.meta.keywords,
     openGraph,
     twitter,
     icons: {
@@ -150,35 +175,42 @@ export default async function RootLayout({
   // Apply theme color immediately via style tag to prevent FOUC
   const themeColorOklch = hexToOklch(brandConfig.theme.primaryColor);
 
-  // Get absolute URLs for favicons (same logic as in generateMetadata)
-  const metadataBaseUrl = brandConfig.meta.metadataBase || "https://shoestore.local";
-  const faviconPath = brandConfig.favicon.path
-    ? brandConfig.favicon.path.startsWith("http")
-      ? brandConfig.favicon.path
-      : brandConfig.favicon.path.startsWith("/")
-        ? new URL(brandConfig.favicon.path, metadataBaseUrl).toString()
-        : brandConfig.favicon.path
-    : "/favicon.ico";
+  // Get absolute URLs for favicons using dynamic host from headers
+  const headersList = await headers();
+  const host = headersList.get("host") || "localhost:3000";
+  const protocol =
+    headersList.get("x-forwarded-proto") ||
+    (host.includes("localhost") ? "http" : "https");
+  const metadataBaseUrl = `${protocol}://${host}`;
 
-  const appleTouchIcon = brandConfig.favicon.appleTouchIcon
-    ? brandConfig.favicon.appleTouchIcon.startsWith("http")
-      ? brandConfig.favicon.appleTouchIcon
-      : brandConfig.favicon.appleTouchIcon.startsWith("/")
-        ? new URL(brandConfig.favicon.appleTouchIcon, metadataBaseUrl).toString()
-        : brandConfig.favicon.appleTouchIcon
-    : faviconPath;
+  // Helper to get absolute URL
+  const getAbsoluteIconUrl = (
+    path: string | undefined,
+    fallback: string
+  ): string => {
+    if (!path) return fallback;
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    if (path.startsWith("/")) return `${metadataBaseUrl}${path}`;
+    return path;
+  };
 
+  const faviconPath = getAbsoluteIconUrl(
+    brandConfig.favicon.path,
+    `${metadataBaseUrl}/favicon.ico`
+  );
+  const appleTouchIcon = getAbsoluteIconUrl(
+    brandConfig.favicon.appleTouchIcon,
+    faviconPath
+  );
   const manifestIcon = brandConfig.favicon.manifestIcon
-    ? brandConfig.favicon.manifestIcon.startsWith("http")
-      ? brandConfig.favicon.manifestIcon
-      : brandConfig.favicon.manifestIcon.startsWith("/")
-        ? new URL(brandConfig.favicon.manifestIcon, metadataBaseUrl).toString()
-        : brandConfig.favicon.manifestIcon
+    ? getAbsoluteIconUrl(brandConfig.favicon.manifestIcon, "")
     : null;
 
   return (
-    <html lang='en'>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         <style
           dangerouslySetInnerHTML={{
             __html: `
@@ -237,8 +269,9 @@ export default async function RootLayout({
                 appleLink.href = appleUrl;
                 head.appendChild(appleLink);
                 
-                ${manifestIcon
-                ? `
+                ${
+                  manifestIcon
+                    ? `
                 // Remove existing manifest icon
                 var existingManifest = document.querySelector('link[rel="icon"][sizes="192x192"]');
                 if (existingManifest) existingManifest.remove();
@@ -251,8 +284,8 @@ export default async function RootLayout({
                 manifestLink.href = manifestUrl;
                 head.appendChild(manifestLink);
                 `
-                : ""
-              }
+                    : ""
+                }
                 
                 // Update theme-color meta tag
                 var meta = document.querySelector('meta[name="theme-color"]');
@@ -277,7 +310,7 @@ export default async function RootLayout({
           <WishlistProvider>
             {children}
 
-            <Toaster richColors closeButton position='top-right' />
+            <Toaster richColors closeButton position="top-right" />
           </WishlistProvider>
         </CartProvider>
       </body>

@@ -1,7 +1,5 @@
-import { serverSideApiClient } from "@/lib/api-client";
-import { cookies } from "next/headers";
+import { getPublicServerClient } from "@/lib/server-utils";
 import type { Metadata } from "next";
-import { getMerchantContext } from "@/lib/merchant-context";
 import type { Product, ProductCategory, HeroSlide } from "@/lib/types";
 import { HeroCarousel } from "@/components/site/HeroCarousel";
 import { MobilePromoBanner } from "@/components/site/MobilePromoBanner";
@@ -16,10 +14,12 @@ export const metadata: Metadata = {
   description: "Browse our latest products.",
 };
 
-async function getCategories(token?: string, merchantId?: string): Promise<ProductCategory[]> {
+async function getCategories(): Promise<ProductCategory[]> {
   try {
-    const client = serverSideApiClient(token, merchantId);
-    const response = await client.get("/products/categories", { params: { enabled: true } });
+    const client = await getPublicServerClient();
+    const response = await client.get("/products/categories", {
+      params: { enabled: true },
+    });
     return response.data?.data?.categories || [];
   } catch (error) {
     console.error("Failed to load categories:", error);
@@ -27,9 +27,9 @@ async function getCategories(token?: string, merchantId?: string): Promise<Produ
   }
 }
 
-async function getProducts(token?: string, merchantId?: string): Promise<Product[]> {
+async function getProducts(): Promise<Product[]> {
   try {
-    const client = serverSideApiClient(token, merchantId);
+    const client = await getPublicServerClient();
     const response = await client.get("/products", { params: { limit: 300 } });
     return response.data?.data?.products || [];
   } catch (error) {
@@ -38,21 +38,27 @@ async function getProducts(token?: string, merchantId?: string): Promise<Product
   }
 }
 
-async function getHeroSlides(token?: string, merchantId?: string): Promise<HeroSlide[]> {
+async function getHeroSlides(): Promise<HeroSlide[]> {
   try {
-    const client = serverSideApiClient(token, merchantId);
+    const client = await getPublicServerClient();
     const response = await client.get("/hero-slides");
     return response.data?.data || response.data || [];
   } catch (error: any) {
-    console.error("Failed to load hero slides:", error?.response?.status, error?.message);
+    console.error(
+      "Failed to load hero slides:",
+      error?.response?.status,
+      error?.message
+    );
     return [];
   }
 }
 
-async function getMostLovedProducts(token?: string, merchantId?: string): Promise<Product[]> {
+async function getMostLovedProducts(): Promise<Product[]> {
   try {
-    const client = serverSideApiClient(token, merchantId);
-    const response = await client.get("/products/most-loved", { params: { limit: 8 } });
+    const client = await getPublicServerClient();
+    const response = await client.get("/products/most-loved", {
+      params: { limit: 8 },
+    });
     return response.data?.data || [];
   } catch (error) {
     console.error("Failed to load most loved products:", error);
@@ -61,18 +67,13 @@ async function getMostLovedProducts(token?: string, merchantId?: string): Promis
 }
 
 export default async function Home() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth_token")?.value;
-  const merchantCtx = await getMerchantContext();
-  const merchantId = merchantCtx?.merchant?.id;
-  console.log("[Home] Resolved merchantId:", merchantId);
-
-  const [categories, products, heroSlides, mostLovedProducts] = await Promise.all([
-    getCategories(token, merchantId),
-    getProducts(token, merchantId),
-    getHeroSlides(token, merchantId),
-    getMostLovedProducts(token, merchantId),
-  ]);
+  const [categories, products, heroSlides, mostLovedProducts] =
+    await Promise.all([
+      getCategories(),
+      getProducts(),
+      getHeroSlides(),
+      getMostLovedProducts(),
+    ]);
 
   // Group products by category
   const productsByCategory = new Map<string, Product[]>();
@@ -98,22 +99,22 @@ export default async function Home() {
     categories.length > 0
       ? categories
       : Array.from(productsByCategory.keys()).map((name) => ({
-        id: name.toLowerCase().replace(/\s+/g, "-"),
-        name,
-        order: 0,
-        createdAt: "",
-        updatedAt: "",
-      }));
+          id: name.toLowerCase().replace(/\s+/g, "-"),
+          name,
+          order: 0,
+          createdAt: "",
+          updatedAt: "",
+        }));
 
   // Get first hero slide for mobile promo banner (if available)
   const promoSlide = heroSlides.length > 0 ? heroSlides[0] : null;
 
   return (
-    <div className='bg-linear-to-b from-[#f7fbff] via-background to-[#eef4ff]'>
-      <div className='mx-auto max-w-[1440px] px-4 py-4 sm:py-8 sm:px-6 lg:px-8'>
+    <div className="bg-linear-to-b from-[#f7fbff] via-background to-[#eef4ff]">
+      <div className="mx-auto max-w-[1440px] px-4 py-4 sm:py-8 sm:px-6 lg:px-8">
         {/* Mobile Promotional Banner - Only visible on mobile */}
         {promoSlide && (
-          <div className='md:hidden mb-6'>
+          <div className="md:hidden mb-6">
             <MobilePromoBanner
               title={promoSlide.title}
               subtitle={promoSlide.subtitle}
@@ -129,13 +130,18 @@ export default async function Home() {
         )}
 
         {/* Desktop Hero Carousel - Only visible on desktop */}
-        <div className='hidden md:block mb-8 mt-1'>
+        <div className="hidden md:block mb-8 mt-1">
           <HeroCarousel slides={heroSlides} />
         </div>
 
         {/* Mobile Category Filters */}
-        <div className='md:hidden mb-4'>
-          <CategoryFilters categories={orderedCategories.map((cat) => ({ id: cat.id, name: cat.name }))} />
+        <div className="md:hidden mb-4">
+          <CategoryFilters
+            categories={orderedCategories.map((cat) => ({
+              id: cat.id,
+              name: cat.name,
+            }))}
+          />
         </div>
 
         {/* Product Sections */}

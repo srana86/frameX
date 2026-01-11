@@ -41,8 +41,9 @@ export function AddToCart({ product, currencyCode }: { product: Product; currenc
   const isOutOfStock = product.stock !== undefined && product.stock <= 0;
 
   // Calculate final price (discounted if discountPercentage exists)
-  const finalPrice =
-    product.discountPercentage && product.discountPercentage > 0 ? product.price * (1 - product.discountPercentage / 100) : product.price;
+  const price = Number(product.price) || 0;
+  const discountPct = Number(product.discountPercentage) || 0;
+  const finalPrice = discountPct > 0 ? price * (1 - discountPct / 100) : price;
 
   // Track product detail page views for Meta Pixel (ViewContent)
   useEffect(() => {

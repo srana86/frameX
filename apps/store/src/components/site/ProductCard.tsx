@@ -41,8 +41,9 @@ export function ProductCard({ product, layout = "grid", singleColumn = false }: 
       : "") || "Thoughtfully crafted footwear built for daily comfort.";
 
   // Calculate final price (discounted if discountPercentage exists)
-  const finalPrice =
-    product.discountPercentage && product.discountPercentage > 0 ? product.price * (1 - product.discountPercentage / 100) : product.price;
+  const price = Number(product.price) || 0;
+  const discountPct = Number(product.discountPercentage) || 0;
+  const finalPrice = discountPct > 0 ? price * (1 - discountPct / 100) : price;
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -154,7 +155,7 @@ export function ProductCard({ product, layout = "grid", singleColumn = false }: 
                 </div>
                 <div className='flex items-center justify-between mt-2'>
                   <div>
-                    {product.discountPercentage && product.discountPercentage > 0 ? (
+                      {discountPct > 0 ? (
                       <>
                         <p className='text-lg font-bold text-foreground'>
                           {currencySymbol}
@@ -162,13 +163,13 @@ export function ProductCard({ product, layout = "grid", singleColumn = false }: 
                         </p>
                         <p className='text-xs text-muted-foreground line-through'>
                           {currencySymbol}
-                          {product.price.toFixed(2)}
+                          {price.toFixed(2)}
                         </p>
                       </>
                     ) : (
                       <p className='text-lg font-bold text-foreground'>
                         {currencySymbol}
-                        {product.price.toFixed(2)}
+                        {price.toFixed(2)}
                       </p>
                     )}
                   </div>
@@ -319,18 +320,18 @@ export function ProductCard({ product, layout = "grid", singleColumn = false }: 
                   <div className='flex items-center gap-1 flex-wrap'>
                     <span className='text-[10px] sm:text-[11px] text-muted-foreground line-through'>
                       {currencySymbol}
-                      {product.price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                      {price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                     </span>
                     <span className='text-[9px] sm:text-[10px] font-semibold text-emerald-600 dark:text-emerald-400'>
                       Save {currencySymbol}
-                      {(product.price - finalPrice).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      {(price - finalPrice).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </span>
                   </div>
                 </>
               ) : (
                 <p className='text-sm sm:text-base font-bold text-foreground'>
                   {currencySymbol}
-                  {product.price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                  {price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                 </p>
               )}
             </div>
