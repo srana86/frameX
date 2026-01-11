@@ -1,7 +1,7 @@
 import { Server as HTTPServer } from "http";
 import { Socket as ServerSocket } from "socket.io";
 import { ExtendedError } from "socket.io/dist/namespace";
-import { TJwtPayload } from "../module/Auth/auth.interface";
+// tjwt import removed
 
 export interface AuthenticatedSocket extends ServerSocket {
   userId?: string;

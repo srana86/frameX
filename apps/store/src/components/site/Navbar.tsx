@@ -47,13 +47,23 @@ interface NavbarProps {
   brandConfig: BrandConfig;
 }
 
+import { signOut, useSession } from "@/lib/auth-client";
+
+// ... other imports
+
 export function Navbar({ brandConfig }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [banner, setBanner] = useState<PromotionalBanner | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userName, setUserName] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
+
+  // Use BetterAuth session hook
+  const { data: sessionData } = useSession();
+  const userData = sessionData?.user;
+
+  const isAuthenticated = !!sessionData?.user;
+  const userName = userData?.name || userData?.fullName || userData?.email || null;
+  const userRole = (userData?.role)?.toLowerCase() || null;
+
   const { count } = useCart();
   const { items: wishlistItems } = useWishlist();
   const wishlistCount = wishlistItems.length;
@@ -75,42 +85,12 @@ export function Navbar({ brandConfig }: NavbarProps) {
     fetchBanner();
   }, []);
 
-  // Check authentication status
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const data = await apiRequest<any>("GET", "/auth/me");
-        if (data?.user) {
-          setIsAuthenticated(true);
-          setUserName(data.user.fullName || data.user.email || null);
-          // Normalize role to lowercase (backend returns uppercase like "MERCHANT")
-          setUserRole(data.user.role?.toLowerCase() || null);
-        } else {
-          setIsAuthenticated(false);
-          setUserName(null);
-          setUserRole(null);
-        }
-      } catch (error) {
-        setIsAuthenticated(false);
-        setUserName(null);
-        setUserRole(null);
-      }
-    };
-    checkAuth();
-  }, [pathname]);
-
   const handleLogout = async () => {
     try {
-      await apiRequest("POST", "/auth/logout");
-      // Clear localStorage
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("shoestore_user_profile");
-        localStorage.removeItem("auth_token");
-      }
-      setIsAuthenticated(false);
-      setUserName(null);
+      await signOut();
       toast.success("Logged out successfully");
       router.push("/");
+      router.refresh();
     } catch (error) {
       toast.error("Failed to logout");
     }

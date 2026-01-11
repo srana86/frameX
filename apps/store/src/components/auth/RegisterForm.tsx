@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
-import { apiRequest } from "@/lib/api-client";
+import { signUp, signIn } from "@/lib/auth-client";
 
 // Zod schema for register form
 const registerSchema = z.object({
@@ -33,6 +33,7 @@ const registerSchema = z.object({
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     .regex(/[0-9]/, "Password must contain at least one number"),
+  phone: z.string().optional(),
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
@@ -47,11 +48,6 @@ export function RegisterForm({
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [userLocation, setUserLocation] = useState<{
-    country: string;
-    countryCode: string;
-    ip: string;
-  } | null>(null);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -59,43 +55,26 @@ export function RegisterForm({
       fullName: "",
       email: "",
       password: "",
+      phone: "",
     },
   });
-
-  // Fetch user location on mount
-  useEffect(() => {
-    const fetchLocation = async () => {
-      try {
-        const data = await apiRequest<any>("GET", "/geolocation");
-        if (data) {
-          setUserLocation(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch location:", error);
-      }
-    };
-    fetchLocation();
-  }, []);
 
   const onSubmit = async (values: RegisterFormValues) => {
     setLoading(true);
 
     try {
-      // Call register API
-      // Token is set as httpOnly cookie by the backend
-      const response = await apiRequest<any>("POST", "/auth/register", {
-        fullName: values.fullName,
+      // Use BetterAuth signUp.email()
+      // Passes custom fields matching our schema
+      const { data, error } = await signUp.email({
         email: values.email,
         password: values.password,
-        country: userLocation?.country || undefined,
-        countryCode: userLocation?.countryCode || undefined,
-        ipAddress: userLocation?.ip || undefined,
+        name: values.fullName,
+        phone: values.phone,
       });
 
-      // Store token in localStorage as fallback for cross-origin cookie issues
-      const { accessToken } = response.data || response;
-      if (accessToken) {
-        localStorage.setItem("auth_token", accessToken);
+      if (error) {
+        toast.error(error.message || "Registration failed");
+        return;
       }
 
       toast.success("Account created successfully!");
@@ -105,9 +84,7 @@ export function RegisterForm({
       router.refresh();
     } catch (error: any) {
       const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Registration failed. Please try again.";
+        error.message || "Registration failed. Please try again.";
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -116,25 +93,10 @@ export function RegisterForm({
 
   const handleGoogleLogin = async () => {
     try {
-      // Fetch OAuth config from backend
-      const oauthConfig = await apiRequest<any>("GET", "/oauth-config");
-      if (!oauthConfig.google?.enabled || !oauthConfig.google?.clientId) {
-        toast.error("Google login is not configured");
-        return;
-      }
-
-      const clientId = oauthConfig.google.clientId;
-      const origin =
-        typeof window !== "undefined" ? window.location.origin : "";
-      const redirectUri = `${origin}/google-callback`;
-      const scope = "openid email profile";
-      const responseType = "code";
-
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}&response_type=${responseType}&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
-
-      window.location.href = authUrl;
+      await signIn.social({
+        provider: "google",
+        callbackURL: "/account",
+      });
     } catch (error) {
       toast.error("Failed to initiate Google login");
     }

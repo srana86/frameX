@@ -19,7 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
-import { apiRequest } from "@/lib/api-client";
+import { signIn } from "@/lib/auth-client";
 
 // Zod schema for login form
 const loginSchema = z.object({
@@ -52,27 +52,23 @@ export function LoginForm({ googleOAuthEnabled = false }: LoginFormProps) {
     setLoading(true);
 
     try {
-      // Call login API
-      // Token is set as httpOnly cookie by the backend
-      const response = await apiRequest<any>("POST", "/auth/login", {
-        method: "email",
+      // Use BetterAuth signIn.email() - session cookie is set automatically
+      const { data, error } = await signIn.email({
         email: values.email,
         password: values.password,
         rememberMe: values.rememberMe,
       });
 
-      // Response structure: { success, message, data: { user, accessToken } }
-      const { user, accessToken } = response.data || response;
-
-      // Store token in localStorage as fallback for cross-origin cookie issues
-      if (accessToken) {
-        localStorage.setItem("auth_token", accessToken);
+      if (error) {
+        toast.error(error.message || "Login failed");
+        return;
       }
 
       toast.success("Login successful!");
 
       // Redirect based on user role
-      const userRole = user?.role?.toLowerCase() || "customer";
+      const user = data?.user as any;
+      const userRole = (user?.role as string)?.toLowerCase() || "customer";
       if (userRole === "admin") {
         router.push("/admin");
       } else if (userRole === "merchant") {
@@ -85,9 +81,7 @@ export function LoginForm({ googleOAuthEnabled = false }: LoginFormProps) {
       router.refresh();
     } catch (error: any) {
       const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Login failed. Please try again.";
+        error.message || "Login failed. Please try again.";
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -96,29 +90,16 @@ export function LoginForm({ googleOAuthEnabled = false }: LoginFormProps) {
 
   const handleGoogleLogin = async () => {
     try {
-      // Fetch OAuth config from backend
-      const oauthConfig = await apiRequest<any>("GET", "/oauth-config");
-      if (!oauthConfig.google?.enabled || !oauthConfig.google?.clientId) {
-        toast.error("Google login is not configured");
-        return;
-      }
-
-      const clientId = oauthConfig.google.clientId;
-      const origin =
-        typeof window !== "undefined" ? window.location.origin : "";
-      const redirectUri = `${origin}/google-callback`;
-      const scope = "openid email profile";
-      const responseType = "code";
-
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}&response_type=${responseType}&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
-
-      window.location.href = authUrl;
+      // Use BetterAuth signIn.social() for Google OAuth
+      await signIn.social({
+        provider: "google",
+        callbackURL: "/account", // Redirect after successful OAuth
+      });
     } catch (error) {
       toast.error("Failed to initiate Google login");
     }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12">

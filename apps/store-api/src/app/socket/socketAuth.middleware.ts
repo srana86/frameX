@@ -1,52 +1,31 @@
 import { ExtendedError } from "socket.io/dist/namespace";
-import { verifyToken } from "../utils/tokenGenerateFunction";
-import config from "../../config";
+import { fromNodeHeaders } from "better-auth/node";
+import { auth } from "../../lib/auth";
 import { AuthenticatedSocket } from "../types";
-import { TJwtPayload } from "../module/Auth/auth.interface";
-import { prisma, getTenantByDomain } from "@framex/database";
+import { getTenantByDomain } from "@framex/database";
 
 /**
  * Socket authentication middleware
- * Authenticates socket connections using JWT token from handshake
+ * Authenticates socket connections using BetterAuth session
  * Validates tenant context and user existence
- * Rejects unauthorized connections early to prevent resource waste
  */
 export const socketAuthMiddleware = async (
   socket: AuthenticatedSocket,
   next: (err?: ExtendedError) => void
 ) => {
   try {
-    // Extract token from handshake auth or query or cookie
-    const token =
-      socket.handshake.auth?.token ||
-      socket.handshake.query?.token ||
-      socket.handshake.headers?.authorization?.replace("Bearer ", "") ||
-      extractCookieValue(
-        socket.handshake.headers?.cookie as string,
-        "auth_token"
-      );
+    // Get session using BetterAuth (validates cookie/header)
+    const session = await auth.api.getSession({
+      headers: fromNodeHeaders(socket.handshake.headers),
+    });
 
-    if (!token) {
-      return next(new Error("Authentication token required"));
+    if (!session || !session.user) {
+      return next(new Error("Authentication failed: No active session"));
     }
 
-    // Verify JWT token
-    let decoded: TJwtPayload;
-    try {
-      decoded = verifyToken(
-        token as string,
-        config.jwt_access_secret as string
-      ) as TJwtPayload;
-    } catch (error: any) {
-      if (error.name === "TokenExpiredError") {
-        return next(new Error("Token expired. Please refresh your token."));
-      }
-      return next(new Error("Invalid token"));
-    }
-
-    if (!decoded.userId || !decoded.role || !decoded.tenantId) {
-      return next(new Error("Invalid token payload"));
-    }
+    const { user } = session;
+    const userRole = (user.role as string) || "customer";
+    const userTenantId = user.tenantId as string | undefined;
 
     // Extract tenant from handshake for validation
     const handshakeTenantId =
@@ -59,6 +38,7 @@ export const socketAuthMiddleware = async (
     if (origin) {
       try {
         const originUrl = new URL(origin);
+        // Skip for localhost/IPs usually, or handle demo/localhost logic
         const tenantDomain = await getTenantByDomain(originUrl.hostname);
         if (tenantDomain) {
           resolvedTenantId = tenantDomain.tenantId;
@@ -68,41 +48,20 @@ export const socketAuthMiddleware = async (
       }
     }
 
-    // Validate tenant context
+    // Validate tenant context if tenantId is available on user
+    // If user is global admin (no tenantId) they might access any tenant?
+    // Assuming multi-tenant strictness:
     const expectedTenantId = handshakeTenantId || resolvedTenantId;
-    if (expectedTenantId && decoded.tenantId !== expectedTenantId) {
-      return next(new Error("Token does not belong to this tenant"));
+
+    if (userTenantId && expectedTenantId && userTenantId !== expectedTenantId) {
+      return next(new Error("Session does not belong to this tenant"));
     }
 
-    // Verify user still exists and is active in the database
-    const user = await prisma.storeUser.findUnique({
-      where: {
-        id: decoded.userId,
-        tenantId: decoded.tenantId,
-        isDeleted: false,
-      },
-      select: {
-        id: true,
-        role: true,
-        status: true,
-        tenantId: true,
-      },
-    });
-
-    if (!user) {
-      return next(new Error("User not found"));
-    }
-
-    if (user.status === "BLOCKED") {
-      return next(new Error("Account is blocked"));
-    }
-
-    // Attach user info to socket for later use
-    socket.userId = decoded.userId;
-    socket.userRole = decoded.role;
-    socket.tenantId = decoded.tenantId;
-    // merchantId is actually tenantId for merchants
-    socket.merchantId = decoded.tenantId;
+    // Attach user info to socket
+    socket.userId = user.id;
+    socket.userRole = userRole;
+    socket.tenantId = userTenantId || expectedTenantId || undefined;
+    socket.merchantId = userTenantId; // for backward compatibility/clarity
 
     next();
   } catch (error: any) {
@@ -142,20 +101,3 @@ export const requireSocketTenant = () => {
     next();
   };
 };
-
-/**
- * Helper to extract cookie value from cookie header string
- */
-function extractCookieValue(
-  cookieHeader: string | undefined,
-  name: string
-): string | null {
-  if (!cookieHeader) return null;
-
-  const cookies = cookieHeader.split(";");
-  const cookie = cookies.find((c) => c.trim().startsWith(`${name}=`));
-
-  if (!cookie) return null;
-
-  return cookie.split("=")[1]?.trim() || null;
-}

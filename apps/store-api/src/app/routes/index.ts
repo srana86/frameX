@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { UserRoutes } from "../module/User/user.route";
-import { AuthRoutes } from "../module/Auth/auth.route";
+// NOTE: AuthRoutes removed - BetterAuth handles /api/auth/* routes
 import { ProductRoutes } from "../module/Product/product.route";
 import { OrderRoutes } from "../module/Order/order.route";
 import { CouponRoutes } from "../module/Coupon/coupon.route";
@@ -43,10 +43,7 @@ import { AIRoutes } from "../module/AI/ai.route";
 const router = Router();
 
 const moduleRoutes = [
-  {
-    path: "/auth",
-    route: AuthRoutes,
-  },
+  // NOTE: Auth routes are now handled by BetterAuth at /api/auth/*
   {
     path: "/users",
     route: UserRoutes,

@@ -47,7 +47,23 @@ export const tenantMiddleware = async (
             }
         }
 
-        // Priority 2: Origin header (for cross-origin API calls)
+        // Priority 2: x-forwarded-domain header (for proxied requests)
+        if (!tenantId) {
+            const xForwardedDomain = req.headers["x-forwarded-domain"] as string;
+            if (xForwardedDomain) {
+                const tenantDomain = await resolveTenantFromDomain(xForwardedDomain);
+                if (tenantDomain) {
+                    tenantId = tenantDomain.tenantId;
+                    req.tenant = {
+                        id: tenantDomain.tenant.id,
+                        name: tenantDomain.tenant.name,
+                        status: tenantDomain.tenant.status,
+                    };
+                }
+            }
+        }
+
+        // Priority 3: Origin header (for cross-origin API calls)
         if (!tenantId) {
             const origin = req.headers["origin"] as string;
             if (origin) {

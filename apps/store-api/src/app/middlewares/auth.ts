@@ -1,107 +1,45 @@
 import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { verifyToken } from "../utils/tokenGenerateFunction";
-import config from "../../config";
+import { fromNodeHeaders } from "better-auth/node";
 import catchAsync from "../utils/catchAsync";
 import AppError from "../errors/AppError";
-import { TJwtPayload } from "../module/Auth/auth.interface";
-import { prisma } from "@framex/database";
+import { auth } from "../../lib/auth";
 
 /**
- * Authentication middleware
- * Validates JWT token and optionally checks user roles
- * Also validates that the user belongs to the current tenant
+ * BetterAuth Session Middleware
+ * 
+ * Validates session from Redis (fast) with database fallback.
+ * Replaces the previous JWT-based authentication.
  */
-const auth = (...requiredRoles: string[]) => {
+const authMiddleware = (...requiredRoles: string[]) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    // Get token from cookie or Authorization header
-    const token =
-      req.cookies?.auth_token ||
-      req.headers.authorization?.replace("Bearer ", "");
+    // Get session from BetterAuth (checks Redis first, then DB)
+    const session = await auth.api.getSession({
+      headers: fromNodeHeaders(req.headers),
+    });
 
-    // Check if token exists
-    if (!token) {
+    if (!session || !session.user) {
       throw new AppError(StatusCodes.UNAUTHORIZED, "You are not authorized!");
     }
 
-    // Verify token
-    let decoded: TJwtPayload;
-    try {
-      decoded = verifyToken(
-        token,
-        config.jwt_access_secret as string
-      ) as TJwtPayload;
-    } catch (error: any) {
-      // Check if token is expired
-      if (error.name === "TokenExpiredError") {
-        throw new AppError(
-          StatusCodes.UNAUTHORIZED,
-          "Token has expired. Please refresh your token."
-        );
-      }
-      throw new AppError(StatusCodes.UNAUTHORIZED, "Invalid token");
-    }
+    // Get custom fields from user
+    const userTenantId = session.user.tenantId as string | undefined;
+    const userRole = (session.user.role as string) || "customer";
 
-    // Validate required fields in token
-    if (!decoded.userId || !decoded.role || !decoded.tenantId) {
-      throw new AppError(StatusCodes.UNAUTHORIZED, "Invalid token payload");
-    }
-
-    // Validate tenantId matches the request's tenant
-    // This prevents cross-tenant access attacks
-    if (req.tenantId && decoded.tenantId !== req.tenantId) {
+    // Validate tenant match for multi-tenant isolation
+    if (req.tenantId && userTenantId && userTenantId !== req.tenantId) {
       throw new AppError(
         StatusCodes.FORBIDDEN,
-        "Token does not belong to this tenant"
+        "Session does not belong to this tenant"
       );
     }
 
-    // Verify user still exists and is active
-    const user = await prisma.storeUser.findUnique({
-      where: {
-        id: decoded.userId,
-        tenantId: decoded.tenantId,
-        isDeleted: false,
-      },
-      select: {
-        id: true,
-        role: true,
-        status: true,
-        passwordChangedAt: true,
-      },
-    });
-
-    if (!user) {
-      throw new AppError(StatusCodes.UNAUTHORIZED, "User no longer exists");
-    }
-
-    // Check if user is blocked
-    if (user.status === "BLOCKED") {
-      throw new AppError(
-        StatusCodes.FORBIDDEN,
-        "Your account has been blocked"
-      );
-    }
-
-    // Check if password was changed after token was issued
-    if (user.passwordChangedAt && decoded.iat) {
-      const passwordChangedTimestamp = Math.floor(
-        user.passwordChangedAt.getTime() / 1000
-      );
-      if (passwordChangedTimestamp > decoded.iat) {
-        throw new AppError(
-          StatusCodes.UNAUTHORIZED,
-          "Password was recently changed. Please login again."
-        );
-      }
-    }
-
-    // Check if required roles are specified
+    // Check required roles if specified
     if (requiredRoles.length > 0) {
-      const userRole = decoded.role.toLowerCase();
-      const allowedRoles = requiredRoles.map((role) => role.toLowerCase());
+      const normalizedUserRole = userRole.toLowerCase();
+      const allowedRoles = requiredRoles.map((r) => r.toLowerCase());
 
-      if (!allowedRoles.includes(userRole)) {
+      if (!allowedRoles.includes(normalizedUserRole)) {
         throw new AppError(
           StatusCodes.FORBIDDEN,
           "You are not authorized to access this resource!"
@@ -109,52 +47,52 @@ const auth = (...requiredRoles: string[]) => {
       }
     }
 
-    // Attach user to request
-    req.user = decoded;
+    // Attach user to request (compatible with existing code)
+    req.user = {
+      userId: session.user.id,
+      role: userRole,
+      tenantId: userTenantId || req.tenantId,
+    };
 
     next();
   });
 };
 
 /**
- * Optional authentication middleware
- * Attempts to authenticate but allows unauthenticated requests to pass
- * Useful for routes that have different behavior for authenticated vs anonymous users
+ * Optional Authentication Middleware
+ * 
+ * Attempts to authenticate but allows unauthenticated requests to pass.
+ * Useful for routes that behave differently for authenticated vs anonymous users.
  */
 export const optionalAuth = () => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const token =
-      req.cookies?.auth_token ||
-      req.headers.authorization?.replace("Bearer ", "");
-
-    if (!token) {
-      // No token provided, continue without user
-      return next();
-    }
-
     try {
-      const decoded = verifyToken(
-        token,
-        config.jwt_access_secret as string
-      ) as TJwtPayload;
+      const session = await auth.api.getSession({
+        headers: fromNodeHeaders(req.headers),
+      });
 
-      // Validate tenantId matches if present
-      if (
-        req.tenantId &&
-        decoded.tenantId &&
-        decoded.tenantId !== req.tenantId
-      ) {
-        // Token from different tenant, treat as anonymous
-        return next();
+      if (session?.user) {
+        const userTenantId = session.user.tenantId as string | undefined;
+        const userRole = (session.user.role as string) || "customer";
+
+        // Skip if tenant mismatch
+        if (req.tenantId && userTenantId && userTenantId !== req.tenantId) {
+          return next();
+        }
+
+        req.user = {
+          userId: session.user.id,
+          role: userRole,
+          tenantId: userTenantId || req.tenantId,
+        };
       }
-
-      req.user = decoded;
     } catch (error) {
-      // Invalid token, continue without user
+      // Ignore errors - user is anonymous
+      console.log("[Auth] Optional auth failed, continuing as anonymous");
     }
 
     next();
   });
 };
 
-export default auth;
+export default authMiddleware;

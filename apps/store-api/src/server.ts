@@ -7,6 +7,7 @@ import app from "./app";
 import config from "./config";
 import { initializeSocketIO, shutdownSocketIO } from "./app/socket/socket";
 import { prisma } from "@framex/database";
+import { connectRedis, disconnectRedis } from "./lib/redis";
 
 let server: Server;
 
@@ -28,6 +29,10 @@ async function main() {
     await prisma.$connect();
     const connectionTime = Date.now() - startTime;
     console.log(`✅ [Database] PostgreSQL connected in ${connectionTime}ms`);
+
+    // Connect Redis for BetterAuth sessions
+    console.log("🔄 [Redis] Connecting for BetterAuth sessions...");
+    await connectRedis();
 
     server = app.listen(config.port, () => {
       console.log(`🚀 [Server] Store API is listening on port ${config.port}`);
@@ -61,6 +66,7 @@ main();
 process.on("unhandledRejection", async (err) => {
   console.log(`😈 unhandledRejection is detected, shutting down...`, err);
   await shutdownSocketIO();
+  await disconnectRedis();
   await prisma.$disconnect();
   if (server) {
     server.close(() => {
@@ -73,6 +79,7 @@ process.on("unhandledRejection", async (err) => {
 process.on("uncaughtException", async () => {
   console.log(`😈 uncaughtException is detected, shutting down...`);
   await shutdownSocketIO();
+  await disconnectRedis();
   await prisma.$disconnect();
   process.exit(1);
 });
@@ -81,6 +88,7 @@ process.on("uncaughtException", async () => {
 process.on("SIGTERM", async () => {
   console.log("SIGTERM received, shutting down gracefully");
   await shutdownSocketIO();
+  await disconnectRedis();
   await prisma.$disconnect();
   if (server) {
     server.close(() => {
@@ -92,6 +100,7 @@ process.on("SIGTERM", async () => {
 process.on("SIGINT", async () => {
   console.log("SIGINT received, shutting down gracefully");
   await shutdownSocketIO();
+  await disconnectRedis();
   await prisma.$disconnect();
   if (server) {
     server.close(() => {

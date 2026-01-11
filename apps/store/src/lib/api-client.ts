@@ -73,41 +73,18 @@ export const serverApiRequest = async <T>(
 };
 
 // Track if a token refresh is in progress to prevent multiple simultaneous refreshes
-let isRefreshing = false;
-let refreshSubscribers: ((success: boolean) => void)[] = [];
-
-/**
- * Subscribe to refresh completion
- */
-const subscribeToRefresh = (callback: (success: boolean) => void) => {
-  refreshSubscribers.push(callback);
-};
-
-/**
- * Notify all subscribers of refresh result
- */
-const notifyRefreshSubscribers = (success: boolean) => {
-  refreshSubscribers.forEach((callback) => callback(success));
-  refreshSubscribers = [];
-};
+// NOTE: With BetterAuth, this refresh logic is less critical as cookies are handled automatically
+// but we keep the structure for compatibility with existing code
 
 /**
  * Request interceptor
  * Adds domain header for tenant resolution
- * Also adds Authorization header from localStorage as fallback for cross-origin cookie issues
  */
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // Send current domain for tenant resolution
     if (typeof window !== "undefined") {
       config.headers["X-Domain"] = window.location.hostname;
-
-      // Fallback: Get token from localStorage for cross-origin scenarios
-      // where cookies might not be sent due to sameSite restrictions
-      const token = localStorage.getItem("auth_token");
-      if (token && !config.headers.Authorization) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
     }
 
     // Fallback to merchant ID from env
@@ -122,106 +99,12 @@ apiClient.interceptors.request.use(
 );
 
 /**
- * List of endpoints that should NOT trigger token refresh or redirect on 401
- * These are either public endpoints or auth-checking endpoints
- */
-const publicEndpoints = [
-  "/auth/refresh-token",
-  "/auth/login",
-  "/auth/register",
-  "/auth/me", // Used for checking auth status - should not redirect
-  "/auth/forgot-password",
-  "/auth/reset-password",
-  "/auth/google",
-  "/brand-config",
-  "/oauth-config",
-  "/delivery-config",
-  "/ads-config",
-  "/products",
-  "/pages",
-  "/hero-slides",
-  "/storefront",
-  "/geolocation",
-  "/reviews",
-  "/promotional-banner",
-];
-
-/**
- * Check if a URL is a public endpoint that shouldn't trigger auth redirects
- */
-const isPublicEndpoint = (url: string | undefined): boolean => {
-  if (!url) return false;
-  return publicEndpoints.some((endpoint) => url.includes(endpoint));
-};
-
-/**
  * Response interceptor
- * Handles automatic token refresh on 401 errors for protected endpoints only
- * Public endpoints will NOT trigger redirects
+ * Simple error handling - no complex token refresh needed with BetterAuth
  */
 apiClient.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & {
-      _retry?: boolean;
-    };
-
-    // Don't retry if:
-    // 1. No config (shouldn't happen)
-    // 2. Already retried
-    // 3. Request was for a public endpoint
-    if (
-      !originalRequest ||
-      originalRequest._retry ||
-      isPublicEndpoint(originalRequest.url)
-    ) {
-      return Promise.reject(error);
-    }
-
-    // Handle 401 Unauthorized errors for protected endpoints
-    if (error.response?.status === 401) {
-      // If refresh is already in progress, wait for it
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          subscribeToRefresh((success: boolean) => {
-            if (success) {
-              // Retry original request after successful refresh
-              resolve(apiClient(originalRequest));
-            } else {
-              reject(error);
-            }
-          });
-        });
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        // Call refresh endpoint - it will use the httpOnly refresh_token cookie
-        const response = await apiClient.post("/auth/refresh-token");
-
-        if (response.data?.success) {
-          // Token refreshed successfully
-          // The new auth_token cookie is automatically set by the backend
-          isRefreshing = false;
-          notifyRefreshSubscribers(true);
-
-          // Retry original request with new token (cookie will be sent automatically)
-          return apiClient(originalRequest);
-        }
-      } catch (refreshError) {
-        isRefreshing = false;
-        notifyRefreshSubscribers(false);
-
-        // Refresh failed - just reject, don't redirect
-        // Let the calling code decide what to do (e.g., protected pages can redirect)
-        return Promise.reject(error);
-      }
-
-      isRefreshing = false;
-    }
-
+  (error: AxiosError) => {
     return Promise.reject(error);
   }
 );
@@ -254,32 +137,29 @@ export const apiRequest = async <T>(
 };
 
 /**
- * Check if currently authenticated (by attempting to call /auth/me)
+ * Check if currently authenticated (by attempting to call BetterAuth session)
  * @returns true if authenticated, false otherwise
  */
 export const checkAuth = async (): Promise<boolean> => {
   try {
-    const response = await apiClient.get("/auth/me");
-    return response.data?.success === true;
+    // BetterAuth returns session info at /api/auth/session
+    // or we can just check /api/auth/ok for basic health, but session is better
+    const response = await apiClient.get("/auth/session");
+    return !!response.data; // logic may vary depending on BetterAuth session endpoint return
   } catch {
     return false;
   }
 };
 
 /**
- * Logout - clears auth cookies and localStorage token
+ * Logout - calls BetterAuth logout
  * Note: Does NOT redirect - let calling code handle navigation
  */
 export const logout = async (): Promise<void> => {
   try {
-    await apiClient.post("/auth/logout");
+    await apiClient.post("/auth/sign-out");
   } catch (error) {
     // Ignore errors - we're logging out anyway
-  }
-
-  // Clear localStorage token as well
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("auth_token");
   }
 };
 

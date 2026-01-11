@@ -15,7 +15,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value;
-
+    console.log("cookieStore:", cookieStore.getAll());
     if (!token) {
       return null;
     }
