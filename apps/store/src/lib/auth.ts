@@ -1,5 +1,5 @@
-import { cookies } from "next/headers";
-import { getServerClient } from "./server-utils";
+import { cookies, headers } from "next/headers";
+import { authClient } from "./auth-client";
 
 export interface CurrentUser {
   id: string;
@@ -7,45 +7,52 @@ export interface CurrentUser {
   email?: string;
   phone?: string;
   role: "customer" | "merchant" | "admin";
-  merchantId?: string;
+  tenantId?: string;
   createdAt: string;
 }
 
+/**
+ * Get current user from BetterAuth session (server-side)
+ * Uses the authClient with manually forwarded cookies/headers
+ */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get("auth_token")?.value;
-    console.log("cookieStore:", cookieStore.getAll());
-    if (!token) {
+    const headersList = await headers();
+
+    // Call BetterAuth's getSession via the client, forwarding cookies and headers
+    const { data: sessionData } = await authClient.getSession({
+      fetchOptions: {
+        headers: {
+          Cookie: cookieStore.toString(),
+          "x-domain": headersList.get("host") || "localhost",
+        }
+      }
+    });
+
+    if (!sessionData?.user) {
       return null;
     }
 
-    const client = await getServerClient();
-    const response = await client.get("/auth/me");
+    const user = sessionData.user;
 
-    if (response.data && response.data.success !== false) {
-      // Backend might return user directly or inside a user property or inside data
-      const userData =
-        response.data.data || response.data.user || response.data;
-      // Normalize role to lowercase (backend returns uppercase like "MERCHANT")
-      const normalizedRole = (userData.role || "customer").toLowerCase() as
-        | "customer"
-        | "merchant"
-        | "admin";
-      return {
-        id: userData.id || userData._id,
-        fullName: userData.fullName,
-        email: userData.email,
-        phone: userData.phone,
-        role: normalizedRole,
-        merchantId: userData.merchantId || userData.tenantId,
-        createdAt: userData.createdAt,
-      };
-    }
+    // Normalize role to lowercase
+    const normalizedRole = ((user as any).role || "CUSTOMER").toLowerCase() as
+      | "customer"
+      | "merchant"
+      | "admin";
 
-    return null;
+    return {
+      id: user.id,
+      fullName: user.name || "",
+      email: user.email,
+      phone: (user as any).phone,
+      role: normalizedRole,
+      tenantId: (user as any).tenantId,
+      createdAt: user.createdAt.toString(),
+    };
   } catch (error) {
-    console.error("Error getting current user from backend:", error);
+    console.error("Error getting current user from BetterAuth:", error);
     return null;
   }
 }

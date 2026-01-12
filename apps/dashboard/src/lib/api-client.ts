@@ -52,20 +52,11 @@ async function apiRequest<T>(
 ): Promise<T> {
   const url = buildUrl(path);
 
-  // Get token from localStorage if on client side
-  let authHeaders: Record<string, string> = {};
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("auth_token");
-    if (token) {
-      authHeaders["Authorization"] = `Bearer ${token}`;
-    }
-  }
-
   const response = await fetch(url, {
     ...options,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders,
       ...options.headers,
     },
   });
@@ -103,20 +94,11 @@ export async function apiRequestWithMeta<T>(
 ): Promise<{ data: T; meta?: ApiResponse<T>["meta"] }> {
   const url = buildUrl(path);
 
-  // Get token from localStorage if on client side
-  let authHeaders: Record<string, string> = {};
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("auth_token");
-    if (token) {
-      authHeaders["Authorization"] = `Bearer ${token}`;
-    }
-  }
-
   const response = await fetch(url, {
     ...options,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders,
       ...options.headers,
     },
   });

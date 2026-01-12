@@ -23,6 +23,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/store-api/node_modules ./apps/store-api/node_modules
 COPY --from=deps /app/packages ./packages
 COPY . .
+# Copy ecosystem file
+COPY apps/store-api/ecosystem.config.js ./apps/store-api/ecosystem.config.js
 
 # Generate Prisma client
 RUN cd packages/database && npx prisma generate
@@ -35,6 +37,9 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV production
+
+# Install pm2 globally
+RUN npm install --global pm2
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 expressjs
@@ -51,4 +56,6 @@ EXPOSE 5000
 
 ENV PORT 5000
 
-CMD ["node", "dist/server.js"]
+COPY --from=builder --chown=expressjs:nodejs /app/apps/store-api/ecosystem.config.js ./ecosystem.config.js
+
+CMD ["pm2-runtime", "start", "ecosystem.config.js"]

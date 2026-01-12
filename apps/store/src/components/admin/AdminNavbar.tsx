@@ -38,6 +38,8 @@ import { Search } from "lucide-react";
 import { useState } from "react";
 import { apiRequest } from "@/lib/api-client";
 
+import { useAuth } from "@/hooks/use-auth";
+
 interface Notification {
   id: string;
   title: string;
@@ -56,28 +58,13 @@ export default function AdminNavbar({ brandConfig }: AdminNavbarProps) {
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
+  const userId = user?.id || null;
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"unread" | "all">("unread");
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-
-  // Check authentication status
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const data = await apiRequest<any>("GET", "/auth/me");
-        setIsAuthenticated(!!data.data);
-        setUserId(data.data?.id || null);
-      } catch (error) {
-        setIsAuthenticated(false);
-        setUserId(null);
-      }
-    };
-    checkAuth();
-  }, []);
 
   // Handle new notification from socket
   const handleNewNotification = useCallback((notification: Notification) => {

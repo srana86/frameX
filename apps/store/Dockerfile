@@ -23,6 +23,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/store/node_modules ./apps/store/node_modules
 COPY --from=deps /app/packages ./packages
 COPY . .
+# Copy ecosystem file
+COPY apps/store/ecosystem.config.js ./apps/store/ecosystem.config.js
 
 # Generate Prisma client
 RUN cd packages/database && npx prisma generate
@@ -38,6 +40,9 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
+# Install pm2 globally
+RUN npm install --global pm2
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
@@ -50,7 +55,9 @@ USER nextjs
 
 EXPOSE 3000
 
+COPY --from=builder --chown=nextjs:nodejs /app/apps/store/ecosystem.config.js ./ecosystem.config.js
+
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-CMD ["node", "apps/store/server.js"]
+CMD ["pm2-runtime", "start", "ecosystem.config.js"]

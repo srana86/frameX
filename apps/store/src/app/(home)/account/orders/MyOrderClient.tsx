@@ -54,39 +54,32 @@ const paymentStatusColors: Record<string, string> = {
   refunded: "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800",
 };
 
+import { useAuth } from "@/hooks/use-auth";
+
 export default function MyOrdersClient() {
   const currencySymbol = useCurrencySymbol();
   const router = useRouter();
+  const { user: userProfile, isLoading: authLoading } = useAuth({ required: true });
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    const fetchUserAndOrders = async () => {
-      try {
-        // Fetch user profile first
-        const userData = await apiRequest<any>("GET", "/auth/me");
-        if (!userData.data) {
-          router.push("/login");
-          return;
-        }
-        setUserProfile(userData.data);
+    const fetchOrders = async () => {
+      if (!userProfile) return;
 
+      try {
+        setLoading(true);
         // Fetch orders
         const params = new URLSearchParams();
-        if (userData.data.email) params.append("email", userData.data.email);
-        if (userData.data.phone) params.append("phone", userData.data.phone);
+        if (userProfile.email) params.append("email", userProfile.email);
+        if (userProfile.phone) params.append("phone", userProfile.phone);
 
         const ordersData = await apiRequest<any>("GET", `/orders/user?${params.toString()}`);
         setOrders(ordersData);
         setError(null);
       } catch (err: any) {
-        if (err?.response?.status === 401) {
-          router.push("/login");
-          return;
-        }
         setError(err?.message || "Failed to load orders");
         toast.error(err?.message || "Failed to load orders");
       } finally {
@@ -94,8 +87,15 @@ export default function MyOrdersClient() {
       }
     };
 
-    fetchUserAndOrders();
-  }, [router]);
+    if (!authLoading) {
+      if (userProfile) {
+        fetchOrders();
+      } else {
+        // useAuth handles redirection if required=true, but we can double check
+        setLoading(false);
+      }
+    }
+  }, [userProfile, authLoading]);
 
   const filteredOrders = orders.filter((order) => {
     if (!searchQuery) return true;

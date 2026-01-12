@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import apiClient, { checkAuth, logout as apiLogout } from "@/lib/api-client";
+import { useSession, signOut, getSession } from "@/lib/auth-client";
 
 export interface AuthUser {
   id: string;
@@ -26,10 +26,6 @@ interface UseAuthOptions {
    * Redirect URL when not authenticated
    */
   redirectTo?: string;
-  /**
-   * Enable proactive token refresh before expiry
-   */
-  enableProactiveRefresh?: boolean;
 }
 
 interface UseAuthReturn {
@@ -41,15 +37,12 @@ interface UseAuthReturn {
   refresh: () => Promise<void>;
 }
 
-// Refresh interval: 4 minutes (tokens typically expire in 15-30 min)
-const REFRESH_INTERVAL = 4 * 60 * 1000;
-
 /**
  * useAuth hook for managing authentication state on the client side
+ * Uses BetterAuth session management
  *
  * Features:
- * - Fetches current user from backend
- * - Proactive token refresh before expiry
+ * - Fetches current user via BetterAuth session
  * - Role-based access control
  * - Automatic redirect when not authenticated
  */
@@ -58,165 +51,87 @@ export function useAuth(options: UseAuthOptions = {}): UseAuthReturn {
     required = false,
     requiredRole,
     redirectTo = "/login",
-    enableProactiveRefresh = true,
   } = options;
 
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const session = useSession();
   const [error, setError] = useState<string | null>(null);
-  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isMounted = useRef(true);
+  const hasRedirected = useRef(false);
 
-  /**
-   * Fetch current user from backend
-   */
-  const fetchUser = useCallback(async () => {
-    try {
-      const response = await apiClient.get("/auth/me");
-
-      if (!isMounted.current) return;
-
-      if (response.data?.success && response.data?.data) {
-        const userData = response.data.data;
-        // Normalize role to lowercase (backend returns uppercase like "MERCHANT")
-        const normalizedRole = (userData.role || "customer").toLowerCase() as
-          | "customer"
-          | "merchant"
-          | "admin";
-        setUser({
-          id: userData.id || userData._id,
-          fullName: userData.fullName,
-          email: userData.email,
-          phone: userData.phone,
-          role: normalizedRole,
-          tenantId: userData.tenantId,
-        });
-        setError(null);
-        return true;
-      }
-      return false;
-    } catch (err) {
-      if (!isMounted.current) return false;
-      setUser(null);
-      return false;
+  // Transform BetterAuth session to AuthUser
+  const user: AuthUser | null = session.data?.user
+    ? {
+      id: session.data.user.id,
+      fullName: session.data.user.name || "",
+      email: session.data.user.email,
+      phone: session.data.user.phone,
+      role: ((session.data.user.role || "CUSTOMER").toLowerCase() as "customer" | "merchant" | "admin"),
+      tenantId: session.data.user.tenantId,
     }
-  }, []);
+    : null;
 
-  /**
-   * Proactively refresh the token
-   */
-  const refreshToken = useCallback(async () => {
-    try {
-      await apiClient.post("/auth/refresh-token");
-      // Token is refreshed via httpOnly cookie
-    } catch (err) {
-      // Refresh failed - user will be logged out on next 401
-      console.warn("Token refresh failed");
-    }
-  }, []);
+  const isLoading = session.isPending;
+  const isAuthenticated = !!user;
 
   /**
    * Refresh authentication state
    */
   const refresh = useCallback(async () => {
-    setIsLoading(true);
-    await fetchUser();
-    setIsLoading(false);
-  }, [fetchUser]);
+    // BetterAuth handles session refresh automatically via cookies
+    // Just refetch session
+    await getSession();
+  }, []);
 
   /**
    * Logout user
    */
   const logout = useCallback(async () => {
-    await apiLogout();
-    setUser(null);
+    await signOut();
     if (typeof window !== "undefined") {
       window.location.href = "/login";
     }
   }, []);
 
-  // Initial auth check
+  // Handle required auth and role checks
   useEffect(() => {
-    isMounted.current = true;
+    if (isLoading || hasRedirected.current) return;
 
-    const initAuth = async () => {
-      const isAuth = await fetchUser();
-
-      if (!isMounted.current) return;
-
-      setIsLoading(false);
-
-      // Handle required auth
-      if (required && !isAuth) {
-        router.push(redirectTo);
-        return;
-      }
-
-      // Handle role requirements
-      if (requiredRole && isAuth && user) {
-        const roleHierarchy: Record<string, number> = {
-          customer: 1,
-          merchant: 2,
-          admin: 3,
-        };
-
-        const userRoleLevel = roleHierarchy[user.role] || 0;
-        const requiredRoleLevel = roleHierarchy[requiredRole] || 0;
-
-        if (userRoleLevel < requiredRoleLevel) {
-          // Redirect to appropriate page based on role
-          const userRoleLower = user.role.toLowerCase();
-          if (userRoleLower === "customer") {
-            router.push("/account");
-          } else if (userRoleLower === "merchant") {
-            router.push("/merchant");
-          } else {
-            router.push("/");
-          }
-        }
-      }
-    };
-
-    initAuth();
-
-    return () => {
-      isMounted.current = false;
-    };
-  }, [fetchUser, required, requiredRole, redirectTo, router, user]);
-
-  // Proactive token refresh
-  useEffect(() => {
-    if (!enableProactiveRefresh || !user) {
+    // Handle required auth
+    if (required && !isAuthenticated) {
+      hasRedirected.current = true;
+      router.push(redirectTo);
       return;
     }
 
-    // Set up periodic token refresh
-    refreshIntervalRef.current = setInterval(() => {
-      refreshToken();
-    }, REFRESH_INTERVAL);
+    // Handle role requirements
+    if (requiredRole && isAuthenticated && user) {
+      const roleHierarchy: Record<string, number> = {
+        customer: 1,
+        merchant: 2,
+        admin: 3,
+      };
 
-    // Also refresh on visibility change (user returns to tab)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        refreshToken();
+      const userRoleLevel = roleHierarchy[user.role] || 0;
+      const requiredRoleLevel = roleHierarchy[requiredRole] || 0;
+
+      if (userRoleLevel < requiredRoleLevel) {
+        hasRedirected.current = true;
+        // Redirect to appropriate page based on role
+        if (user.role === "customer") {
+          router.push("/account");
+        } else if (user.role === "merchant") {
+          router.push("/merchant");
+        } else {
+          router.push("/");
+        }
       }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-      }
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [enableProactiveRefresh, user, refreshToken]);
+    }
+  }, [isLoading, isAuthenticated, user, required, requiredRole, redirectTo, router]);
 
   return {
     user,
     isLoading,
-    isAuthenticated: !!user,
+    isAuthenticated,
     error,
     logout,
     refresh,

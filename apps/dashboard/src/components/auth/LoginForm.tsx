@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { api } from "@/lib/api-client";
+import { signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,27 +13,23 @@ export default function LoginForm() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
-    const { login } = useAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            const result = await api.post<{ accessToken: string; needsPasswordChange: boolean }>("auth/login", {
+            const { data, error } = await signIn.email({
                 email,
                 password,
+                callbackURL: "/",
             });
 
-            // For simplicity, we'll decode the token or just pass a mock user object
-            // In a real app, you'd decode the JWT to get user info or have a /me endpoint
-            const mockUser = {
-                id: "1",
-                email: email,
-                role: "admin",
-            };
+            if (error) {
+                throw new Error(error.message || "Login failed");
+            }
 
-            login(result.accessToken, mockUser);
+            toast.success("Logged in successfully!");
         } catch (error: any) {
             toast.error(error.message || "Login failed. Please check your credentials.");
         } finally {

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import {
   LayoutDashboard,
   Package,
@@ -173,40 +174,14 @@ const supportMenuItems = [
 export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user: userProfile, logout } = useAuth();
   const { state } = useSidebar();
-  const [userProfile, setUserProfile] = useState<CurrentUser | null>(null);
   const isCollapsed = state === "collapsed";
-
-  useEffect(() => {
-    // Fetch user profile
-    const fetchProfile = async () => {
-      try {
-        const data = await apiRequest<any>("GET", "/auth/me");
-        if (data?.user) {
-          // Normalize role to lowercase (backend returns uppercase like "MERCHANT")
-          setUserProfile({
-            ...data.user,
-            role: data.user.role?.toLowerCase() || "customer",
-          });
-        }
-      } catch (error) {
-        console.error("Failed to fetch user profile:", error);
-      }
-    };
-    fetchProfile();
-  }, []);
 
   const handleLogout = async () => {
     try {
-      await apiRequest("POST", "/auth/logout");
-      // Clear any stored user data
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("shoestore_user_profile");
-        localStorage.removeItem("auth_token");
-      }
+      await logout();
       toast.success("Logged out successfully");
-      router.push("/login");
-      router.refresh();
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Failed to logout");
@@ -228,13 +203,13 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
             >
               {(brandConfig.logo.type === "image" &&
                 brandConfig.logo.imagePath) ||
-              (brandConfig.logo.type === "text" &&
-                brandConfig.logo.icon?.imagePath) ? (
+                (brandConfig.logo.type === "text" &&
+                  brandConfig.logo.icon?.imagePath) ? (
                 <div className="relative h-10 w-10 rounded-md flex items-center justify-center shrink-0">
                   <CloudImage
                     src={
                       brandConfig.logo.type === "image" &&
-                      brandConfig.logo.imagePath
+                        brandConfig.logo.imagePath
                         ? brandConfig.logo.imagePath
                         : brandConfig.logo.icon?.imagePath || ""
                     }
@@ -541,11 +516,11 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
                         <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                         {(pathname?.startsWith("/merchant/payments") ||
                           pathname?.startsWith("/merchant/payment-config")) && (
-                          <div
-                            className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
-                            style={{ animationDuration: "2s" }}
-                          />
-                        )}
+                            <div
+                              className="absolute inset-0 bg-primary/5 rounded-[5px] animate-pulse"
+                              style={{ animationDuration: "2s" }}
+                            />
+                          )}
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
@@ -1128,7 +1103,7 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
                         className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                       >
                         {userProfile.role === "merchant" ||
-                        userProfile.role === "admin" ? (
+                          userProfile.role === "admin" ? (
                           <DropdownMenuItem asChild>
                             <Link
                               href="/merchant"

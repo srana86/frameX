@@ -4,9 +4,12 @@ import { resolve } from "path";
 // Load environment variables
 config({ path: resolve(__dirname, "../.env") });
 
-import { PrismaClient, TenantStatus, UserRole, ProductStatus, OrderStatus } from "@prisma/client";
+import { PrismaClient, TenantStatus, UserRole, ProductStatus } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { hash } from "bcryptjs";
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
+
+const scryptAsync = promisify(scrypt);
 
 const adapter = new PrismaPg({
     connectionString: process.env.DATABASE_URL,
@@ -14,24 +17,55 @@ const adapter = new PrismaPg({
 
 const prisma = new PrismaClient({ adapter });
 
+/**
+ * Hash password using scrypt (same as BetterAuth default)
+ */
+async function hashPassword(password: string): Promise<string> {
+    const salt = randomBytes(16).toString("hex");
+    const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
+    return `${salt}:${derivedKey.toString("hex")}`;
+}
+
 async function main() {
     console.log("🌱 Seeding database...");
 
-    // Create super admin user
-    const hashedPassword = await hash("admin123", 12);
+    const now = new Date();
+    const hashedPassword = await hashPassword("admin123");
 
+    // Create super admin user
     const superAdmin = await prisma.user.upsert({
         where: { email: "admin@framex.com" },
         update: {},
         create: {
             email: "admin@framex.com",
-            password: hashedPassword,
             name: "Super Admin",
             role: UserRole.SUPER_ADMIN,
             emailVerified: true,
+            createdAt: now,
+            updatedAt: now,
         },
     });
     console.log("✅ Super admin created:", superAdmin.email);
+
+    // Create credential account for super admin (BetterAuth stores password here)
+    await prisma.account.upsert({
+        where: {
+            providerId_accountId: {
+                providerId: "credential",
+                accountId: superAdmin.id,
+            },
+        },
+        update: {},
+        create: {
+            userId: superAdmin.id,
+            accountId: superAdmin.id,
+            providerId: "credential",
+            password: hashedPassword,
+            createdAt: now,
+            updatedAt: now,
+        },
+    });
+    console.log("✅ Super admin account created with password");
 
     // Create demo tenant
     const demoTenant = await prisma.tenant.upsert({
@@ -80,13 +114,34 @@ async function main() {
         create: {
             tenantId: demoTenant.id,
             email: "demo@framex.com",
-            password: hashedPassword,
             name: "Demo Admin",
             role: UserRole.ADMIN,
             emailVerified: true,
+            createdAt: now,
+            updatedAt: now,
         },
     });
     console.log("✅ Tenant admin created:", tenantAdmin.email);
+
+    // Create credential account for tenant admin
+    await prisma.account.upsert({
+        where: {
+            providerId_accountId: {
+                providerId: "credential",
+                accountId: tenantAdmin.id,
+            },
+        },
+        update: {},
+        create: {
+            userId: tenantAdmin.id,
+            accountId: tenantAdmin.id,
+            providerId: "credential",
+            password: hashedPassword,
+            createdAt: now,
+            updatedAt: now,
+        },
+    });
+    console.log("✅ Tenant admin account created with password");
 
     // Create demo category
     const category = await prisma.category.upsert({
@@ -137,6 +192,10 @@ async function main() {
     console.log("✅ Demo products created");
 
     console.log("🎉 Seeding completed!");
+    console.log("");
+    console.log("📝 Demo Credentials:");
+    console.log("   Super Admin: admin@framex.com / admin123");
+    console.log("   Tenant Admin: demo@framex.com / admin123");
 }
 
 main()

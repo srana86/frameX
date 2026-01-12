@@ -3,7 +3,6 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma, getTenantByDomain } from "@framex/database";
 import redis from "./redis";
 import config from "../config";
-import bcrypt from "bcrypt";
 
 /**
  * BetterAuth Server Instance
@@ -52,28 +51,24 @@ export const auth = betterAuth({
     // Also store in database for backup/audit trail
     storeSessionInDatabase: true,
   },
+  // advanced: {
+  //   cookiePrefix: "framex",
+  //   crossSubDomainCookies: {
+  //     enabled: false,
+  //     domain: "demo.localhost" // Allow cookies to be shared between subdomains
+  //   },
+  //   defaultCookieAttributes: {
+  //     sameSite: "none",
+  //     secure: true, // Required for SameSite=None
+  //   }
+  // },
 
   // Email/Password Authentication
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 6,
     maxPasswordLength: 128,
-    // Password hashing configuration
-    password: {
-      hash: async (password: string) => {
-        const saltRounds = parseInt(config.bcrypt_salt_rounds || "12");
-        return await bcrypt.hash(password, saltRounds);
-      },
-      verify: async ({
-        password,
-        hash,
-      }: {
-        password: string;
-        hash: string;
-      }) => {
-        return await bcrypt.compare(password, hash);
-      },
-    },
+    // Using BetterAuth's default scrypt for password hashing
     // Password reset email handler
     sendResetPassword: async ({ user, url }, request) => {
       // TODO: Integrate with your email service (EmailTemplate module)

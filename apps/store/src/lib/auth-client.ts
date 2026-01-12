@@ -39,28 +39,42 @@ interface CustomSession {
     };
 }
 
+
 export const authClient = createAuthClient({
     baseURL: AUTH_BASE_URL,
-    user: {
-        additionalFields: {
-            tenantId: { type: "string", required: false },
-            role: { type: "string", required: false },
-            phone: { type: "string", required: false },
-            fullName: { type: "string", required: false }, // Keeping strictly for legacy/frontend compatibility if needed, but backend ignores it
-        }
-    }
 });
+
+// Create typed signUp function that accepts phone
+type SignUpEmailParams = {
+    email: string;
+    password: string;
+    name: string;
+    phone?: string;
+    image?: string;
+    callbackURL?: string;
+};
+
+const originalSignUp = authClient.signUp;
+
+// Wrap signUp.email to properly type the phone field
+export const signUp = {
+    ...originalSignUp,
+    email: (params: SignUpEmailParams) => {
+        // BetterAuth's type inference doesn't include custom fields,
+        // but the server accepts them. Cast to any for the call.
+        return originalSignUp.email(params as any);
+    },
+};
 
 // Export typed authentication functions
 const {
     signIn,
-    signUp,
     signOut,
     useSession: useAuthSession,
     getSession: getAuthSession,
 } = authClient;
 
-export { signIn, signUp, signOut };
+export { signIn, signOut };
 
 export const useSession = () => {
     const session = useAuthSession();

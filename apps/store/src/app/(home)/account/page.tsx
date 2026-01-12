@@ -35,6 +35,7 @@ import type { CustomerInfo } from "@/lib/types";
 import { toast } from "sonner";
 import { useCurrencySymbol } from "@/hooks/use-currency";
 import { apiRequest } from "@/lib/api-client";
+import { useAuth } from "@/hooks/use-auth";
 
 function AffiliateCard() {
   const [enabled, setEnabled] = useState<boolean | null>(null);
@@ -76,10 +77,13 @@ function AffiliateCard() {
 }
 
 export default function AccountPage() {
+  const { user: authUser, isLoading: loading, logout } = useAuth({ required: true });
+  // Cast to any to avoid type errors for missing address fields in basic session
+  const userProfile = authUser as any;
+  const userRole = userProfile?.role?.toLowerCase() || null;
   const currencySymbol = useCurrencySymbol();
   const router = useRouter();
-  const [userProfile, setUserProfile] = useState<CustomerInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<CustomerInfo>({
     fullName: "",
@@ -91,61 +95,29 @@ export default function AccountPage() {
     postalCode: "",
     notes: "",
   });
-  const [userRole, setUserRole] = useState<string | null>(null);
 
+  // Update form data when user profile is loaded
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const data = await apiRequest<any>("GET", "/auth/me");
-
-        if (data.data) {
-          const userData = data.data;
-          setUserProfile(userData);
-          // Normalize role to lowercase (backend returns uppercase like "MERCHANT")
-          setUserRole(userData.role?.toLowerCase() || null);
-          setFormData({
-            fullName: userData.fullName || "",
-            email: userData.email || "",
-            phone: userData.phone || "",
-            addressLine1: userData.addressLine1 || "",
-            addressLine2: userData.addressLine2 || "",
-            city: userData.city || "",
-            postalCode: userData.postalCode || "",
-            notes: userData.notes || "",
-          });
-          localStorage.setItem(
-            "shoestore_user_profile",
-            JSON.stringify(userData)
-          );
-        }
-      } catch (error: any) {
-        console.error("Error fetching user:", error);
-        if (error?.response?.status === 401) {
-          router.push("/login");
-          return;
-        }
-        toast.error("Failed to load user data");
-        router.push("/login");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [router]);
+    if (userProfile) {
+      setFormData({
+        fullName: userProfile.fullName || "",
+        email: userProfile.email || "",
+        phone: userProfile.phone || "",
+        addressLine1: "", // Address info not available in session
+        addressLine2: "",
+        city: "",
+        postalCode: "",
+        notes: "",
+      });
+    }
+  }, [userProfile]);
 
   const handleSave = async () => {
     try {
-      const data = await apiRequest<any>(
-        "PUT",
-        "/auth/update-profile",
-        formData
-      );
-      const userData = data.data;
-      setUserProfile(userData);
+      // TODO: Update profile via BetterAuth or separate Customer endpoint
+      // const data = await apiRequest<any>("PUT", "/auth/update-profile", formData);
+      toast.info("Profile update not yet implemented with new auth system");
       setIsEditing(false);
-      toast.success("Profile updated successfully!");
-      localStorage.setItem("shoestore_user_profile", JSON.stringify(userData));
     } catch (error: any) {
       toast.error(error?.message || "Failed to update profile");
     }
@@ -153,14 +125,8 @@ export default function AccountPage() {
 
   const handleLogout = async () => {
     try {
-      await apiRequest<any>("POST", "/auth/logout");
-      // Clear any local profile cache (non-sensitive data)
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("shoestore_user_profile");
-      }
+      await logout();
       toast.success("Logged out successfully");
-      router.push("/login");
-      router.refresh();
     } catch (error) {
       toast.error("Failed to logout");
     }

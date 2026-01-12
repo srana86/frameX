@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { api } from "@/lib/api-client";
+import { useSession, signOut } from "@/lib/auth-client";
 
 interface User {
     id: string;
@@ -13,8 +13,6 @@ interface User {
 
 interface AuthContextType {
     user: User | null;
-    token: string | null;
-    login: (token: string, user: User) => void;
     logout: () => void;
     isLoading: boolean;
 }
@@ -22,45 +20,25 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const { data: session, isPending: isLoading } = useSession();
     const router = useRouter();
 
-    useEffect(() => {
-        // Load auth state from localStorage on mount
-        const storedToken = localStorage.getItem("auth_token");
-        const storedUser = localStorage.getItem("auth_user");
-
-        if (storedToken && storedUser) {
-            setToken(storedToken);
-            setUser(JSON.parse(storedUser));
+    const user: User | null = session?.user
+        ? {
+            id: session.user.id,
+            email: session.user.email,
+            role: (session.user as any).role || "ADMIN",
         }
-        setIsLoading(false);
-    }, []);
+        : null;
 
-    const login = (newToken: string, newUser: User) => {
-        setToken(newToken);
-        setUser(newUser);
-        localStorage.setItem("auth_token", newToken);
-        localStorage.setItem("auth_user", JSON.stringify(newUser));
-        document.cookie = `auth_token=${newToken}; path=/; max-age=31536000; SameSite=Lax`;
-        toast.success("Logged in successfully");
-        router.push("/admin");
-    };
-
-    const logout = () => {
-        setToken(null);
-        setUser(null);
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("auth_user");
-        document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    const logout = async () => {
+        await signOut();
         toast.info("Logged out");
         router.push("/login");
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+        <AuthContext.Provider value={{ user, logout, isLoading }}>
             {children}
         </AuthContext.Provider>
     );

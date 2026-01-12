@@ -9,6 +9,8 @@ import router from "./app/routes";
 import notFound from "./app/middlewares/notFound";
 import globalErrorHandler from "./app/middlewares/globalErrorhandler";
 import requestLogger from "./app/middlewares/requestLogger";
+import { auth } from "./lib/auth";
+import { toNodeHandler } from "better-auth/node";
 
 const app: Application = express();
 
@@ -31,6 +33,9 @@ app.use(
     credentials: true,
   })
 );
+
+// BetterAuth Handler
+app.all("/api/auth/*", toNodeHandler(auth));
 
 // Application routes
 app.use("/api/v1", router);

@@ -53,9 +53,13 @@ interface PaginationInfo {
   hasMore: boolean;
 }
 
+import { useAuth } from "@/hooks/use-auth";
+
 export function NotificationsClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user, isAuthenticated } = useAuth();
+  const userId = user?.id || null;
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -67,23 +71,6 @@ export function NotificationsClient() {
     totalPages: 0,
     hasMore: false,
   });
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  // Check authentication
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const data: any = await apiRequest("GET", "/auth/me");
-        setIsAuthenticated(!!data.data?.user || !!data.user);
-        setUserId(data.data?.user?.id || data.user?.id || null);
-      } catch (error) {
-        setIsAuthenticated(false);
-        setUserId(null);
-      }
-    };
-    checkAuth();
-  }, []);
 
   // Handle new notification from socket
   const handleNewNotification = useCallback(
