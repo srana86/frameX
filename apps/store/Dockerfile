@@ -26,8 +26,8 @@ COPY . .
 # Copy ecosystem file
 COPY apps/store/ecosystem.config.js ./apps/store/ecosystem.config.js
 
-# Generate Prisma client
-RUN cd packages/database && npx prisma generate
+# Generate Prisma client (dummy URL - no actual connection during build)
+RUN cd packages/database && DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate
 
 # Build the app
 ENV NEXT_TELEMETRY_DISABLED 1

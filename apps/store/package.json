@@ -60,7 +60,6 @@
     "@tiptap/starter-kit": "^3.11.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/fake-useragent": "^1.0.0",
-    "@types/form-data": "^2.2.1",
     "@types/jsonwebtoken": "^9.0.10",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",

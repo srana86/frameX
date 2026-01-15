@@ -4,15 +4,9 @@ import { z } from "zod";
 const createPageValidationSchema = z.object({
   body: z.object({
     id: z.string().optional(),
-    title: z.string({
-      required_error: "Title is required",
-      invalid_type_error: "Title must be string",
-    }),
+    title: z.string({ message: "Title is required" }),
     slug: z.string().optional(),
-    content: z.string({
-      required_error: "Content is required",
-      invalid_type_error: "Content must be string",
-    }),
+    content: z.string({ message: "Content is required" }),
     category: z.string().optional(),
     order: z.number().optional(),
     enabled: z.boolean().optional(),
@@ -35,10 +29,7 @@ const updatePageValidationSchema = z.object({
 const createPageCategoryValidationSchema = z.object({
   body: z.object({
     id: z.string().optional(),
-    name: z.string({
-      required_error: "Name is required",
-      invalid_type_error: "Name must be string",
-    }),
+    name: z.string({ message: "Name is required" }),
     order: z.number().optional(),
   }),
 });

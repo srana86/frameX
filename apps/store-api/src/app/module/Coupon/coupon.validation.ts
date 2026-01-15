@@ -30,14 +30,8 @@ const conditionsSchema = z.object({
 const createCouponValidationSchema = z.object({
   body: z.object({
     id: z.string().optional(),
-    code: z.string({
-      required_error: "Coupon code is required",
-      invalid_type_error: "Code must be string",
-    }),
-    name: z.string({
-      required_error: "Coupon name is required",
-      invalid_type_error: "Name must be string",
-    }),
+    code: z.string({ message: "Coupon code is required" }),
+    name: z.string({ message: "Coupon name is required" }),
     description: z.string().optional(),
     type: z.enum(
       [
@@ -47,23 +41,14 @@ const createCouponValidationSchema = z.object({
         "buy_x_get_y",
         "first_order",
       ],
-      {
-        required_error: "Coupon type is required",
-      }
+      { message: "Coupon type is required" }
     ),
     status: z.enum(["active", "inactive", "expired", "scheduled"]).optional(),
-    discountValue: z.number({
-      required_error: "Discount value is required",
-      invalid_type_error: "Discount value must be number",
-    }),
+    discountValue: z.number({ message: "Discount value is required" }),
     maxDiscountAmount: z.number().optional(),
     buyXGetY: buyXGetYConfigSchema.optional(),
-    startDate: z.string({
-      required_error: "Start date is required",
-    }),
-    endDate: z.string({
-      required_error: "End date is required",
-    }),
+    startDate: z.string({ message: "Start date is required" }),
+    endDate: z.string({ message: "End date is required" }),
     usageLimit: usageLimitSchema.optional(),
     conditions: conditionsSchema.optional(),
   }),

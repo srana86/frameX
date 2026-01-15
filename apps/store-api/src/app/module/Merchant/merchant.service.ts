@@ -18,7 +18,7 @@ const getMerchantContextFromDB = async (merchantId?: string) => {
 
   // Retrieve merchant from User table (as merchants are Users in the platform)
   const userMerchant = await prisma.user.findFirst({
-    where: { id: merchantId, isDeleted: false } // merchantId is guaranteed to be string here due to check above
+    where: { id: merchantId } // merchantId is guaranteed to be string here due to check above
   });
 
   if (!userMerchant) {

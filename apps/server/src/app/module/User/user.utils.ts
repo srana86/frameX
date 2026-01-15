@@ -21,9 +21,23 @@ export type TUserRole = "SUPER_ADMIN" | "ADMIN" | "STAFF";
 // User helper functions (replacing Mongoose static methods)
 
 export async function isUserExistsByEmail(email: string) {
-    return prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
         where: { email },
+        include: {
+            accounts: {
+                where: { providerId: 'credential' },
+                select: { password: true }
+            }
+        }
     });
+
+    if (user && user.accounts?.[0]?.password) {
+        return {
+            ...user,
+            password: user.accounts[0].password
+        };
+    }
+    return user ? { ...user, password: null } : null;
 }
 
 export async function isUserExistsByCustomId(id: string) {
@@ -62,19 +76,42 @@ export async function createUser(userData: {
 }) {
     const hashedPassword = await hashPassword(userData.password);
 
-    return prisma.user.create({
+    // BetterAuth stores password in Account table, not User table
+    const user = await prisma.user.create({
         data: {
             email: userData.email,
-            password: hashedPassword,
-            name: userData.name,
+            name: userData.name || userData.email.split('@')[0],
             phone: userData.phone,
             role: userData.role || "STAFF",
             tenantId: userData.tenantId,
+            emailVerified: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
         },
     });
+
+    // Create credential account for password login
+    await prisma.account.create({
+        data: {
+            userId: user.id,
+            accountId: user.id,
+            providerId: 'credential',
+            password: hashedPassword,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+    });
+
+    return user;
 }
 
-export async function updateUserById(id: string, data: Partial<TUser>) {
+export async function updateUserById(id: string, data: {
+    name?: string;
+    phone?: string | null;
+    role?: TUserRole;
+    status?: "ACTIVE" | "INACTIVE" | "BLOCKED";
+    emailVerified?: boolean;
+}) {
     return prisma.user.update({
         where: { id },
         data,

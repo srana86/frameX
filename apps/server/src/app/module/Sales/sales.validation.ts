@@ -19,6 +19,6 @@ export const createSaleValidationSchema = z.object({
     transactionId: z.string().optional(),
     status: saleStatusEnum.optional(),
     type: saleTypeEnum.optional(),
-    metadata: z.record(z.any()).optional(),
+    metadata: z.record(z.string(), z.any()).optional(),
   }),
 });

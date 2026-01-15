@@ -8,6 +8,7 @@ export interface CurrentUser {
   phone?: string;
   role: "customer" | "merchant" | "admin";
   tenantId?: string;
+  merchantId?: string;
   createdAt: string;
 }
 
@@ -49,6 +50,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
       phone: (user as any).phone,
       role: normalizedRole,
       tenantId: (user as any).tenantId,
+      merchantId: (user as any).merchantId,
       createdAt: user.createdAt.toString(),
     };
   } catch (error) {

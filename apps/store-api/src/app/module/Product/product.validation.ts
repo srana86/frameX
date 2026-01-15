@@ -5,26 +5,11 @@ const createProductValidationSchema = z.object({
   body: z.object({
     id: z.string().optional(),
     slug: z.string().optional(),
-    name: z.string({
-      required_error: "Name is required",
-      invalid_type_error: "Name must be string",
-    }),
-    brand: z.string({
-      required_error: "Brand is required",
-      invalid_type_error: "Brand must be string",
-    }),
-    category: z.string({
-      required_error: "Category is required",
-      invalid_type_error: "Category must be string",
-    }),
-    description: z.string({
-      required_error: "Description is required",
-      invalid_type_error: "Description must be string",
-    }),
-    price: z.number({
-      required_error: "Price is required",
-      invalid_type_error: "Price must be number",
-    }),
+    name: z.string({ message: "Name is required" }),
+    brand: z.string({ message: "Brand is required" }),
+    category: z.string({ message: "Category is required" }),
+    description: z.string({ message: "Description is required" }),
+    price: z.number({ message: "Price is required" }),
     buyPrice: z.number().optional(),
     images: z.array(z.string()).optional(),
     sizes: z.array(z.string()).optional(),

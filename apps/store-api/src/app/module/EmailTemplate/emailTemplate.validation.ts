@@ -32,7 +32,7 @@ const testEmailTemplateValidationSchema = z.object({
     event: z.string().min(1, "Event is required"),
     to: z.string().email("Valid email is required"),
     html: z.string().optional(),
-    variables: z.record(z.any()).optional(),
+    variables: z.record(z.string(), z.any()).optional(),
   }),
 });
 

@@ -1,0 +1,177 @@
+# =============================================================================
+# Multi-Tenant SSL Docker Compose
+# =============================================================================
+# Development & Production environment for the SSL management system.
+# 
+# USAGE:
+#   # Start with local DB/Redis (standalone mode):
+#   docker-compose up -d
+#
+#   # Start without DB/Redis (use root docker-compose services):
+#   docker-compose up -d api nginx
+#
+#   # View logs:
+#   docker-compose logs -f api
+#
+#   # Stop all:
+#   docker-compose down
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # PostgreSQL Database (can be disabled if using root docker-compose)
+  # ===========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: multi-tenant-ssl-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-framex}
+      POSTGRES_USER: ${POSTGRES_USER:-framex}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-framex_secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # Different port to avoid conflict with root postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-framex}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - multi-tenant-ssl-network
+    profiles:
+      - standalone
+
+  # ===========================================================================
+  # Redis (can be disabled if using root docker-compose)
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: multi-tenant-ssl-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6380:6379"  # Different port to avoid conflict with root redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - multi-tenant-ssl-network
+    profiles:
+      - standalone
+
+  # ===========================================================================
+  # Domain Management API
+  # ===========================================================================
+  api:
+    build:
+      context: ../..
+      dockerfile: apps/multi-tenant-ssl/Dockerfile
+    container_name: multi-tenant-ssl-api
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3000
+      # Database - use standalone or external
+      DATABASE_URL: ${DATABASE_URL:-postgresql://framex:framex_secret@postgres:5432/framex}
+      # Redis - use standalone or external
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      # ACME / Let's Encrypt
+      ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
+      ACME_DIRECTORY: ${ACME_DIRECTORY:-https://acme-staging-v02.api.letsencrypt.org/directory}
+      ACME_HOME: /root/.acme.sh
+      # Paths
+      NGINX_SITES_PATH: /etc/nginx/sites-enabled
+      SSL_CERT_PATH: /etc/ssl/tenants
+      ACME_WEBROOT: /var/www/acme
+      # Security
+      API_KEY: ${API_KEY:-dev-api-key-change-in-production}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+      CERT_RENEWAL_DAYS: ${CERT_RENEWAL_DAYS:-30}
+    volumes:
+      # Persistent volumes for certificates
+      - ssl_certs:/etc/ssl/tenants
+      - acme_data:/root/.acme.sh
+      - nginx_sites:/etc/nginx/sites-enabled
+    networks:
+      - multi-tenant-ssl-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
+  # Nginx Reverse Proxy
+  # ===========================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: multi-tenant-ssl-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/default-certs:/etc/ssl/private:ro
+      - nginx_sites:/etc/nginx/sites-enabled:ro
+      - ssl_certs:/etc/ssl/tenants:ro
+      - acme_webroot:/var/www/acme
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - multi-tenant-ssl-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================================================
+  # Sample Backend App (for testing proxy functionality)
+  # ===========================================================================
+  sample-app:
+    image: nginx:alpine
+    container_name: multi-tenant-ssl-sample-app
+    restart: unless-stopped
+    volumes:
+      - ./sample-app:/usr/share/nginx/html:ro
+    expose:
+      - "80"
+    networks:
+      - multi-tenant-ssl-network
+    profiles:
+      - testing
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  ssl_certs:
+    driver: local
+  acme_data:
+    driver: local
+  nginx_sites:
+    driver: local
+  acme_webroot:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  multi-tenant-ssl-network:
+    driver: bridge

@@ -117,6 +117,7 @@ const createTenant = async (data: {
             status: TenantStatus.TRIAL,
             domains: {
                 create: {
+                    hostname: `${data.subdomain.toLowerCase()}.framextech.com`,
                     subdomain: data.subdomain.toLowerCase(),
                     primaryDomain: `${data.subdomain.toLowerCase()}.framextech.com`,
                     verified: true,
@@ -206,6 +207,7 @@ const addCustomDomain = async (tenantId: string, customDomain: string) => {
     return prisma.tenantDomain.create({
         data: {
             tenantId,
+            hostname: customDomain,
             customDomain,
             primaryDomain: customDomain,
             verified: false,

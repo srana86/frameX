@@ -5,26 +5,16 @@ import { USER_ROLE } from "./user.constant";
 const createUserValidationSchema = z.object({
   body: z.object({
     id: z.string().optional(),
-    fullName: z.string({
-      required_error: "Full name is required",
-      invalid_type_error: "Full name must be string",
-    }),
+    fullName: z.string({ message: "Full name is required" }),
     email: z
-      .string({
-        invalid_type_error: "Email must be string",
-      })
+      .string({ message: "Email must be a valid string" })
       .email({ message: "Invalid email format" })
       .optional(),
     phone: z
-      .string({
-        invalid_type_error: "Phone must be string",
-      })
+      .string({ message: "Phone must be a valid string" })
       .optional(),
     password: z
-      .string({
-        required_error: "Password is required",
-        invalid_type_error: "Password must be string",
-      })
+      .string({ message: "Password is required" })
       .min(6, { message: "Password must be at least 6 characters" })
       .max(50, { message: "Password cannot be more than 50 characters" }),
     role: z
@@ -41,23 +31,23 @@ const updateUserValidationSchema = z.object({
   body: z.object({
     fullName: z
       .string({
-        invalid_type_error: "Full name must be string",
+        message: "Full name must be string",
       })
       .optional(),
     email: z
       .string({
-        invalid_type_error: "Email must be string",
+        message: "Email must be string",
       })
       .email({ message: "Invalid email format" })
       .optional(),
     phone: z
       .string({
-        invalid_type_error: "Phone must be string",
+        message: "Phone must be string",
       })
       .optional(),
     password: z
       .string({
-        invalid_type_error: "Password must be string",
+        message: "Password must be string",
       })
       .min(6, { message: "Password must be at least 6 characters" })
       .max(50, { message: "Password cannot be more than 50 characters" })

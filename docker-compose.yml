@@ -1,4 +1,15 @@
-version: "3.9"
+# =============================================================================
+# LOCAL DEVELOPMENT - Databases + Nginx for routing
+# =============================================================================
+# Usage:
+#   docker-compose up -d     # Start postgres, redis, nginx
+#   pnpm dev                 # Run apps locally
+#
+# Access via:
+#   http://framextech.local        → Dashboard (localhost:3001)
+#   http://demo.framextech.local   → Store (localhost:3000)
+#   http://demo.framextech.local/api/* → Store API (localhost:8080)
+# =============================================================================
 
 services:
   # ============ DATABASE ============
@@ -15,7 +26,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-framex}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-framex}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -33,110 +44,15 @@ services:
     networks:
       - framex-network
 
-  # ============ APPS ============
-  store:
-    build:
-      context: .
-      dockerfile: apps/store/Dockerfile
-    container_name: framex-store
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-framex}:${POSTGRES_PASSWORD:-framex_secret}@postgres:5432/${POSTGRES_DB:-framex}
-      REDIS_URL: redis://redis:6379
-      NODE_ENV: development
-    ports:
-      - "3000:3000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    volumes:
-      - ./apps/store:/app/apps/store
-      - ./packages:/app/packages
-      - /app/apps/store/node_modules
-      - /app/apps/store/.next
-    networks:
-      - framex-network
-
-  store-api:
-    build:
-      context: .
-      dockerfile: apps/store-api/Dockerfile
-    container_name: framex-store-api
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-framex}:${POSTGRES_PASSWORD:-framex_secret}@postgres:5432/${POSTGRES_DB:-framex}
-      REDIS_URL: redis://redis:6379
-      NODE_ENV: development
-      PORT: 8080
-    ports:
-      - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    volumes:
-      - ./apps/store-api:/app/apps/store-api
-      - ./packages:/app/packages
-      - /app/apps/store-api/node_modules
-    networks:
-      - framex-network
-
-  dashboard:
-    build:
-      context: .
-      dockerfile: apps/dashboard/Dockerfile
-    container_name: framex-dashboard
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-framex}:${POSTGRES_PASSWORD:-framex_secret}@postgres:5432/${POSTGRES_DB:-framex}
-      NODE_ENV: development
-    ports:
-      - "3001:3001"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ./apps/dashboard:/app/apps/dashboard
-      - ./packages:/app/packages
-      - /app/apps/dashboard/node_modules
-      - /app/apps/dashboard/.next
-    networks:
-      - framex-network
-
-  server:
-    build:
-      context: .
-      dockerfile: apps/server/Dockerfile
-    container_name: framex-server
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-framex}:${POSTGRES_PASSWORD:-framex_secret}@postgres:5432/${POSTGRES_DB:-framex}
-      NODE_ENV: development
-      PORT: 8081
-    ports:
-      - "8081:8081"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ./apps/server:/app/apps/server
-      - ./packages:/app/packages
-      - /app/apps/server/node_modules
-    networks:
-      - framex-network
-
-  # ============ GATEWAY ============
+  # ============ NGINX (for local domain routing) ============
   nginx:
     build:
       context: ./docker/nginx
     container_name: framex-nginx
     ports:
-      - "80:80" # Standard HTTP port maps to local 80
-    depends_on:
-      - store
-      - store-api
-      - dashboard
-      - server
-      - redis
+      - "80:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - framex-network
 

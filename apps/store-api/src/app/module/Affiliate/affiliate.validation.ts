@@ -25,6 +25,7 @@ const updateSettingsValidationSchema = z.object({
     minWithdrawalAmount: z.number().nonnegative().optional(),
     commissionLevels: z
       .record(
+        z.string(),
         z.object({
           percentage: z.number().min(0).max(100),
           enabled: z.boolean(),
@@ -32,7 +33,7 @@ const updateSettingsValidationSchema = z.object({
         })
       )
       .optional(),
-    salesThresholds: z.record(z.number().nonnegative()).optional(),
+    salesThresholds: z.record(z.string(), z.number().nonnegative()).optional(),
     cookieExpiryDays: z.number().positive().optional(),
   }),
 });

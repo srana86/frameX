@@ -2,13 +2,13 @@ import { z } from "zod";
 
 // Customer info schema
 const customerInfoSchema = z.object({
-  fullName: z.string({ required_error: "Full name is required" }),
+  fullName: z.string({ message: "Full name is required" }),
   email: z.string().email().optional(),
-  phone: z.string({ required_error: "Phone is required" }),
-  addressLine1: z.string({ required_error: "Address line 1 is required" }),
+  phone: z.string({ message: "Phone is required" }),
+  addressLine1: z.string({ message: "Address line 1 is required" }),
   addressLine2: z.string().optional(),
-  city: z.string({ required_error: "City is required" }),
-  postalCode: z.string({ required_error: "Postal code is required" }),
+  city: z.string({ message: "City is required" }),
+  postalCode: z.string({ message: "Postal code is required" }),
   notes: z.string().optional(),
 });
 
@@ -34,15 +34,15 @@ const createOrderValidationSchema = z.object({
       .optional(),
     orderType: z.enum(["online", "offline"]).optional(),
     items: z.array(cartLineItemSchema).min(1, "At least one item is required"),
-    subtotal: z.number({ required_error: "Subtotal is required" }),
+    subtotal: z.number({ message: "Subtotal is required" }),
     discountPercentage: z.number().optional(),
     discountAmount: z.number().optional(),
     vatTaxPercentage: z.number().optional(),
     vatTaxAmount: z.number().optional(),
     shipping: z.number().default(0),
-    total: z.number({ required_error: "Total is required" }),
+    total: z.number({ message: "Total is required" }),
     paymentMethod: z.enum(["cod", "online"], {
-      required_error: "Payment method is required",
+      message: "Payment method is required",
     }),
     paymentStatus: z
       .enum(["pending", "completed", "failed", "cancelled", "refunded"])
@@ -77,7 +77,7 @@ const updateOrderValidationSchema = z.object({
 // Assign courier validation schema
 const assignCourierValidationSchema = z.object({
   body: z.object({
-    serviceId: z.string({ required_error: "Service ID is required" }),
+    serviceId: z.string({ message: "Service ID is required" }),
     consignmentId: z.string().optional(),
   }),
 });

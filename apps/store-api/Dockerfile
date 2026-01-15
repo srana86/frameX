@@ -11,8 +11,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/store-api/package.json ./apps/store-api/
 COPY packages/ ./packages/
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies with shamefully-hoist to flatten node_modules
+RUN pnpm install --frozen-lockfile --shamefully-hoist
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
@@ -23,11 +23,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/store-api/node_modules ./apps/store-api/node_modules
 COPY --from=deps /app/packages ./packages
 COPY . .
-# Copy ecosystem file
-COPY apps/store-api/ecosystem.config.js ./apps/store-api/ecosystem.config.js
 
-# Generate Prisma client
-RUN cd packages/database && npx prisma generate
+# Generate Prisma client (dummy URL - no actual connection during build)
+RUN cd packages/database && DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate
 
 # Build the app
 RUN pnpm --filter @framex/store-api build
@@ -36,26 +34,22 @@ RUN pnpm --filter @framex/store-api build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-
-# Install pm2 globally
-RUN npm install --global pm2
+ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 expressjs
 
-# Copy built application
+# Copy built application and dependencies
 COPY --from=builder --chown=expressjs:nodejs /app/apps/store-api/dist ./dist
-COPY --from=builder /app/apps/store-api/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages/database ./packages/database
+COPY --from=builder --chown=expressjs:nodejs /app/apps/store-api/package.json ./
+COPY --from=builder --chown=expressjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=expressjs:nodejs /app/packages/database ./packages/database
 
 USER expressjs
 
-EXPOSE 5000
+EXPOSE 8080
 
-ENV PORT 5000
+ENV PORT=8080
 
-COPY --from=builder --chown=expressjs:nodejs /app/apps/store-api/ecosystem.config.js ./ecosystem.config.js
-
-CMD ["pm2-runtime", "start", "ecosystem.config.js"]
+# Run directly with node (simpler than PM2 for development)
+CMD ["node", "dist/server.js"]

@@ -25,7 +25,7 @@ const loginUser = async (payload: TLoginUser) => {
     }
 
     // checking if the password is matched
-    if (!(await isPasswordMatched(payload.password, user.password))) {
+    if (!user.password || !(await isPasswordMatched(payload.password, user.password))) {
         throw new AppError(httpStatus.FORBIDDEN, "Password do not matched");
     }
 

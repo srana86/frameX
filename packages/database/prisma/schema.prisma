@@ -16,11 +16,20 @@ datasource db {
 model Tenant {
   id        String       @id @default(uuid())
   name      String
+  slug      String?      @unique // URL-safe identifier
   email     String       @unique
   phone     String?
   status    TenantStatus @default(ACTIVE)
+  isActive  Boolean      @default(true) // Quick active check
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
+
+  // Domain Limits
+  maxDomains Int @default(3) // Maximum custom domains allowed
+
+  // Backend Routing (default for all domains)
+  backendHost String @default("127.0.0.1") // Backend server host
+  backendPort Int    @default(3000) // Backend server port
 
   // Relations
   domains               TenantDomain[]
@@ -47,20 +56,66 @@ model Tenant {
 }
 
 model TenantDomain {
-  id            String    @id @default(uuid())
+  id            String  @id @default(uuid())
   tenantId      String
-  subdomain     String?   @unique // "acme" → acme.framextech.com
-  customDomain  String?   @unique // shop.example.com
+  hostname      String  @unique // The full domain (e.g., shop.example.com)
+  subdomain     String? @unique // "acme" → acme.framextech.com
+  customDomain  String? @unique // shop.example.com (alias for hostname for custom domains)
   primaryDomain String // The active domain
-  verified      Boolean   @default(false)
-  sslStatus     SSLStatus @default(PENDING)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // Domain Settings
+  isPrimary  Boolean @default(false)
+  isWildcard Boolean @default(false) // *.tenant.saas.com
+
+  // Backend Routing (can override tenant defaults)
+  backendHost String? // Override tenant's backend host
+  backendPort Int? // Override tenant's backend port
+
+  // DNS Verification
+  verificationToken  String                   @default(uuid())
+  verificationMethod DomainVerificationMethod @default(DNS_TXT)
+  dnsVerified        Boolean                  @default(false)
+  dnsVerifiedAt      DateTime?
+  dnsLastCheckedAt   DateTime?
+  dnsCheckError      String?
+
+  // SSL Certificate Status
+  sslStatus     SSLStatus   @default(PENDING)
+  sslProvider   SSLProvider @default(LETS_ENCRYPT)
+  certPath      String? // Path to fullchain.pem
+  keyPath       String? // Path to privkey.pem
+  certIssuedAt  DateTime?
+  certExpiresAt DateTime?
+
+  // Renewal Tracking
+  lastRenewalAttempt DateTime?
+  lastRenewalError   String?
+  renewalAttempts    Int       @default(0)
+
+  // Nginx Configuration
+  nginxConfigPath String?
+  nginxConfigured Boolean   @default(false)
+  nginxLastReload DateTime?
+
+  // Status
+  status DomainStatus @default(PENDING_VERIFICATION)
+
+  // Timestamps
+  verified  Boolean   @default(false) // Legacy field
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+
+  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  certificates DomainCertificate[]
 
   @@index([tenantId])
   @@index([primaryDomain])
+  @@index([customDomain])
+  @@index([status])
+  @@index([sslStatus])
+  @@index([certExpiresAt])
+  @@index([deletedAt])
 }
 
 model TenantSettings {
@@ -79,6 +134,82 @@ model TenantSettings {
   orderEnabled   Boolean @default(true)
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================
+// DOMAIN CERTIFICATES (SSL Certificate History)
+// ============================================================
+// Historical record of all SSL certificates issued for a domain.
+// Useful for audit trails and debugging certificate issues.
+
+model DomainCertificate {
+  id       String @id @default(uuid())
+  domainId String
+
+  // Certificate identification
+  serialNumber String? // X.509 serial number
+  fingerprint  String? // SHA-256 fingerprint
+
+  // Issuer details
+  issuer     String // "Let's Encrypt", "Cloudflare", etc.
+  commonName String // CN from certificate
+  altNames   String[] // Subject Alternative Names (SAN)
+
+  // Certificate data (PEM format)
+  certPem  String? @db.Text // Full certificate PEM
+  chainPem String? @db.Text // CA chain PEM
+
+  // Validity period
+  issuedAt  DateTime
+  expiresAt DateTime
+
+  // Status
+  isActive  Boolean   @default(true) // Currently in use
+  revokedAt DateTime? // If revoked
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  // Relations
+  domain TenantDomain @relation(fields: [domainId], references: [id], onDelete: Cascade)
+
+  @@index([domainId])
+  @@index([expiresAt])
+  @@index([isActive])
+}
+
+// ============================================================
+// DOMAIN AUDIT LOG
+// ============================================================
+// Records all domain and certificate operations for compliance.
+
+model DomainAuditLog {
+  id String @id @default(uuid())
+
+  // What happened
+  action     DomainAuditAction
+  entityType String // "TenantDomain", "DomainCertificate"
+  entityId   String // ID of the affected entity
+
+  // Who did it
+  actorType String // "system", "api", "worker", "admin"
+  actorId   String? // User/service ID if applicable
+
+  // Details
+  details   Json? // Additional context as JSON
+  ipAddress String? // Request IP if applicable
+  userAgent String? // Request user agent
+
+  // Result
+  success      Boolean @default(true)
+  errorMessage String?
+
+  // Timestamp
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
 }
 
 // ============================================================
@@ -485,9 +616,66 @@ enum TenantStatus {
 }
 
 enum SSLStatus {
-  PENDING
-  ACTIVE
-  FAILED
+  PENDING // Not yet issued
+  ISSUING // Currently being issued
+  ACTIVE // Valid certificate installed
+  EXPIRING_SOON // Less than 30 days to expiry
+  EXPIRED // Certificate has expired
+  RENEWAL_FAILED // Renewal attempt(s) failed
+  REVOKED // Certificate was revoked
+  FAILED // Legacy - issuance failed
+}
+
+// Domain lifecycle status for custom domains
+enum DomainStatus {
+  PENDING_VERIFICATION // Waiting for DNS verification
+  VERIFICATION_FAILED // DNS check failed
+  VERIFIED // DNS verified, ready for SSL issuance
+  PROVISIONING // SSL certificate being issued
+  ACTIVE // Fully operational with valid SSL
+  SUSPENDED // Temporarily disabled by admin
+  DELETED // Soft deleted, pending cleanup
+}
+
+// SSL certificate provider
+enum SSLProvider {
+  LETS_ENCRYPT // Free ACME certificates (default)
+  CLOUDFLARE // Cloudflare origin certificates
+  CUSTOM // User-provided certificate
+}
+
+// Domain verification methods
+enum DomainVerificationMethod {
+  DNS_TXT // TXT record verification (recommended)
+  DNS_CNAME // CNAME record verification
+  HTTP_FILE // HTTP file challenge (automatic with ACME)
+}
+
+// Actions tracked in domain audit log
+enum DomainAuditAction {
+  // Tenant actions
+  TENANT_CREATED
+  TENANT_UPDATED
+  TENANT_DELETED
+  TENANT_ACTIVATED
+  TENANT_SUSPENDED
+  // Domain actions
+  DOMAIN_CREATED
+  DOMAIN_UPDATED
+  DOMAIN_DELETED
+  DOMAIN_VERIFIED
+  DOMAIN_VERIFICATION_FAILED
+  // Certificate actions
+  CERT_ISSUED
+  CERT_RENEWED
+  CERT_RENEWAL_FAILED
+  CERT_REVOKED
+  CERT_EXPIRED
+  // Nginx actions
+  NGINX_CONFIG_CREATED
+  NGINX_CONFIG_UPDATED
+  NGINX_CONFIG_DELETED
+  NGINX_RELOADED
 }
 
 enum UserRole {

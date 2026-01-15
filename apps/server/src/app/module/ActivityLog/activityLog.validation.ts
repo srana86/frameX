@@ -15,7 +15,7 @@ export const createActivityLogValidationSchema = z.object({
     action: z.string().min(1, "Action is required"),
     entityId: z.string().min(1, "Entity ID is required"),
     entityName: z.string().optional(),
-    details: z.record(z.any()).optional(),
+    details: z.record(z.string(), z.any()).optional(),
     performedBy: z.string().optional(),
   }),
 });
