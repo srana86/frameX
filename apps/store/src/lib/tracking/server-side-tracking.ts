@@ -7,7 +7,12 @@ import { getAllMetaParams } from "./meta-param-builder";
 
 // Helper to get the Store-API base URL (works on both client and server)
 function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+  // Client-side: use relative URL (nginx proxies)
+  if (typeof window !== "undefined") {
+    return "/api/v1";
+  }
+  // Server-side: use internal URL
+  return process.env.INTERNAL_API_URL || "http://localhost:8080/api/v1";
 }
 
 // Helper to get Merchant ID for tenant context
@@ -16,7 +21,9 @@ function getMerchantId(): string {
 }
 
 // Helper to build headers with tenant context
-function getApiHeaders(contentType: string = "application/json"): Record<string, string> {
+function getApiHeaders(
+  contentType: string = "application/json"
+): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": contentType,
   };
@@ -122,7 +129,7 @@ function getMetaCookies(): {
     return null;
   };
 
-  let fbp = getCookie("_fbp");
+  const fbp = getCookie("_fbp");
   let fbc = getCookie("_fbc");
   const clientIpAddress = getCookie("_fbi"); // Set by clientParamBuilder
 
@@ -268,7 +275,7 @@ export async function sendServerSideTracking(
           console.warn("TikTok Pixel server-side tracking failed");
         }
       })
-      .catch(() => { })
+      .catch(() => {})
   );
 
   // Google Analytics 4
@@ -304,7 +311,7 @@ export async function sendServerSideTracking(
           console.warn("GA4 server-side tracking failed");
         }
       })
-      .catch(() => { })
+      .catch(() => {})
   );
 
   // Execute all promises in parallel (failures are silently caught)

@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getCurrencySymbol, formatPrice as formatPriceUtil } from "@/lib/currency";
+import {
+  getCurrencySymbol,
+  formatPrice as formatPriceUtil,
+} from "@/lib/currency";
 import type { BrandConfig } from "@/lib/brand-config";
 import { defaultBrandConfig } from "@/lib/brand-config";
 
@@ -10,7 +13,8 @@ const DEFAULT_SYMBOL = getCurrencySymbol(DEFAULT_ISO);
 
 let cachedCurrencyIso = DEFAULT_ISO;
 let cachedCurrencySymbol: string | null = null;
-let inflightCurrencyPromise: Promise<{ iso: string; symbol: string }> | null = null;
+let inflightCurrencyPromise: Promise<{ iso: string; symbol: string }> | null =
+  null;
 
 async function loadCurrencyConfig(): Promise<{ iso: string; symbol: string }> {
   if (cachedCurrencySymbol) {
@@ -23,8 +27,8 @@ async function loadCurrencyConfig(): Promise<{ iso: string; symbol: string }> {
 
   inflightCurrencyPromise = (async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-      const res = await fetch(`${apiUrl}/brand-config`, {
+      // Use relative URL - nginx proxies to backend
+      const res = await fetch("/api/v1/brand-config", {
         cache: "force-cache",
       });
       const response = await res.json();
@@ -51,7 +55,9 @@ async function loadCurrencyConfig(): Promise<{ iso: string; symbol: string }> {
  * Cached at module level to avoid duplicate client fetches
  */
 export function useCurrencySymbol(): string {
-  const [symbol, setSymbol] = useState<string>(cachedCurrencySymbol ?? DEFAULT_SYMBOL);
+  const [symbol, setSymbol] = useState<string>(
+    cachedCurrencySymbol ?? DEFAULT_SYMBOL
+  );
 
   useEffect(() => {
     let isActive = true;
@@ -77,7 +83,9 @@ export function useCurrencySymbol(): string {
  * Uses shared cached currency state to avoid repeated fetches
  */
 export function useFormatPrice() {
-  const [currencyIso, setCurrencyIso] = useState<string>(cachedCurrencyIso ?? DEFAULT_ISO);
+  const [currencyIso, setCurrencyIso] = useState<string>(
+    cachedCurrencyIso ?? DEFAULT_ISO
+  );
 
   useEffect(() => {
     let isActive = true;
@@ -95,5 +103,6 @@ export function useFormatPrice() {
     };
   }, []);
 
-  return (price: number, decimals: number = 2) => formatPriceUtil(price, currencyIso, decimals);
+  return (price: number, decimals: number = 2) =>
+    formatPriceUtil(price, currencyIso, decimals);
 }

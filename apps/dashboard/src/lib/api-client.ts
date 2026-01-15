@@ -3,8 +3,19 @@
  * Handles all API requests to the Node.js backend server
  */
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/v1";
+/**
+ * API Base URL
+ * - Browser: Use relative /api/v1 (nginx proxies to server:8081)
+ * - Server: Use full URL for SSR
+ */
+const getApiBaseUrl = () => {
+  if (typeof window === "undefined") {
+    return process.env.INTERNAL_API_URL || "http://localhost:8081/api/v1";
+  }
+  return "/api/v1";
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 /**
  * Build a clean URL (no double slashes)
@@ -37,7 +48,11 @@ interface ApiResponse<T> {
  * API Error class
  */
 export class ApiError extends Error {
-  constructor(message: string, public statusCode?: number, public data?: any) {
+  constructor(
+    message: string,
+    public statusCode?: number,
+    public data?: any
+  ) {
     super(message);
     this.name = "ApiError";
   }

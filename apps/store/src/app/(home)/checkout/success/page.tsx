@@ -44,8 +44,8 @@ function OrderSuccessContent() {
 
     const fetchOrder = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-        const res = await fetch(`${apiUrl}/orders/${orderId}`);
+        // Use relative URL - nginx proxies to backend
+        const res = await fetch(`/api/v1/orders/${orderId}`);
         if (!res.ok) {
           throw new Error("Failed to fetch order");
         }
@@ -127,8 +127,8 @@ function OrderSuccessContent() {
         quantity: item.quantity,
       }));
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-      fetch(`${apiUrl}/brand-config`, {
+      // Use relative URL - nginx proxies to backend
+      fetch("/api/v1/brand-config", {
         cache: "force-cache",
       })
         .then((res) => res.json())
@@ -221,7 +221,7 @@ function OrderSuccessContent() {
             ]);
           }
         })
-        .catch(() => { });
+        .catch(() => {});
     }
   }, [order]);
 

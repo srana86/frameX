@@ -6,7 +6,20 @@
 
 import { headers } from "next/headers";
 
-const API_URL = process.env.NEXT_PUBLIC_STORE_API_URL || 'http://localhost:8080/api/v1';
+// Internal API URL for server-side calls
+const API_URL = process.env.INTERNAL_API_URL || "http://localhost:8080/api/v1";
+
+// Helper to get domain from headers for tenant resolution
+async function getDomainHeader(): Promise<string> {
+  try {
+    const headersList = await headers();
+    const host =
+      headersList.get("x-forwarded-host") || headersList.get("host") || "";
+    return host.split(":")[0];
+  } catch {
+    return "";
+  }
+}
 
 // Shim for MongoDB Cursor
 class CursorShim<T> {
@@ -41,7 +54,7 @@ class CursorShim<T> {
     // Serialize simple query params
     if (this.query) {
       Object.entries(this.query).forEach(([key, value]) => {
-        if (typeof value !== 'object') {
+        if (typeof value !== "object") {
           params.append(key, String(value));
         } else {
           // Basic support for nested/mongo-like queries? -> Ignore complex objects for now or JSON stringify
@@ -50,27 +63,49 @@ class CursorShim<T> {
       });
     }
 
-    if (this.options.limit) params.append('limit', String(this.options.limit));
-    if (this.options.skip) params.append('skip', String(this.options.skip));
+    if (this.options.limit) params.append("limit", String(this.options.limit));
+    if (this.options.skip) params.append("skip", String(this.options.skip));
 
     // Handle sort (simple mapping)
     if (this.options.sort) {
       // { _id: -1 } -> sortBy=_id&sortOrder=desc
       const keys = Object.keys(this.options.sort);
       if (keys.length > 0) {
-        params.append('sortBy', keys[0]);
-        params.append('sortOrder', this.options.sort[keys[0]] === -1 ? 'desc' : 'asc');
+        params.append("sortBy", keys[0]);
+        params.append(
+          "sortOrder",
+          this.options.sort[keys[0]] === -1 ? "desc" : "asc"
+        );
       }
     }
 
     try {
-      const res = await fetch(`${API_URL}/${this.collectionName}?${params.toString()}`, {
-        cache: 'no-store',
-        headers: { 'x-merchant-id': await getMerchantIdForAPI() || '' }
-      });
+      const domain = await getDomainHeader();
+      const res = await fetch(
+        `${API_URL}/${this.collectionName}?${params.toString()}`,
+        {
+          cache: "no-store",
+          headers: {
+            "X-Domain": domain,
+            "X-Merchant-ID": (await getMerchantIdForAPI()) || "",
+          },
+        }
+      );
       if (!res.ok) return [];
-      const data = await res.json();
-      return Array.isArray(data) ? data : (data.data || []);
+      const json = await res.json();
+      // Handle different API response formats
+      if (Array.isArray(json)) return json;
+      if (json.data) {
+        // API returns { data: { products: [...] } } or { data: [...] }
+        if (Array.isArray(json.data)) return json.data;
+        if (json.data[this.collectionName])
+          return json.data[this.collectionName];
+        if (json.data.products) return json.data.products; // products endpoint
+        // Try first array value in data object
+        const firstValue = Object.values(json.data)[0];
+        if (Array.isArray(firstValue)) return firstValue;
+      }
+      return [];
     } catch (e) {
       console.error(`API Fetch Error [${this.collectionName}]:`, e);
       return [];
@@ -103,13 +138,15 @@ class CollectionShim<T> {
 
   async insertOne(doc: any) {
     try {
+      const domain = await getDomainHeader();
       const res = await fetch(`${API_URL}/${this.collectionName}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'x-merchant-id': await getMerchantIdForAPI() || ''
+          "Content-Type": "application/json",
+          "X-Domain": domain,
+          "X-Merchant-ID": (await getMerchantIdForAPI()) || "",
         },
-        body: JSON.stringify(doc)
+        body: JSON.stringify(doc),
       });
       const result = await res.json();
       return { acknowledged: true, insertedId: result.id || result._id };
@@ -121,7 +158,13 @@ class CollectionShim<T> {
 
   async updateOne(filter: any, update: any) {
     console.warn(`[MongoShim] updateOne called on ${this.collectionName}`);
-    return { acknowledged: true, modifiedCount: 1, matchedCount: 1, upsertedId: null, upsertedCount: 0 };
+    return {
+      acknowledged: true,
+      modifiedCount: 1,
+      matchedCount: 1,
+      upsertedId: null,
+      upsertedCount: 0,
+    };
   }
 
   async deleteOne(filter: any) {
@@ -130,7 +173,9 @@ class CollectionShim<T> {
   }
 
   async findOneAndUpdate(filter: any, update: any, options: any = {}) {
-    console.warn(`[MongoShim] findOneAndUpdate called on ${this.collectionName}`);
+    console.warn(
+      `[MongoShim] findOneAndUpdate called on ${this.collectionName}`
+    );
     // Return mock doc directly
     return { ...filter, ...update?.$set, _id: "mock_id" };
   }
@@ -144,7 +189,9 @@ class CollectionShim<T> {
 /**
  * Get collection for current merchant (shimmed)
  */
-export async function getMerchantCollectionForAPI<T = any>(collectionName: string) {
+export async function getMerchantCollectionForAPI<T = any>(
+  collectionName: string
+) {
   return new CollectionShim<T>(collectionName);
 }
 
@@ -184,7 +231,13 @@ export class ObjectId {
   constructor(id?: string | number | ObjectId) {
     this.id = id ? String(id) : "mock_id";
   }
-  toString() { return this.id; }
-  toJSON() { return this.id; }
-  static isValid(id: any) { return typeof id === 'string' && id.length > 0; }
+  toString() {
+    return this.id;
+  }
+  toJSON() {
+    return this.id;
+  }
+  static isValid(id: any) {
+    return typeof id === "string" && id.length > 0;
+  }
 }

@@ -6,7 +6,7 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                         NGINX (OpenResty)                       │
 │                    Reverse Proxy & Load Balancer                │
-│         *.framextech.local → store | framextech.local → dashboard│
+│         *.framextech.local → store | localhost → dashboard│
 └─────────────────────────────────────────────────────────────────┘
                                    │
         ┌──────────────────────────┼──────────────────────────┐

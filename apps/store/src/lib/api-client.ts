@@ -1,7 +1,20 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+/**
+ * API Base URL
+ * - Browser: Use relative /api/v1 (nginx proxies to backend)
+ * - Server: Use full URL for SSR
+ */
+const getApiBaseUrl = () => {
+  // Server-side: use internal URL
+  if (typeof window === "undefined") {
+    return process.env.INTERNAL_API_URL || "http://localhost:8080/api/v1";
+  }
+  // Client-side: use relative URL (nginx proxies to store-api)
+  return "/api/v1";
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 /**
  * Client-side API client
@@ -25,13 +38,16 @@ export const serverSideApiClient = (
   merchantId?: string,
   domain?: string
 ) => {
+  // Always use internal URL for server-side calls
+  const serverBaseUrl =
+    process.env.INTERNAL_API_URL || "http://localhost:8080/api/v1";
   return axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: serverBaseUrl,
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       "X-Merchant-ID": merchantId || process.env.NEXT_PUBLIC_MERCHANT_ID || "",
-      "X-Domain": domain || process.env.NEXT_PUBLIC_DOMAIN || "",
+      "X-Domain": domain || "",
     },
     withCredentials: true,
   });
