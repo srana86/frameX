@@ -9,78 +9,77 @@ import {
   MerchantDeployment,
 } from "./superAdmin.interface";
 
-// Get all merchants
+// Get all tenants (was merchants) - keeping function names for backward compat
 const getAllMerchantsFromDB = async () => {
-
-  const merchants = await prisma.merchant.findMany({
+  const tenants = await prisma.tenant.findMany({
     where: {
-      status: { not: "INACTIVE" } // Example filter if needed
+      status: { not: "INACTIVE" },
     },
-    orderBy: { createdAt: "desc" }
+    orderBy: { createdAt: "desc" },
   });
 
-  return merchants.map((m) => ({
-    id: m.id,
-    name: m.name,
-    email: m.email,
-    status: m.status,
-    createdAt: m.createdAt.toISOString()
+  return tenants.map((t) => ({
+    id: t.id,
+    name: t.name,
+    email: t.email,
+    status: t.status,
+    createdAt: t.createdAt.toISOString(),
   }));
 };
 
-// Create new merchant
+// Create new tenant (was merchant)
 const createMerchantFromDB = async (payload: CreateMerchantPayload) => {
-  // Check if merchant already exists
-  const existingMerchant = await prisma.merchant.findUnique({
+  // Check if tenant already exists
+  const existingTenant = await prisma.tenant.findUnique({
     where: {
-      email: payload.email
-    }
+      email: payload.email,
+    },
   });
 
-  if (existingMerchant) {
+  if (existingTenant) {
     throw new AppError(
       StatusCodes.CONFLICT,
-      "Merchant with this email already exists"
+      "Tenant with this email already exists"
     );
   }
 
-  const merchant = await prisma.merchant.create({
+  const tenant = await prisma.tenant.create({
     data: {
       name: payload.name,
       email: payload.email,
       status: "ACTIVE",
-    }
+    },
   });
 
   return {
-    id: merchant.id,
-    name: merchant.name,
-    email: merchant.email,
-    status: merchant.status,
-    createdAt: merchant.createdAt.toISOString()
+    id: tenant.id,
+    name: tenant.name,
+    email: tenant.email,
+    status: tenant.status,
+    createdAt: tenant.createdAt.toISOString(),
   };
 };
 
-// Update merchant
+// Update tenant (was merchant)
 const updateMerchantFromDB = async (payload: UpdateMerchantPayload) => {
-  const merchant = await prisma.merchant.findUnique({
+  const tenant = await prisma.tenant.findUnique({
     where: {
-      id: payload.id
-    }
+      id: payload.id,
+    },
   });
 
-  if (!merchant) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Merchant not found");
+  if (!tenant) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Tenant not found");
   }
 
   const updateData: any = {};
   if (payload.name) updateData.name = payload.name;
   if (payload.email) updateData.email = payload.email;
-  if (payload.status) updateData.status = payload.status; // Ensure status enum matches
+  if (payload.status) updateData.status = payload.status;
 
-  const updated = await prisma.merchant.update({
+  const updated = await prisma.tenant.update({
     where: { id: payload.id },
-    data: updateData
+    data: updateData,
   });
 
   return {
@@ -88,51 +87,51 @@ const updateMerchantFromDB = async (payload: UpdateMerchantPayload) => {
     name: updated.name,
     email: updated.email,
     status: updated.status,
-    createdAt: updated.createdAt.toISOString()
+    createdAt: updated.createdAt.toISOString(),
   };
 };
 
-// Get full merchant data
-const getFullMerchantDataFromDB = async (merchantId: string) => {
-  const merchant = await prisma.merchant.findUnique({
+// Get full tenant data (was merchant)
+const getFullMerchantDataFromDB = async (tenantId: string) => {
+  const tenant = await prisma.tenant.findUnique({
     where: {
-      id: merchantId
-    }
+      id: tenantId,
+    },
   });
 
-  if (!merchant) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Merchant not found");
+  if (!tenant) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Tenant not found");
   }
 
   // Get subscription info
-  const subscription = await prisma.merchantSubscription.findFirst({
-    where: { merchantId }
+  const subscription = await prisma.tenantSubscription.findFirst({
+    where: { tenantId },
   });
 
   // Placeholder for database and deployment info
   const database: MerchantDatabase = {
-    id: `db-${merchantId}`,
-    databaseName: `merchant_${merchantId}`, // simplified
+    id: `db-${tenantId}`,
+    databaseName: `tenant_${tenantId}`,
     useSharedDatabase: true,
     status: "active",
   };
 
   const deployment: MerchantDeployment = {
-    id: `deploy-${merchantId}`,
-    deploymentUrl: merchant.deploymentUrl || `https://${merchantId}.example.com`,
+    id: `deploy-${tenantId}`,
+    deploymentUrl: tenant.deploymentUrl || `https://${tenantId}.example.com`,
     deploymentStatus: "active",
     deploymentType: "standard",
   };
 
   return {
     merchant: {
-      id: merchant.id,
-      name: merchant.name,
-      email: merchant.email,
-      status: merchant.status,
-      createdAt: merchant.createdAt,
-      role: "MERCHANT" // derived
-      // toObject() not needed, returning plain object
+      // Keep 'merchant' key for backward compat with frontend
+      id: tenant.id,
+      name: tenant.name,
+      email: tenant.email,
+      status: tenant.status,
+      createdAt: tenant.createdAt,
+      role: "MERCHANT",
     },
     database,
     deployment,
@@ -140,21 +139,21 @@ const getFullMerchantDataFromDB = async (merchantId: string) => {
   };
 };
 
-// Get merchant database information
-const getMerchantDatabaseFromDB = async (merchantId: string) => {
-  const merchant = await prisma.merchant.findUnique({
+// Get tenant database information
+const getMerchantDatabaseFromDB = async (tenantId: string) => {
+  const tenant = await prisma.tenant.findUnique({
     where: {
-      id: merchantId
-    }
+      id: tenantId,
+    },
   });
 
-  if (!merchant) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Merchant not found");
+  if (!tenant) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Tenant not found");
   }
 
   const database: MerchantDatabase = {
-    id: `db-${merchantId}`,
-    databaseName: `merchant_${merchantId}`,
+    id: `db-${tenantId}`,
+    databaseName: `tenant_${tenantId}`,
     useSharedDatabase: true,
     status: "active",
   };
@@ -162,21 +161,21 @@ const getMerchantDatabaseFromDB = async (merchantId: string) => {
   return { database };
 };
 
-// Get merchant deployment information
-const getMerchantDeploymentFromDB = async (merchantId: string) => {
-  const merchant = await prisma.merchant.findUnique({
+// Get tenant deployment information
+const getMerchantDeploymentFromDB = async (tenantId: string) => {
+  const tenant = await prisma.tenant.findUnique({
     where: {
-      id: merchantId
-    }
+      id: tenantId,
+    },
   });
 
-  if (!merchant) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Merchant not found");
+  if (!tenant) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Tenant not found");
   }
 
   const deployment: MerchantDeployment = {
-    id: `deploy-${merchantId}`,
-    deploymentUrl: merchant.deploymentUrl || `https://${merchantId}.example.com`,
+    id: `deploy-${tenantId}`,
+    deploymentUrl: tenant.deploymentUrl || `https://${tenantId}.example.com`,
     deploymentStatus: "active",
     deploymentType: "standard",
   };
@@ -184,26 +183,26 @@ const getMerchantDeploymentFromDB = async (merchantId: string) => {
   return { deployment };
 };
 
-// Get merchant subscription information
-const getMerchantSubscriptionFromDB = async (merchantId: string) => {
-  const merchant = await prisma.merchant.findUnique({
+// Get tenant subscription information
+const getMerchantSubscriptionFromDB = async (tenantId: string) => {
+  const tenant = await prisma.tenant.findUnique({
     where: {
-      id: merchantId
-    }
+      id: tenantId,
+    },
   });
 
-  if (!merchant) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Merchant not found");
+  if (!tenant) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Tenant not found");
   }
 
-  const subscription = await prisma.merchantSubscription.findFirst({
-    where: { merchantId }
+  const subscription = await prisma.tenantSubscription.findFirst({
+    where: { tenantId },
   });
 
   if (!subscription) {
     throw new AppError(
       StatusCodes.NOT_FOUND,
-      "Subscription not found for this merchant"
+      "Subscription not found for this tenant"
     );
   }
 

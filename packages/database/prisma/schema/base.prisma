@@ -1,0 +1,10 @@
+// Prisma Schema for FrameX Multi-Tenant System
+// Base configuration - generator and datasource
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}

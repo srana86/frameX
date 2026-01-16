@@ -25,9 +25,9 @@ app.use(cookieParser());
 app.use(
   cors({
     origin: [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://localhost:5173",
+      "http://localhost", // nginx (dashboard)
+      "http://localhost:3000", // direct store
+      "http://localhost:3001", // direct dashboard
       process.env.DASHBOARD_URL,
     ].filter((origin): origin is string => typeof origin === "string"),
     credentials: true,
@@ -40,8 +40,8 @@ app.all("/api/auth/*", toNodeHandler(auth));
 // Application routes
 app.use("/api/v1", router);
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello from boiler plate code");
+app.get("/api", (req: Request, res: Response) => {
+  res.send("Framex Tech API is running");
 });
 
 // This is connected with the globalErrorhandler.ts file at the middleware folder.

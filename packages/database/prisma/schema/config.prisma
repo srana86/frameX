@@ -1,0 +1,160 @@
+// ============================================================
+// CONFIG MODELS
+// ============================================================
+
+// BrandConfig - Merged with TenantSettings (single source of truth for store branding)
+model BrandConfig {
+  id             String   @id @default(uuid())
+  tenantId       String   @unique
+  name           String
+  logo           String?
+  favicon        String?
+  primaryColor   String?
+  secondaryColor String?
+  currencyIso    String   @default("BDT")
+  currencySymbol String   @default("৳")
+  // Merged from TenantSettings
+  timezone       String   @default("UTC")
+  language       String   @default("en")
+  theme          Json? // {primaryColor, secondaryColor, fontFamily, etc}
+  socialLinks    Json? // {facebook, instagram, twitter, youtube}
+  contactInfo    Json? // {email, phone, address, supportEmail}
+  orderEnabled   Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model DeliveryServiceConfig {
+  id                          String   @id @default(uuid())
+  tenantId                    String   @unique
+  defaultDeliveryCharge       Decimal  @db.Decimal(10, 2)
+  enableCODForDefault         Boolean  @default(true)
+  deliveryChargeNotRefundable Boolean  @default(false)
+  weightBasedCharges          Json? // [{weight, extraCharge}]
+  deliveryOption              String   @default("districts")
+  specificDeliveryCharges     Json? // [{location, charge}]
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+}
+
+model CourierServicesConfig {
+  id        String   @id @default(uuid())
+  tenantId  String   @unique
+  services  Json? // [{id, name, enabled, logo, credentials}]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SSLCommerzConfig {
+  id            String   @id @default(uuid())
+  tenantId      String   @unique
+  enabled       Boolean  @default(false)
+  storeId       String?
+  storePassword String?
+  isLive        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model OAuthConfig {
+  id        String   @id @default(uuid())
+  tenantId  String   @unique
+  google    Json? // {enabled, clientId, clientSecret}
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdsConfig {
+  id               String   @id @default(uuid())
+  tenantId         String   @unique
+  metaPixel        Json? // {enabled, pixelId, serverSideTracking}
+  googleTagManager Json? // {enabled, containerId}
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// ============================================================
+// EMAIL SYSTEM
+// ============================================================
+
+model EmailTemplate {
+  id              String     @id @default(uuid())
+  tenantId        String
+  event           EmailEvent
+  name            String
+  description     String?
+  subject         String
+  fromName        String?
+  fromEmail       String?
+  replyTo         String?
+  previewText     String?
+  design          Json?
+  html            String?    @db.Text
+  variables       String[]
+  enabled         Boolean    @default(true)
+  testRecipient   String?
+  lastPublishedAt DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@unique([tenantId, event])
+  @@index([tenantId])
+}
+
+model EmailProviderSettings {
+  id                 String   @id @default(uuid())
+  tenantId           String   @unique
+  defaultProviderId  String?
+  fallbackProviderId String?
+  providers          Json? // Array of provider configs
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+// ============================================================
+// BUDGET & INVESTMENT
+// ============================================================
+
+model Budget {
+  id        String    @id @default(uuid())
+  tenantId  String
+  name      String
+  category  String?
+  amount    Decimal   @db.Decimal(10, 2)
+  spent     Decimal   @default(0) @db.Decimal(10, 2)
+  period    String
+  startDate DateTime?
+  endDate   DateTime?
+  isActive  Boolean   @default(true)
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([tenantId])
+}
+
+model Investment {
+  id        String   @id @default(uuid())
+  tenantId  String
+  key       String
+  value     Decimal  @db.Decimal(10, 2)
+  category  String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+model Settings {
+  id        String   @id @default(uuid())
+  tenantId  String?
+  key       String
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key])
+}

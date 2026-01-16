@@ -1,15 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { prisma, PrismaQueryBuilder, AffiliateStatus, AffiliateCommissionStatus, AffiliateWithdrawalStatus, Decimal } from "@framex/database";
+import { prisma, PrismaQueryBuilder, Decimal } from "@framex/database";
 import AppError from "../../errors/AppError";
 import { StatusCodes } from "http-status-codes";
-import { UserServices } from "../User/user.service";
 
-import { calculateAffiliateLevel, getNextLevelProgress } from "./affiliate.helper";
+import {
+  calculateAffiliateLevel,
+  getNextLevelProgress,
+} from "./affiliate.helper";
 
 // Generate promo code helper
-function generatePromoCode(userId: string, fullName?: string): string {
-  const namePart = fullName
-    ? fullName.replace(/\s+/g, "").substring(0, 3).toUpperCase()
+function generatePromoCode(userId: string, name?: string): string {
+  const namePart = name
+    ? name.replace(/\s+/g, "").substring(0, 3).toUpperCase()
     : "AFF";
   const idPart = userId.slice(-6).toUpperCase();
   const randomPart = Math.random().toString(36).substring(2, 5).toUpperCase();
@@ -77,16 +79,7 @@ const getMyAffiliateFromDB = async (tenantId: string, userId: string) => {
       affiliateId: affiliate.id,
       status: "APPROVED",
     },
-    include: {
-      // In Prisma we can't easily join to verify order status in one go unless we check order status in commission or fetch orders
-      // Assuming commission status is kept in sync with order status via webhooks/events
-    }
   });
-
-  // Verify related orders are delivered
-  // This step simulates the Mongoose logic but purely relies on commission status being correct
-  // A robust system would update commission status when order is delivered.
-  // For now, let's assume 'APPROVED' commission means order is delivered/valid.
 
   const deliveredEarnings = approvedCommissions.reduce(
     (sum, c) => sum + Number(c.commissionAmount),
@@ -99,7 +92,9 @@ const getMyAffiliateFromDB = async (tenantId: string, userId: string) => {
   );
 
   // Update if needed
-  if (Math.abs(Number(affiliate.availableBalance) - actualAvailableBalance) > 0.01) {
+  if (
+    Math.abs(Number(affiliate.availableBalance) - actualAvailableBalance) > 0.01
+  ) {
     await prisma.affiliate.update({
       where: { id: affiliate.id },
       data: {
@@ -130,7 +125,9 @@ const createMyAffiliateFromDB = async (tenantId: string, userId: string) => {
     );
   }
 
-  const existing = await prisma.affiliate.findFirst({ where: { tenantId, userId } });
+  const existing = await prisma.affiliate.findFirst({
+    where: { tenantId, userId },
+  });
   if (existing) {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
@@ -138,16 +135,21 @@ const createMyAffiliateFromDB = async (tenantId: string, userId: string) => {
     );
   }
 
-  const user = await prisma.storeUser.findFirst({ where: { id: userId, tenantId } });
+  // Now using BetterAuth User model instead of StoreUser
+  const user = await prisma.user.findFirst({ where: { id: userId, tenantId } });
   if (!user) {
     throw new AppError(StatusCodes.NOT_FOUND, "User not found");
   }
 
   // Generate unique promo code
-  let promoCode = generatePromoCode(userId, user.fullName);
+  let promoCode = generatePromoCode(userId, user.name);
   let attempts = 0;
-  while (await prisma.affiliate.findUnique({ where: { tenantId_promoCode: { tenantId, promoCode } } })) {
-    promoCode = generatePromoCode(userId, user.fullName);
+  while (
+    await prisma.affiliate.findUnique({
+      where: { tenantId_promoCode: { tenantId, promoCode } },
+    })
+  ) {
+    promoCode = generatePromoCode(userId, user.name);
     attempts++;
     if (attempts > 10) {
       promoCode = `AFF${Date.now().toString(36).toUpperCase()}`;
@@ -174,7 +176,10 @@ const createMyAffiliateFromDB = async (tenantId: string, userId: string) => {
 };
 
 // Get all affiliates (admin)
-const getAllAffiliatesFromDB = async (tenantId: string, query: Record<string, unknown>) => {
+const getAllAffiliatesFromDB = async (
+  tenantId: string,
+  query: Record<string, unknown>
+) => {
   const builder = new PrismaQueryBuilder({
     model: prisma.affiliate,
     query,
@@ -189,12 +194,12 @@ const getAllAffiliatesFromDB = async (tenantId: string, query: Record<string, un
     .paginate()
     .execute();
 
-  // Enrich with user data and commission stats
+  // Enrich with user data and commission stats (using BetterAuth User model)
   const enrichedAffiliates = await Promise.all(
     affiliates.map(async (affiliate) => {
-      const user = await prisma.storeUser.findUnique({
+      const user = await prisma.user.findUnique({
         where: { id: affiliate.userId },
-        select: { id: true, fullName: true, email: true, phone: true }
+        select: { id: true, name: true, email: true, phone: true },
       });
 
       const totalCommissions = await prisma.affiliateCommission.count({
@@ -230,7 +235,9 @@ const getCommissionsFromDB = async (
   let finalAffiliateId = affiliateId;
 
   if (userId && !affiliateId) {
-    const affiliate = await prisma.affiliate.findFirst({ where: { tenantId, userId } });
+    const affiliate = await prisma.affiliate.findFirst({
+      where: { tenantId, userId },
+    });
     if (!affiliate) {
       return { meta: { page: 1, limit: 50, total: 0, totalPage: 0 }, data: [] };
     }
@@ -257,19 +264,19 @@ const getCommissionsFromDB = async (
     commissions.map(async (commission) => {
       const order = await prisma.order.findUnique({
         where: { id: commission.orderId },
-        include: { customer: true }
+        include: { customer: true },
       });
 
       return {
         ...commission,
         order: order
           ? {
-            id: order.id,
-            total: order.total,
-            status: order.status,
-            createdAt: order.createdAt,
-            customer: order.customer,
-          }
+              id: order.id,
+              total: order.total,
+              status: order.status,
+              createdAt: order.createdAt,
+              customer: order.customer,
+            }
           : null,
       };
     })
@@ -280,7 +287,9 @@ const getCommissionsFromDB = async (
 
 // Get affiliate progress
 const getAffiliateProgressFromDB = async (tenantId: string, userId: string) => {
-  const affiliate = await prisma.affiliate.findFirst({ where: { tenantId, userId } });
+  const affiliate = await prisma.affiliate.findFirst({
+    where: { tenantId, userId },
+  });
   if (!affiliate) {
     throw new AppError(StatusCodes.NOT_FOUND, "Affiliate not found");
   }
@@ -288,8 +297,6 @@ const getAffiliateProgressFromDB = async (tenantId: string, userId: string) => {
   const settings = await getAffiliateSettingsFromDB(tenantId);
   const deliveredOrders = affiliate.deliveredOrders || 0;
 
-  // Cast settings to any to interact with helper which expects specific interface
-  // Ideally helpers should be typed with Prisma types
   const settingsAny = settings as any;
   const actualLevel = calculateAffiliateLevel(deliveredOrders, settingsAny);
 
@@ -322,7 +329,9 @@ const getWithdrawalsFromDB = async (
   let finalAffiliateId = affiliateId;
 
   if (user.role !== "MERCHANT" && user.role !== "ADMIN" && !affiliateId) {
-    const affiliate = await prisma.affiliate.findFirst({ where: { tenantId, userId: user.id } });
+    const affiliate = await prisma.affiliate.findFirst({
+      where: { tenantId, userId: user.id },
+    });
     if (!affiliate) {
       return [];
     }
@@ -340,31 +349,40 @@ const getWithdrawalsFromDB = async (
   const withdrawals = await prisma.affiliateWithdrawal.findMany({
     where,
     orderBy: { requestedAt: "desc" },
-    include: { affiliate: true }
+    include: { affiliate: true },
   });
 
-  return Promise.all(withdrawals.map(async (w) => {
-    let user = null;
-    if (w.affiliate) {
-      user = await prisma.storeUser.findUnique({
-        where: { id: w.affiliate.userId },
-        select: { fullName: true, email: true, phone: true }
-      });
-    }
-
-    return {
-      ...w,
-      affiliate: {
-        ...w.affiliate,
-        user
+  // Using BetterAuth User model
+  return Promise.all(
+    withdrawals.map(async (w) => {
+      let user = null;
+      if (w.affiliate) {
+        user = await prisma.user.findUnique({
+          where: { id: w.affiliate.userId },
+          select: { name: true, email: true, phone: true },
+        });
       }
-    };
-  }));
+
+      return {
+        ...w,
+        affiliate: {
+          ...w.affiliate,
+          user,
+        },
+      };
+    })
+  );
 };
 
 // Create withdrawal request
-const createWithdrawalFromDB = async (tenantId: string, userId: string, payload: any) => {
-  const affiliate = await prisma.affiliate.findFirst({ where: { tenantId, userId } });
+const createWithdrawalFromDB = async (
+  tenantId: string,
+  userId: string,
+  payload: any
+) => {
+  const affiliate = await prisma.affiliate.findFirst({
+    where: { tenantId, userId },
+  });
   if (!affiliate) {
     throw new AppError(StatusCodes.NOT_FOUND, "Affiliate account not found");
   }
@@ -372,16 +390,20 @@ const createWithdrawalFromDB = async (tenantId: string, userId: string, payload:
   const { amount, paymentMethod, paymentDetails } = payload;
 
   if (!amount || amount <= 0) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Amount must be greater than 0");
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "Amount must be greater than 0"
+    );
   }
-
-  // ... validation logic similar to Mongoose version (omitted for brevity but should be here) ...
 
   const settings = await getAffiliateSettingsFromDB(tenantId);
   const minAmount = Number(settings.minWithdrawalAmount);
 
   if (amount < minAmount) {
-    throw new AppError(StatusCodes.BAD_REQUEST, `Minimum withdrawal is ${minAmount}`);
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      `Minimum withdrawal is ${minAmount}`
+    );
   }
 
   const availableBalance = Number(affiliate.availableBalance);
@@ -392,13 +414,16 @@ const createWithdrawalFromDB = async (tenantId: string, userId: string, payload:
 
   const pendingWithdrawalsSum = await prisma.affiliateWithdrawal.aggregate({
     where: { tenantId, affiliateId: affiliate.id, status: "PENDING" },
-    _sum: { amount: true }
+    _sum: { amount: true },
   });
 
   const pendingAmount = Number(pendingWithdrawalsSum._sum.amount || 0);
 
   if (pendingAmount + amount > availableBalance) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Insufficient balance (considering pending withdrawals)");
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "Insufficient balance (considering pending withdrawals)"
+    );
   }
 
   // Transaction for safe deduction
@@ -412,14 +437,14 @@ const createWithdrawalFromDB = async (tenantId: string, userId: string, payload:
         paymentMethod,
         paymentDetails,
         requestedAt: new Date(),
-      }
+      },
     });
 
     await tx.affiliate.update({
       where: { id: affiliate.id },
       data: {
-        availableBalance: { decrement: new Decimal(amount) }
-      }
+        availableBalance: { decrement: new Decimal(amount) },
+      },
     });
 
     return withdrawal;
@@ -430,11 +455,13 @@ const createWithdrawalFromDB = async (tenantId: string, userId: string, payload:
 const updateWithdrawalFromDB = async (
   tenantId: string,
   withdrawalId: string,
-  newStatus: AffiliateWithdrawalStatus,
+  newStatus: "PENDING" | "APPROVED" | "REJECTED" | "COMPLETED",
   processedBy: string,
   notes?: string
 ) => {
-  const withdrawal = await prisma.affiliateWithdrawal.findUnique({ where: { id: withdrawalId } });
+  const withdrawal = await prisma.affiliateWithdrawal.findUnique({
+    where: { id: withdrawalId },
+  });
   if (!withdrawal) {
     throw new AppError(StatusCodes.NOT_FOUND, "Withdrawal not found");
   }
@@ -452,19 +479,19 @@ const updateWithdrawalFromDB = async (
   return prisma.$transaction(async (tx) => {
     await tx.affiliateWithdrawal.update({
       where: { id: withdrawalId },
-      data: updateData
+      data: updateData,
     });
 
     if (newStatus === "COMPLETED") {
       await tx.affiliate.update({
         where: { id: withdrawal.affiliateId },
-        data: { totalWithdrawn: { increment: withdrawal.amount } }
+        data: { totalWithdrawn: { increment: withdrawal.amount } },
       });
     } else if (newStatus === "REJECTED" && withdrawal.status === "PENDING") {
       // Refund balance
       await tx.affiliate.update({
         where: { id: withdrawal.affiliateId },
-        data: { availableBalance: { increment: withdrawal.amount } }
+        data: { availableBalance: { increment: withdrawal.amount } },
       });
     }
 
@@ -473,28 +500,37 @@ const updateWithdrawalFromDB = async (
 };
 
 // Update settings
-const updateAffiliateSettingsFromDB = async (tenantId: string, payload: any) => {
+const updateAffiliateSettingsFromDB = async (
+  tenantId: string,
+  payload: any
+) => {
   return prisma.affiliateSettings.upsert({
     where: { tenantId },
     update: payload,
     create: {
       tenantId,
       ...payload,
-      id: undefined // let prisma generate
-    }
+      id: undefined, // let prisma generate
+    },
   });
 };
 
 // Assign coupon
-const assignCouponToAffiliateFromDB = async (tenantId: string, affiliateId: string, couponId: string) => {
-  const affiliate = await prisma.affiliate.findUnique({ where: { id: affiliateId } });
+const assignCouponToAffiliateFromDB = async (
+  tenantId: string,
+  affiliateId: string,
+  couponId: string
+) => {
+  const affiliate = await prisma.affiliate.findUnique({
+    where: { id: affiliateId },
+  });
   if (!affiliate || affiliate.tenantId !== tenantId) {
     throw new AppError(StatusCodes.NOT_FOUND, "Affiliate not found");
   }
 
   return prisma.affiliate.update({
     where: { id: affiliateId },
-    data: { assignedCouponId: couponId }
+    data: { assignedCouponId: couponId },
   });
 };
 
@@ -503,8 +539,8 @@ const getAffiliateByPromoCodeFromDB = async (promoCode: string) => {
   return prisma.affiliate.findFirst({
     where: {
       promoCode: promoCode.toUpperCase(),
-      status: "ACTIVE"
-    }
+      status: "ACTIVE",
+    },
   });
 };
 

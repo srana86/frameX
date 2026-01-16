@@ -1,0 +1,210 @@
+// ============================================================
+// ENUMS
+// ============================================================
+
+// Tenant & Domain Status
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  TRIAL
+  INACTIVE
+}
+
+enum SSLStatus {
+  PENDING // Not yet issued
+  ISSUING // Currently being issued
+  ACTIVE // Valid certificate installed
+  EXPIRING_SOON // Less than 30 days to expiry
+  EXPIRED // Certificate has expired
+  RENEWAL_FAILED // Renewal attempt(s) failed
+  REVOKED // Certificate was revoked
+  FAILED // Legacy - issuance failed
+}
+
+enum DomainStatus {
+  PENDING_VERIFICATION // Waiting for DNS verification
+  VERIFICATION_FAILED // DNS check failed
+  VERIFIED // DNS verified, ready for SSL issuance
+  PROVISIONING // SSL certificate being issued
+  ACTIVE // Fully operational with valid SSL
+  SUSPENDED // Temporarily disabled by admin
+  DELETED // Soft deleted, pending cleanup
+}
+
+enum SSLProvider {
+  LETS_ENCRYPT // Free ACME certificates (default)
+  CLOUDFLARE // Cloudflare origin certificates
+  CUSTOM // User-provided certificate
+}
+
+enum DomainVerificationMethod {
+  DNS_TXT // TXT record verification (recommended)
+  DNS_CNAME // CNAME record verification
+  HTTP_FILE // HTTP file challenge (automatic with ACME)
+}
+
+enum DomainAuditAction {
+  TENANT_CREATED
+  TENANT_UPDATED
+  TENANT_DELETED
+  TENANT_ACTIVATED
+  TENANT_SUSPENDED
+  DOMAIN_CREATED
+  DOMAIN_UPDATED
+  DOMAIN_DELETED
+  DOMAIN_VERIFIED
+  DOMAIN_VERIFICATION_FAILED
+  CERT_ISSUED
+  CERT_RENEWED
+  CERT_RENEWAL_FAILED
+  CERT_REVOKED
+  CERT_EXPIRED
+  NGINX_CONFIG_CREATED
+  NGINX_CONFIG_UPDATED
+  NGINX_CONFIG_DELETED
+  NGINX_RELOADED
+}
+
+// User & Auth (BetterAuth)
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  STAFF
+  CUSTOMER
+  MERCHANT
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+// Products
+enum ProductStatus {
+  ACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+// Orders & Payments
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum InventoryTransactionType {
+  ORDER
+  RESTOCK
+  ADJUSTMENT
+  RETURN
+}
+
+// Affiliate System
+enum AffiliateStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum AffiliateCommissionStatus {
+  PENDING
+  APPROVED
+  CANCELLED
+}
+
+enum AffiliateWithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+// Notifications
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  ORDER
+}
+
+// Subscriptions & Billing
+enum BillingCycle {
+  MONTHLY
+  SEMI_ANNUAL
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIAL
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+  GRACE_PERIOD
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+// Platform
+enum DeploymentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum FeatureRequestStatus {
+  PENDING
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
+enum CheckoutStatus {
+  PENDING
+  COMPLETED
+  EXPIRED
+  CANCELLED
+}
+
+// Email System
+enum EmailEvent {
+  ORDER_CONFIRMATION
+  PAYMENT_CONFIRMATION
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  ORDER_CANCELLED
+  ORDER_REFUNDED
+  ABANDONED_CART
+  PASSWORD_RESET
+  ACCOUNT_WELCOME
+  ACCOUNT_VERIFICATION
+  REVIEW_REQUEST
+  LOW_STOCK_ALERT
+  ADMIN_NEW_ORDER_ALERT
+}

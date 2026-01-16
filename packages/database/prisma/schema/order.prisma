@@ -1,0 +1,132 @@
+// ============================================================
+// CUSTOMERS & ORDERS
+// ============================================================
+
+model Customer {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  phone     String
+  email     String?
+  address   String?
+  city      String?
+  notes     String?
+  blocked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@unique([tenantId, phone])
+  @@index([tenantId])
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  tenantId        String
+  customerId      String?
+  orderNumber     String
+  status          OrderStatus @default(PENDING)
+  subtotal        Decimal     @db.Decimal(10, 2)
+  discount        Decimal     @default(0) @db.Decimal(10, 2)
+  deliveryFee     Decimal     @default(0) @db.Decimal(10, 2)
+  total           Decimal     @db.Decimal(10, 2)
+  notes           String?
+  deliveryAddress String?
+  couponCode      String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  isDeleted       Boolean     @default(false)
+
+  // Courier Info
+  courierServiceId String?
+  consignmentId    String?
+  trackingNumber   String?
+  courierStatus    String?
+  courierMetadata  Json?
+
+  tenant   Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items    OrderItem[]
+  payment  Payment?
+
+  @@unique([tenantId, orderNumber])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt(sort: Desc)])
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  name      String // Snapshot of product name
+  price     Decimal @db.Decimal(10, 2)
+  quantity  Int
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+}
+
+// ============================================================
+// PAYMENTS & COUPONS
+// ============================================================
+
+model Payment {
+  id            String        @id @default(uuid())
+  tenantId      String
+  orderId       String        @unique
+  amount        Decimal       @db.Decimal(10, 2)
+  status        PaymentStatus @default(PENDING)
+  method        String?
+  transactionId String?
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+model Coupon {
+  id            String       @id @default(uuid())
+  tenantId      String
+  code          String
+  discountType  DiscountType @default(PERCENTAGE)
+  discountValue Decimal      @db.Decimal(10, 2)
+  minOrderValue Decimal?     @db.Decimal(10, 2)
+  maxUses       Int?
+  usedCount     Int          @default(0)
+  expiresAt     DateTime?
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  couponUsages CouponUsage[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, isActive])
+}
+
+model CouponUsage {
+  id              String   @id @default(uuid())
+  tenantId        String
+  couponId        String
+  couponCode      String
+  orderId         String
+  customerId      String?
+  customerEmail   String?
+  customerPhone   String?
+  discountApplied Decimal  @db.Decimal(10, 2)
+  orderTotal      Decimal  @db.Decimal(10, 2)
+  createdAt       DateTime @default(now())
+
+  coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([couponId])
+  @@index([orderId])
+}

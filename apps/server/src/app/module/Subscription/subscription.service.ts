@@ -28,17 +28,18 @@ function mapBillingCycle(months: number): BillingCycle {
   return "YEARLY";
 }
 
+// Using TenantSubscription instead of MerchantSubscription
 const getAllSubscriptions = async () => {
-  const subscriptions = await prisma.merchantSubscription.findMany({
+  const subscriptions = await prisma.tenantSubscription.findMany({
     include: { plan: true },
     orderBy: { createdAt: "desc" },
   });
 
-  const merchants = await prisma.merchant.findMany();
-  const merchantMap = new Map(merchants.map((m) => [m.id, m]));
+  const tenants = await prisma.tenant.findMany();
+  const tenantMap = new Map(tenants.map((t) => [t.id, t]));
 
   return subscriptions.map((sub) => {
-    const merchant = merchantMap.get(sub.merchantId);
+    const tenant = tenantMap.get(sub.tenantId);
     let dynamicStatus: string = sub.status;
 
     if (sub.status === "ACTIVE" && sub.currentPeriodEnd) {
@@ -53,13 +54,13 @@ const getAllSubscriptions = async () => {
       isExpiringSoon: sub.currentPeriodEnd ? isExpiringSoon(sub.currentPeriodEnd) : false,
       isPastDue: sub.currentPeriodEnd ? isPastDue(sub.currentPeriodEnd) : false,
       daysUntilExpiry: sub.currentPeriodEnd ? getDaysUntilExpiry(sub.currentPeriodEnd) : 0,
-      merchant: merchant ? { name: merchant.name, email: merchant.email } : null,
+      merchant: tenant ? { name: tenant.name, email: tenant.email } : null, // Keep 'merchant' key for backward compat
     };
   });
 };
 
 const getSubscriptionById = async (id: string) => {
-  const subscription = await prisma.merchantSubscription.findUnique({
+  const subscription = await prisma.tenantSubscription.findUnique({
     where: { id },
     include: { plan: true },
   });
@@ -72,7 +73,7 @@ const getSubscriptionById = async (id: string) => {
 };
 
 const createSubscription = async (payload: {
-  merchantId: string;
+  tenantId: string;
   planId: string;
   planName?: string;
   billingCycleMonths?: number;
@@ -83,8 +84,8 @@ const createSubscription = async (payload: {
   currentPeriodEnd?: string;
   autoRenew?: boolean;
 }) => {
-  const existing = await prisma.merchantSubscription.findFirst({
-    where: { merchantId: payload.merchantId },
+  const existing = await prisma.tenantSubscription.findFirst({
+    where: { tenantId: payload.tenantId },
   });
 
   const now = new Date();
@@ -97,7 +98,7 @@ const createSubscription = async (payload: {
 
   if (existing) {
     // Update existing subscription
-    const updated = await prisma.merchantSubscription.update({
+    const updated = await prisma.tenantSubscription.update({
       where: { id: existing.id },
       data: {
         planId: payload.planId,
@@ -121,9 +122,9 @@ const createSubscription = async (payload: {
   }
 
   // Create new subscription
-  const subscription = await prisma.merchantSubscription.create({
+  const subscription = await prisma.tenantSubscription.create({
     data: {
-      merchantId: payload.merchantId,
+      tenantId: payload.tenantId,
       planId: payload.planId,
       planName: payload.planName,
       billingCycleMonths,
@@ -147,9 +148,10 @@ const createSubscription = async (payload: {
       action: "subscription_created",
       resource: "subscription",
       resourceId: subscription.id,
+      tenantId: subscription.tenantId,
       details: {
         subscriptionId: subscription.id,
-        merchantId: subscription.merchantId,
+        tenantId: subscription.tenantId,
         planId: subscription.planId,
         planName: subscription.planName,
         billingCycleMonths,
@@ -164,7 +166,7 @@ const createSubscription = async (payload: {
 const updateSubscription = async (id: string, payload: Record<string, any>) => {
   const { plan, ...updateData } = payload;
 
-  const subscription = await prisma.merchantSubscription.update({
+  const subscription = await prisma.tenantSubscription.update({
     where: { id },
     data: updateData,
     include: { plan: true },
@@ -174,7 +176,7 @@ const updateSubscription = async (id: string, payload: Record<string, any>) => {
 };
 
 const deleteSubscription = async (id: string) => {
-  await prisma.merchantSubscription.delete({ where: { id } });
+  await prisma.tenantSubscription.delete({ where: { id } });
   return { success: true, message: "Subscription deleted successfully" };
 };
 
@@ -183,7 +185,7 @@ const getExpiringSubscriptions = async (daysAhead = 7) => {
   const futureDate = new Date(now);
   futureDate.setDate(futureDate.getDate() + daysAhead);
 
-  const subscriptions = await prisma.merchantSubscription.findMany({
+  const subscriptions = await prisma.tenantSubscription.findMany({
     where: {
       status: "ACTIVE",
       currentPeriodEnd: {
@@ -195,18 +197,18 @@ const getExpiringSubscriptions = async (daysAhead = 7) => {
     orderBy: { currentPeriodEnd: "asc" },
   });
 
-  const merchantIds = subscriptions.map((s) => s.merchantId);
-  const merchants = await prisma.merchant.findMany({
-    where: { id: { in: merchantIds } },
+  const tenantIds = subscriptions.map((s) => s.tenantId);
+  const tenants = await prisma.tenant.findMany({
+    where: { id: { in: tenantIds } },
   });
-  const merchantMap = new Map(merchants.map((m) => [m.id, m]));
+  const tenantMap = new Map(tenants.map((t) => [t.id, t]));
 
   return subscriptions.map((sub) => {
-    const merchant = merchantMap.get(sub.merchantId);
+    const tenant = tenantMap.get(sub.tenantId);
     return {
       ...sub,
       daysUntilExpiry: getDaysUntilExpiry(sub.currentPeriodEnd),
-      merchant: merchant ? { name: merchant.name, email: merchant.email } : null,
+      merchant: tenant ? { name: tenant.name, email: tenant.email } : null, // Keep 'merchant' key for backward compat
     };
   });
 };
@@ -216,7 +218,7 @@ const renewSubscription = async (
   billingCycleMonths?: number,
   paymentAmount?: number
 ) => {
-  const subscription = await prisma.merchantSubscription.findUnique({
+  const subscription = await prisma.tenantSubscription.findUnique({
     where: { id: subscriptionId },
   });
 
@@ -230,7 +232,7 @@ const renewSubscription = async (
   const cycleMonths = billingCycleMonths || subscription.billingCycleMonths || 1;
   const newPeriodEnd = calculatePeriodEnd(newPeriodStart, cycleMonths);
 
-  await prisma.merchantSubscription.update({
+  await prisma.tenantSubscription.update({
     where: { id: subscriptionId },
     data: {
       status: "ACTIVE",
@@ -249,9 +251,10 @@ const renewSubscription = async (
       action: "subscription_renewed",
       resource: "subscription",
       resourceId: subscriptionId,
+      tenantId: subscription.tenantId,
       details: {
         subscriptionId,
-        merchantId: subscription.merchantId,
+        tenantId: subscription.tenantId,
         billingCycleMonths: cycleMonths,
         newPeriodEnd: newPeriodEnd.toISOString(),
         paymentAmount,

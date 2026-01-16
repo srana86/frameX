@@ -1,0 +1,62 @@
+// ============================================================
+// SUBSCRIPTION & PLANS
+// ============================================================
+
+model SubscriptionPlan {
+  id                 String       @id @default(uuid())
+  name               String
+  description        String?
+  basePrice          Decimal      @db.Decimal(10, 2)
+  price              Decimal      @db.Decimal(10, 2)
+  billingCycle       BillingCycle
+  billingCycleMonths Int
+  features           Json?
+  featuresList       String[]
+  isActive           Boolean      @default(true)
+  isPopular          Boolean      @default(false)
+  sortOrder          Int          @default(0)
+  buttonText         String       @default("Get Started")
+  buttonVariant      String       @default("outline")
+  iconType           String       @default("star")
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  subscriptions TenantSubscription[]
+
+  @@index([isActive])
+  @@index([billingCycleMonths])
+}
+
+// Renamed from MerchantSubscription to TenantSubscription
+model TenantSubscription {
+  id                 String             @id @default(uuid())
+  tenantId           String
+  planId             String
+  planName           String?
+  status             SubscriptionStatus
+  billingCycle       BillingCycle
+  billingCycleMonths Int
+  amount             Decimal            @db.Decimal(10, 2)
+  currency           String             @default("BDT")
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  nextBillingDate    DateTime?
+  trialEndsAt        DateTime?
+  gracePeriodEndsAt  DateTime?
+  cancelAtPeriodEnd  Boolean            @default(false)
+  cancelledAt        DateTime?
+  autoRenew          Boolean            @default(true)
+  totalPaid          Decimal            @default(0) @db.Decimal(10, 2)
+  renewalCount       Int                @default(0)
+  paymentMethodId    String?
+  lastPaymentDate    DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  plan   SubscriptionPlan @relation(fields: [planId], references: [id])
+  tenant Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([planId])
+  @@index([status])
+}

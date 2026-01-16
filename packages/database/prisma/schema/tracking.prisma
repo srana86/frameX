@@ -1,0 +1,96 @@
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id        String           @id @default(uuid())
+  tenantId  String
+  userId    String
+  title     String
+  message   String
+  type      NotificationType @default(INFO)
+  read      Boolean          @default(false)
+  link      String?
+  data      Json?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([tenantId, userId])
+  @@index([read])
+}
+
+// ============================================================
+// VISITS & TRACKING
+// ============================================================
+
+model Visit {
+  id            String   @id @default(uuid())
+  tenantId      String
+  ipAddress     String
+  path          String   @default("/")
+  referrer      String?
+  userAgent     String?
+  visitCount    Int      @default(1)
+  ipGeolocation Json?
+  lastVisitedAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([ipAddress])
+  @@index([path])
+}
+
+model FBEvent {
+  id        String   @id @default(uuid())
+  tenantId  String
+  eventName String
+  eventId   String?  @unique
+  eventData Json?
+  userData  Json?
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([eventName])
+  @@index([timestamp])
+}
+
+// ============================================================
+// PRODUCT VIEWERS
+// ============================================================
+
+model ProductViewer {
+  id           String   @id @default(uuid())
+  tenantId     String
+  productId    String
+  sessionId    String
+  ipAddress    String?
+  userAgent    String?
+  viewDuration Int? // seconds
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([productId])
+  @@index([sessionId])
+}
+
+// ============================================================
+// BLOCKED CUSTOMERS
+// ============================================================
+
+model BlockedCustomer {
+  id        String   @id @default(uuid())
+  tenantId  String
+  phone     String?
+  email     String?
+  reason    String?
+  blockedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([phone])
+  @@index([email])
+}

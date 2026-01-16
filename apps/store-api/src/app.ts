@@ -50,7 +50,7 @@ app.use(cookieParser());
 // Application routes
 app.use("/api/v1", router);
 
-app.get("/", (req: Request, res: Response) => {
+app.get("/api", (req: Request, res: Response) => {
   res.send("Hello from Store API");
 });
 

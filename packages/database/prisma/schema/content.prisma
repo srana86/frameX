@@ -1,0 +1,94 @@
+// ============================================================
+// CONTENT (Pages, Hero Slides, Reviews)
+// ============================================================
+
+model Page {
+  id             String   @id @default(uuid())
+  tenantId       String
+  slug           String
+  title          String
+  content        String?  @db.Text
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  pageCategoryId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pageCategory PageCategory? @relation(fields: [pageCategoryId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, isActive])
+}
+
+model PageCategory {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  slug      String
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pages  Page[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, isActive])
+}
+
+model HeroSlide {
+  id          String   @id @default(uuid())
+  tenantId    String
+  title       String?
+  subtitle    String?
+  image       String
+  mobileImage String?
+  link        String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, isActive])
+}
+
+model PromotionalBanner {
+  id        String   @id @default(uuid())
+  tenantId  String
+  title     String?
+  image     String?
+  link      String?
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  tenantId    String
+  productId   String
+  name        String
+  rating      Int
+  comment     String?
+  approved    Boolean  @default(false)
+  verified    Boolean  @default(false)
+  images      String[]
+  avatarColor String?
+  initials    String?
+  date        String?
+  createdAt   DateTime @default(now())
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, approved])
+  @@index([productId])
+}

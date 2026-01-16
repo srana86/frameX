@@ -12,9 +12,6 @@ import {
 } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { scrypt, randomBytes } from "crypto";
-import { promisify } from "util";
-
-const scryptAsync = promisify(scrypt);
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL,
@@ -23,12 +20,24 @@ const adapter = new PrismaPg({
 const prisma = new PrismaClient({ adapter });
 
 /**
- * Hash password using scrypt (same as BetterAuth default)
+ * Hash password using scrypt (BetterAuth compatible format)
+ * BetterAuth uses raw salt bytes for scrypt, then stores as hex
  */
-async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(16).toString("hex");
-  const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${salt}:${derivedKey.toString("hex")}`;
+function hashPassword(password: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const saltBuffer = randomBytes(16); // Raw bytes for scrypt
+    const saltHex = saltBuffer.toString("hex"); // Hex for storage
+    scrypt(
+      password,
+      saltBuffer,
+      64,
+      { N: 16384, r: 8, p: 1 },
+      (err, derivedKey) => {
+        if (err) reject(err);
+        else resolve(`${saltHex}:${derivedKey.toString("hex")}`);
+      }
+    );
+  });
 }
 
 async function main() {
@@ -100,18 +109,21 @@ async function main() {
   });
   console.log("✅ Domain created: demo.localhost");
 
-  // Create tenant settings
-  await prisma.tenantSettings.upsert({
+  // Create brand config (replaces TenantSettings)
+  await prisma.brandConfig.upsert({
     where: { tenantId: demoTenant.id },
     update: {},
     create: {
       tenantId: demoTenant.id,
-      brandName: "Demo Store",
-      currency: "USD",
+      name: "Demo Store",
+      currencyIso: "USD",
       currencySymbol: "$",
+      timezone: "UTC",
+      language: "en",
+      orderEnabled: true,
     },
   });
-  console.log("✅ Tenant settings created");
+  console.log("✅ Brand config created");
 
   // Create tenant admin
   const tenantAdmin = await prisma.user.upsert({

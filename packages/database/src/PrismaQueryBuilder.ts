@@ -124,10 +124,14 @@ export class PrismaQueryBuilder<T = any> {
       "sort",
       "sortBy",
       "sortOrder",
+      "order",
       "limit",
       "page",
       "fields",
       "enabled", // Legacy field - use isActive instead
+      "newest", // UI filter - not a DB field
+      "popular", // UI filter - not a DB field
+      "featured", // Handled separately
     ];
 
     excludedFields.forEach((field) => delete queryObj[field]);

@@ -1,0 +1,90 @@
+// ============================================================
+// PRODUCTS & CATEGORIES
+// ============================================================
+
+model Category {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  slug        String
+  description String?
+  image       String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, isActive])
+}
+
+model Product {
+  id           String        @id @default(uuid())
+  tenantId     String
+  categoryId   String?
+  name         String
+  slug         String
+  description  String?
+  price        Decimal       @db.Decimal(10, 2)
+  comparePrice Decimal?      @db.Decimal(10, 2)
+  images       String[]
+  status       ProductStatus @default(ACTIVE)
+  featured     Boolean       @default(false)
+  sortOrder    Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category              Category?              @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  inventory             Inventory?
+  orderItems            OrderItem[]
+  reviews               Review[]
+  inventoryTransactions InventoryTransaction[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@index([tenantId, categoryId])
+  @@index([tenantId, featured])
+}
+
+model Inventory {
+  id        String   @id @default(uuid())
+  tenantId  String
+  productId String   @unique
+  quantity  Int      @default(0)
+  lowStock  Int      @default(5)
+  updatedAt DateTime @updatedAt
+
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product               Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  inventoryTransactions InventoryTransaction[]
+
+  @@index([tenantId])
+}
+
+model InventoryTransaction {
+  id            String                   @id @default(uuid())
+  tenantId      String
+  inventoryId   String
+  productId     String
+  type          InventoryTransactionType
+  quantity      Int // Amount changed (+/-)
+  previousStock Int
+  newStock      Int
+  orderId       String?
+  notes         String?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  inventory Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([productId])
+  @@index([type])
+  @@index([createdAt])
+}

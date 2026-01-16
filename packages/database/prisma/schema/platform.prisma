@@ -1,0 +1,130 @@
+// ============================================================
+// PLATFORM MODELS (Dashboard/Server App)
+// ============================================================
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  tenantId   String?
+  userId     String?
+  action     String
+  resource   String
+  resourceId String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt(sort: Desc)])
+}
+
+model Invoice {
+  id              String        @id @default(uuid())
+  tenantId        String
+  subscriptionId  String?
+  invoiceNumber   String        @unique
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @default("BDT")
+  status          InvoiceStatus @default(PENDING)
+  dueDate         DateTime?
+  paidAt          DateTime?
+  paymentMethodId String?
+  items           Json? // [{description, amount}]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+model Sales {
+  id          String   @id @default(uuid())
+  tenantId    String
+  orderId     String?
+  amount      Decimal  @db.Decimal(10, 2)
+  productName String?
+  productId   String?
+  quantity    Int      @default(1)
+  saleDate    DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([saleDate])
+}
+
+model Deployment {
+  id            String           @id @default(uuid())
+  tenantId      String
+  templateId    String?
+  status        DeploymentStatus @default(PENDING)
+  domain        String?
+  deploymentUrl String?
+  logs          Json?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+model FeatureRequest {
+  id          String               @id @default(uuid())
+  tenantId    String?
+  userId      String?
+  title       String
+  description String?              @db.Text
+  status      FeatureRequestStatus @default(PENDING)
+  votes       Int                  @default(0)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([tenantId])
+}
+
+model DatabaseInfo {
+  id           String   @id @default(uuid())
+  tenantId     String   @unique
+  databaseName String
+  databaseUrl  String?
+  status       String   @default("active")
+  size         BigInt?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model Checkout {
+  id            String         @id @default(uuid())
+  tenantId      String
+  sessionId     String         @unique
+  amount        Decimal        @db.Decimal(10, 2)
+  currency      String         @default("BDT")
+  status        CheckoutStatus @default(PENDING)
+  items         Json?
+  customerId    String?
+  customerEmail String?
+  metadata      Json?
+  expiresAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+}

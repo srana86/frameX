@@ -1,6 +1,6 @@
 import { prisma, TenantStatus } from "@framex/database";
 
-export type IMerchant = {
+export type ITenant = {
   id: string;
   name: string;
   email: string;
@@ -9,42 +9,39 @@ export type IMerchant = {
   customDomain?: string | null;
   deploymentUrl?: string | null;
   subscriptionId?: string | null;
-  settings?: {
-    brandName?: string;
-    logo?: string;
-    theme?: { primaryColor?: string };
-    currency?: string;
-    timezone?: string;
-  } | null;
   createdAt: Date;
   updatedAt: Date;
 };
 
+// Get all tenants (was merchants)
 const getAllMerchants = async () => {
-  return prisma.merchant.findMany({
+  return prisma.tenant.findMany({
     orderBy: { createdAt: "desc" },
   });
 };
 
+// Get tenant by ID
 const getMerchantById = async (id: string) => {
-  return prisma.merchant.findUnique({
+  return prisma.tenant.findUnique({
     where: { id },
   });
 };
 
+// Get full tenant info with subscription, deployment, database
 const getMerchantFull = async (id: string) => {
-  const [merchant, subscription, deployment, database] = await Promise.all([
-    prisma.merchant.findUnique({ where: { id } }),
-    prisma.merchantSubscription.findFirst({ where: { merchantId: id } }),
-    prisma.deployment.findFirst({ where: { merchantId: id } }),
-    prisma.databaseInfo.findUnique({ where: { merchantId: id } }),
+  const [tenant, subscription, deployment, database] = await Promise.all([
+    prisma.tenant.findUnique({ where: { id } }),
+    prisma.tenantSubscription.findFirst({ where: { tenantId: id } }),
+    prisma.deployment.findFirst({ where: { tenantId: id } }),
+    prisma.databaseInfo.findUnique({ where: { tenantId: id } }),
   ]);
 
-  if (!merchant) {
-    throw new Error("Merchant not found");
+  if (!tenant) {
+    throw new Error("Tenant not found");
   }
 
-  let plan: Awaited<ReturnType<typeof prisma.subscriptionPlan.findUnique>> = null;
+  let plan: Awaited<ReturnType<typeof prisma.subscriptionPlan.findUnique>> =
+    null;
   if (subscription?.planId) {
     plan = await prisma.subscriptionPlan.findUnique({
       where: { id: subscription.planId },
@@ -52,26 +49,26 @@ const getMerchantFull = async (id: string) => {
   }
 
   return {
-    merchant,
+    merchant: tenant, // Keep 'merchant' key for backward compatibility with frontend
     subscription,
     plan,
     deployment: deployment
       ? {
-        ...deployment,
-        // Mask sensitive data
-      }
+          ...deployment,
+        }
       : null,
     database: database
       ? {
-        ...database,
-        databaseUrl: database.databaseUrl ? "***encrypted***" : undefined,
-      }
+          ...database,
+          databaseUrl: database.databaseUrl ? "***encrypted***" : undefined,
+        }
       : null,
   };
 };
 
-const createMerchant = async (payload: Partial<IMerchant>) => {
-  return prisma.merchant.create({
+// Create tenant (was merchant)
+const createMerchant = async (payload: Partial<ITenant>) => {
+  return prisma.tenant.create({
     data: {
       name: payload.name!,
       email: payload.email!,
@@ -80,33 +77,30 @@ const createMerchant = async (payload: Partial<IMerchant>) => {
       customDomain: payload.customDomain || null,
       deploymentUrl: payload.deploymentUrl || null,
       subscriptionId: payload.subscriptionId || null,
-      settings: payload.settings || {
-        brandName: payload.name,
-        currency: "USD",
-        timezone: "UTC",
-      },
     },
   });
 };
 
-const updateMerchant = async (id: string, payload: Partial<IMerchant>) => {
+// Update tenant
+const updateMerchant = async (id: string, payload: Partial<ITenant>) => {
   const { id: _, ...updateData } = payload as any;
 
-  const merchant = await prisma.merchant.update({
+  const tenant = await prisma.tenant.update({
     where: { id },
     data: updateData,
   });
 
-  if (!merchant) {
-    throw new Error("Merchant not found");
+  if (!tenant) {
+    throw new Error("Tenant not found");
   }
 
-  return merchant;
+  return tenant;
 };
 
+// Get tenant subscription
 const getMerchantSubscription = async (id: string) => {
-  const subscription = await prisma.merchantSubscription.findFirst({
-    where: { merchantId: id },
+  const subscription = await prisma.tenantSubscription.findFirst({
+    where: { tenantId: id },
     include: { plan: true },
   });
 
@@ -117,9 +111,10 @@ const getMerchantSubscription = async (id: string) => {
   return subscription;
 };
 
+// Get tenant deployment
 const getMerchantDeployment = async (id: string) => {
   const deployment = await prisma.deployment.findFirst({
-    where: { merchantId: id },
+    where: { tenantId: id },
   });
 
   if (!deployment) {
@@ -129,9 +124,10 @@ const getMerchantDeployment = async (id: string) => {
   return deployment;
 };
 
+// Get tenant database info
 const getMerchantDatabase = async (id: string) => {
   const database = await prisma.databaseInfo.findUnique({
-    where: { merchantId: id },
+    where: { tenantId: id },
   });
 
   if (!database) {
@@ -144,31 +140,33 @@ const getMerchantDatabase = async (id: string) => {
   };
 };
 
+// Update tenant domain
 const updateMerchantDomain = async (id: string, customDomain: string) => {
-  return prisma.merchant.update({
+  return prisma.tenant.update({
     where: { id },
     data: { customDomain },
   });
 };
 
+// Delete tenant and all associated data
 const deleteMerchant = async (id: string) => {
-  const merchant = await prisma.merchant.findUnique({ where: { id } });
+  const tenant = await prisma.tenant.findUnique({ where: { id } });
 
-  if (!merchant) {
-    throw new Error("Merchant not found");
+  if (!tenant) {
+    throw new Error("Tenant not found");
   }
 
   // Use transaction for cascade deletion
   await prisma.$transaction([
-    prisma.merchantSubscription.deleteMany({ where: { merchantId: id } }),
-    prisma.deployment.deleteMany({ where: { merchantId: id } }),
-    prisma.databaseInfo.deleteMany({ where: { merchantId: id } }),
-    prisma.merchant.delete({ where: { id } }),
+    prisma.tenantSubscription.deleteMany({ where: { tenantId: id } }),
+    prisma.deployment.deleteMany({ where: { tenantId: id } }),
+    prisma.databaseInfo.deleteMany({ where: { tenantId: id } }),
+    prisma.tenant.delete({ where: { id } }),
   ]);
 
   return {
     success: true,
-    message: "Merchant and all associated data deleted successfully",
+    message: "Tenant and all associated data deleted successfully",
   };
 };
 

@@ -4,98 +4,109 @@ import sendResponse from "../../utils/sendResponse";
 import { prisma } from "@framex/database";
 import httpStatus from "http-status";
 
+// Using Tenant instead of Merchant (merged models)
 const getMerchantSubscription = catchAsync(async (req, res) => {
-    const merchantId = req.query.merchantId as string || req.headers["x-merchant-id"] as string;
+  // Accept both merchantId and tenantId for backward compatibility
+  const tenantId =
+    (req.query.merchantId as string) ||
+    (req.query.tenantId as string) ||
+    (req.headers["x-merchant-id"] as string);
 
-    if (!merchantId) {
-        return sendResponse(res, {
-            statusCode: httpStatus.BAD_REQUEST,
-            success: false,
-            message: "merchantId is required",
-            data: null,
-        });
-    }
-
-    const merchant = await prisma.merchant.findUnique({ where: { id: merchantId } });
-
-    if (!merchant) {
-        return sendResponse(res, {
-            statusCode: httpStatus.NOT_FOUND,
-            success: false,
-            message: "Merchant not found",
-            data: null,
-        });
-    }
-
-    const subscription = await prisma.merchantSubscription.findFirst({ where: { merchantId } });
-
-    if (!subscription) {
-        // Return merchant without subscription
-        return sendResponse(res, {
-            statusCode: httpStatus.OK,
-            success: true,
-            message: "Merchant found, no subscription",
-            data: {
-                merchant,
-                subscription: null,
-                plan: null,
-            },
-        });
-    }
-
-    const planId = subscription.planId;
-    const plan = planId ? await prisma.subscriptionPlan.findUnique({ where: { id: planId } }) : null;
-
-    // Calculate dynamic status
-    const now = new Date();
-    const periodEnd = new Date(subscription.currentPeriodEnd);
-    const graceEnd = subscription.gracePeriodEndsAt ? new Date(subscription.gracePeriodEndsAt) : null;
-
-    let dynamicStatus: string = subscription.status; // Prisma status is Enum (ACTIVE, etc). Convert to string.
-    let isExpired = false;
-    let isGracePeriod = false;
-    let daysRemaining = Math.ceil(
-        (periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    if (subscription.status === "ACTIVE") {
-        if (now > periodEnd) {
-            if (graceEnd && now <= graceEnd) {
-                dynamicStatus = "grace_period";
-                isGracePeriod = true;
-                daysRemaining = Math.ceil(
-                    (graceEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-                );
-            } else {
-                dynamicStatus = "expired";
-                isExpired = true;
-                daysRemaining = 0;
-            }
-        }
-    }
-
-    const result = {
-        merchant,
-        subscription: {
-            ...subscription,
-            dynamicStatus,
-            isExpired,
-            isGracePeriod,
-            daysRemaining,
-            isExpiringSoon: daysRemaining <= 7 && daysRemaining > 0,
-            requiresPayment: isExpired || isGracePeriod,
-        },
-        plan,
-    };
-
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: "Merchant subscription fetched successfully",
-        data: result,
+  if (!tenantId) {
+    return sendResponse(res, {
+      statusCode: httpStatus.BAD_REQUEST,
+      success: false,
+      message: "merchantId/tenantId is required",
+      data: null,
     });
+  }
+
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+
+  if (!tenant) {
+    return sendResponse(res, {
+      statusCode: httpStatus.NOT_FOUND,
+      success: false,
+      message: "Tenant not found",
+      data: null,
+    });
+  }
+
+  const subscription = await prisma.tenantSubscription.findFirst({
+    where: { tenantId },
+  });
+
+  if (!subscription) {
+    // Return tenant without subscription (keeping 'merchant' key for backward compat)
+    return sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Tenant found, no subscription",
+      data: {
+        merchant: tenant,
+        subscription: null,
+        plan: null,
+      },
+    });
+  }
+
+  const planId = subscription.planId;
+  const plan = planId
+    ? await prisma.subscriptionPlan.findUnique({ where: { id: planId } })
+    : null;
+
+  // Calculate dynamic status
+  const now = new Date();
+  const periodEnd = new Date(subscription.currentPeriodEnd);
+  const graceEnd = subscription.gracePeriodEndsAt
+    ? new Date(subscription.gracePeriodEndsAt)
+    : null;
+
+  let dynamicStatus: string = subscription.status;
+  let isExpired = false;
+  let isGracePeriod = false;
+  let daysRemaining = Math.ceil(
+    (periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  if (subscription.status === "ACTIVE") {
+    if (now > periodEnd) {
+      if (graceEnd && now <= graceEnd) {
+        dynamicStatus = "grace_period";
+        isGracePeriod = true;
+        daysRemaining = Math.ceil(
+          (graceEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        );
+      } else {
+        dynamicStatus = "expired";
+        isExpired = true;
+        daysRemaining = 0;
+      }
+    }
+  }
+
+  const result = {
+    merchant: tenant, // Keep 'merchant' key for backward compatibility
+    subscription: {
+      ...subscription,
+      dynamicStatus,
+      isExpired,
+      isGracePeriod,
+      daysRemaining,
+      isExpiringSoon: daysRemaining <= 7 && daysRemaining > 0,
+      requiresPayment: isExpired || isGracePeriod,
+    },
+    plan,
+  };
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Tenant subscription fetched successfully",
+    data: result,
+  });
 });
 
 export const MerchantSubscriptionControllers = {
-    getMerchantSubscription,
+  getMerchantSubscription,
 };

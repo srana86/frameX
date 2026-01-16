@@ -185,39 +185,45 @@ export const auth = betterAuth({
     },
   },
 
-  // Trusted Origins for CORS (matches existing CORS config in app.ts)
-  // Trusted Origins for CORS and CSRF protection
-  // We use a function to allow dynamic subdomains (multi-tenant)
+  // Trusted Origins for CORS
+  // Validates: localhost, framextech.com subdomains, AND custom domains from DB
   trustedOrigins: async (request) => {
     const origin = request?.headers.get("origin");
     if (!origin) return [];
 
-    // 1. Allow standard development origins
-    if (
-      origin === "http://localhost:3000" ||
-      origin === "http://localhost:8080"
-    ) {
+    // Allow any localhost (with or without subdomain/port)
+    if (/^https?:\/\/([a-z0-9-]+\.)?localhost(:\d+)?$/.test(origin)) {
       return [origin];
     }
 
-    // 2. Allow configured frontend URL
-    if (config.frontend_url && origin === config.frontend_url) {
+    // Allow any framextech.com subdomain
+    if (/^https?:\/\/([a-z0-9-]+\.)?framextech\.com$/.test(origin)) {
       return [origin];
     }
 
-    // 3. Allow localhost subdomains (e.g., http://demo.localhost:3000)
-    if (/^http:\/\/[a-z0-9-]+\.localhost:3000$/.test(origin)) {
-      return [origin];
-    }
+    // Check if origin is a verified custom domain in the database
+    try {
+      const originUrl = new URL(origin);
+      const hostname = originUrl.hostname;
 
-    // 4. Allow production subdomains (e.g., https://store.framextech.com)
-    if (/^https:\/\/[a-z0-9-]+\.framextech\.com$/.test(origin)) {
-      return [origin];
-    }
+      // Query database for verified custom domain
+      const tenantDomain = await prisma.tenantDomain.findFirst({
+        where: {
+          OR: [
+            { customDomain: hostname },
+            { hostname: hostname },
+            { primaryDomain: hostname },
+          ],
+          verified: true,
+        },
+      });
 
-    // 5. TODO: Check Database for Custom Domains
-    // const tenantDomain = await prisma.tenantDomain.findFirst({ ... });
-    // if (tenantDomain) return [origin];
+      if (tenantDomain) {
+        return [origin]; // Custom domain is verified, allow it
+      }
+    } catch (e) {
+      // Invalid origin URL, ignore
+    }
 
     return [];
   },
