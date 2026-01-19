@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   Beaker,
@@ -23,6 +23,7 @@ import {
   TrendingUp,
   Lightbulb,
   LogOut,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/cn";
@@ -194,11 +195,46 @@ function buildBreadcrumbs(pathname: string): Breadcrumb[] {
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { logout, user } = useAuth();
+  const router = useRouter();
+  const { logout, user, isLoading } = useAuth();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   const activeItem = useMemo(() => ALL_NAV_ITEMS.find((item) => isActive(pathname, item.href)), [pathname]);
   const breadcrumbs = useMemo(() => buildBreadcrumbs(pathname), [pathname]);
+
+  // Role-based access control: only ADMIN and SUPER_ADMIN allowed
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    const role = user.role?.toUpperCase();
+    if (role === "ADMIN" || role === "SUPER_ADMIN") {
+      setIsAuthorized(true);
+    } else if (role === "MERCHANT") {
+      // Redirect MERCHANT to store app's merchant panel
+      window.location.href = process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3000/merchant";
+    } else {
+      // Other roles (CUSTOMER, STAFF) - redirect to store home
+      window.location.href = process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3000";
+    }
+  }, [user, isLoading, router]);
+
+  // Show loading state while checking authorization
+  if (isLoading || !isAuthorized) {
+    return (
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="mt-4 text-muted-foreground">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='min-h-screen bg-muted/30'>

@@ -9,7 +9,7 @@ export interface AuthUser {
   fullName: string;
   email?: string;
   phone?: string;
-  role: "customer" | "merchant" | "admin";
+  role: "customer" | "staff" | "merchant" | "admin" | "super_admin";
   tenantId?: string;
 }
 
@@ -21,7 +21,7 @@ interface UseAuthOptions {
   /**
    * Required role to access the page (customer < merchant < admin)
    */
-  requiredRole?: "customer" | "merchant" | "admin";
+  requiredRole?: "customer" | "staff" | "merchant" | "admin" | "super_admin";
   /**
    * Redirect URL when not authenticated
    */
@@ -65,7 +65,7 @@ export function useAuth(options: UseAuthOptions = {}): UseAuthReturn {
       fullName: session.data.user.name || "",
       email: session.data.user.email,
       phone: session.data.user.phone,
-      role: ((session.data.user.role || "CUSTOMER").toLowerCase() as "customer" | "merchant" | "admin"),
+      role: ((session.data.user.role || "CUSTOMER").toLowerCase() as "customer" | "staff" | "merchant" | "admin" | "super_admin"),
       tenantId: session.data.user.tenantId,
     }
     : null;
@@ -107,8 +107,10 @@ export function useAuth(options: UseAuthOptions = {}): UseAuthReturn {
     if (requiredRole && isAuthenticated && user) {
       const roleHierarchy: Record<string, number> = {
         customer: 1,
-        merchant: 2,
-        admin: 3,
+        staff: 2,
+        merchant: 3,
+        admin: 4,
+        super_admin: 5,
       };
 
       const userRoleLevel = roleHierarchy[user.role] || 0;

@@ -11,34 +11,13 @@ import {
   ProductStatus,
 } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { scrypt, randomBytes } from "crypto";
+import { hashPassword } from "better-auth/crypto";
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL,
 });
 
 const prisma = new PrismaClient({ adapter });
-
-/**
- * Hash password using scrypt (BetterAuth compatible format)
- * BetterAuth uses raw salt bytes for scrypt, then stores as hex
- */
-function hashPassword(password: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const saltBuffer = randomBytes(16); // Raw bytes for scrypt
-    const saltHex = saltBuffer.toString("hex"); // Hex for storage
-    scrypt(
-      password,
-      saltBuffer,
-      64,
-      { N: 16384, r: 8, p: 1 },
-      (err, derivedKey) => {
-        if (err) reject(err);
-        else resolve(`${saltHex}:${derivedKey.toString("hex")}`);
-      }
-    );
-  });
-}
 
 async function main() {
   console.log("🌱 Seeding database...");
@@ -69,7 +48,7 @@ async function main() {
         accountId: superAdmin.id,
       },
     },
-    update: {},
+    update: { password: hashedPassword },
     create: {
       userId: superAdmin.id,
       accountId: superAdmin.id,
@@ -125,15 +104,15 @@ async function main() {
   });
   console.log("✅ Brand config created");
 
-  // Create tenant admin
+  // Create tenant admin (merchant user)
   const tenantAdmin = await prisma.user.upsert({
     where: { email: "demo@framex.com" },
-    update: {},
+    update: { role: UserRole.MERCHANT },
     create: {
       tenantId: demoTenant.id,
       email: "demo@framex.com",
-      name: "Demo Admin",
-      role: UserRole.ADMIN,
+      name: "Demo Merchant",
+      role: UserRole.MERCHANT,
       emailVerified: true,
       createdAt: now,
       updatedAt: now,
@@ -149,7 +128,7 @@ async function main() {
         accountId: tenantAdmin.id,
       },
     },
-    update: {},
+    update: { password: hashedPassword },
     create: {
       userId: tenantAdmin.id,
       accountId: tenantAdmin.id,
@@ -213,7 +192,7 @@ async function main() {
   console.log("");
   console.log("📝 Demo Credentials:");
   console.log("   Super Admin: admin@framex.com / admin123");
-  console.log("   Tenant Admin: demo@framex.com / admin123");
+  console.log("   Merchant: demo@framex.com / admin123");
 }
 
 main()

@@ -1,7 +1,7 @@
 import { getCurrentUser, type CurrentUser } from "./auth";
 import { redirect } from "next/navigation";
 
-export type UserRole = "customer" | "merchant" | "admin";
+export type UserRole = "customer" | "staff" | "merchant" | "admin" | "super_admin";
 
 /**
  * Check if user has required role
@@ -14,8 +14,10 @@ export function hasRole(
 
   const roleHierarchy: Record<UserRole, number> = {
     customer: 1,
-    merchant: 2,
-    admin: 3,
+    staff: 2,
+    merchant: 3,
+    admin: 4,
+    super_admin: 5,
   };
 
   // Normalize role to lowercase in case it wasn't normalized earlier

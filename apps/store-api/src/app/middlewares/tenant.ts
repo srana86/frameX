@@ -84,12 +84,32 @@ export const tenantMiddleware = async (
             }
         }
 
-        // Priority 3: x-merchant-id header (direct fallback)
+        // Priority 4: Host header (req.hostname) - Useful for local dev / direct access
+        if (!tenantId) {
+            // req.hostname doesn't include port, which is good for getTenantByDomain
+            const hostname = req.hostname;
+            if (hostname) {
+                const tenantDomain = await resolveTenantFromDomain(hostname);
+                if (tenantDomain) {
+                    tenantId = tenantDomain.tenantId;
+                    req.tenant = {
+                        id: tenantDomain.tenant.id,
+                        name: tenantDomain.tenant.name,
+                        status: tenantDomain.tenant.status,
+                    };
+                }
+            }
+        }
+
+        // Priority 5: x-merchant-id header (direct fallback)
         if (!tenantId) {
             tenantId = req.headers["x-merchant-id"] as string;
         }
 
+        console.log(`[TenantMiddleware] Resolved tenantId: ${tenantId} for URL: ${req.url}`);
+
         if (!tenantId) {
+            console.log("[TenantMiddleware] No tenant ID found in headers or domain");
             return res.status(400).json({
                 success: false,
                 message: "Tenant identification required. Send x-domain or x-merchant-id header.",
@@ -98,11 +118,13 @@ export const tenantMiddleware = async (
 
         // Validate tenant exists and is active
         if (!req.tenant) {
+            console.log(`[TenantMiddleware] Validating tenant ID from DB: ${tenantId}`);
             const tenant = await prisma.tenant.findUnique({
                 where: { id: tenantId },
             });
 
             if (!tenant) {
+                console.log(`[TenantMiddleware] Tenant not found in DB for ID: ${tenantId}`);
                 return res.status(404).json({
                     success: false,
                     message: "Tenant not found",

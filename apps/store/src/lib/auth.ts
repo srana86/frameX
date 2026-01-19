@@ -6,7 +6,7 @@ export interface CurrentUser {
   fullName: string;
   email?: string;
   phone?: string;
-  role: "customer" | "merchant" | "admin";
+  role: "customer" | "staff" | "merchant" | "admin" | "super_admin";
   tenantId?: string;
   merchantId?: string;
   createdAt: string;
@@ -40,8 +40,10 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     // Normalize role to lowercase
     const normalizedRole = ((user as any).role || "CUSTOMER").toLowerCase() as
       | "customer"
+      | "staff"
       | "merchant"
-      | "admin";
+      | "admin"
+      | "super_admin";
 
     return {
       id: user.id,

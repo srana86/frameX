@@ -6,12 +6,26 @@ import { createAuthClient } from "better-auth/react";
  * This client handles all authentication operations on the frontend.
  * Sessions are managed via httpOnly cookies - no localStorage tokens needed.
  *
- * Uses relative URL so nginx proxies auth requests to the backend.
+ * Uses environment variable for API base URL.
+ * - Client-side: Uses relative URL (browser resolves based on current origin)
+ * - Server-side: Uses NEXT_PUBLIC_STORE_API_URL for absolute URL
  */
 
-// Empty string = relative URL, browser will use current origin
-// e.g., demo.localhost/api/auth/* → nginx → store-api:8080
-const AUTH_BASE_URL = "";
+// For client-side, empty string works (browser resolves relative URLs)
+// For server-side SSR, we need an absolute URL
+const getBaseURL = () => {
+  // In browser, use empty string for relative URL
+  if (typeof window !== "undefined") {
+    return "";
+  }
+  // Server-side: use the store API base URL (WITHOUT /api/v1 for BetterAuth)
+  // BetterAuth endpoints are at /api/auth/*, not /api/v1/api/auth/*
+  const apiUrl = process.env.NEXT_PUBLIC_STORE_API_URL || "http://localhost:8080/api/v1";
+  // Remove /api/v1 suffix if present to get base URL
+  return apiUrl.replace(/\/api\/v1\/?$/, "") || "http://localhost:8080";
+};
+
+const AUTH_BASE_URL = getBaseURL();
 
 // Define custom user fields to match backend schema
 interface CustomUser {

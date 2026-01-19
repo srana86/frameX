@@ -25,8 +25,13 @@ const getMerchantContextFromDB = async (merchantId?: string) => {
     throw new AppError(StatusCodes.NOT_FOUND, "Merchant not found");
   }
 
+  // Use tenantId to get full merchant data (which is actually tenant data)
+  if (!userMerchant.tenantId) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Merchant has no associated tenant");
+  }
+
   const fullData = await SuperAdminServices.getFullMerchantDataFromDB(
-    userMerchant.id
+    userMerchant.tenantId
   );
 
   const context: MerchantContext = {

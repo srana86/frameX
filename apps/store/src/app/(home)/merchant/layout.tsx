@@ -36,10 +36,19 @@ export default async function MerchantLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireAuth("merchant");
+  const user = await requireAuth("customer"); // Require at least customer level (authenticated)
 
-  if (user.role !== "merchant" && user.role !== "admin") {
-    redirect("/");
+  // Strict role check: only MERCHANT can access this area
+  // ADMIN and SUPER_ADMIN should use the dashboard app instead
+  const normalizedRole = user.role.toLowerCase();
+  if (normalizedRole === "admin" || normalizedRole === "super_admin") {
+    // Redirect admins to the dashboard (different app)
+    redirect(process.env.NEXT_PUBLIC_DASHBOARD_URL || "http://localhost:3001/admin");
+  }
+
+  if (normalizedRole !== "merchant") {
+    // Non-merchant, non-admin users go to account
+    redirect("/account");
   }
 
   const brandConfig = await getBrandConfig();

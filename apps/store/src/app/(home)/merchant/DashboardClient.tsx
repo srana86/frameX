@@ -529,7 +529,7 @@ export function DashboardClient({ initialData, brandName = "E-Commerce Store" }:
       const daysDiff = Math.ceil((latestDate.getTime() - earliestDate.getTime()) / (24 * 60 * 60 * 1000));
       const days = daysDiff + 1; // Include both start and end days
 
-      const data = [];
+      const data: { date: string; revenue: number }[] = [];
       const startDate = startOfDay(earliestDate);
 
       for (let i = 0; i < days; i++) {
@@ -559,7 +559,7 @@ export function DashboardClient({ initialData, brandName = "E-Commerce Store" }:
     if (timePeriod === "30days") days = 30;
     if (timePeriod === "3months") days = 90;
 
-    const data = [];
+    const data: { date: string; revenue: number }[] = [];
     const now = new Date();
 
     for (let i = days - 1; i >= 0; i--) {
