@@ -29,15 +29,31 @@ export interface BaseButtonProps {
 
 // Start Building Button - Blue with white text and white circle with blue arrow
 export const StartBuildingButton = React.forwardRef<HTMLButtonElement | HTMLAnchorElement, BaseButtonProps>(
-  ({ text, icon: Icon, iconPosition = "right", href, onClick, type = "button", disabled, className, children, ...props }, ref) => {
+  (
+    {
+      text,
+      icon: Icon,
+      iconPosition = "right",
+      href,
+      onClick,
+      type = "button",
+      disabled,
+      className,
+      children,
+      circleSize = 32,
+      iconSize = 18,
+      ...props
+    },
+    ref
+  ) => {
     const buttonContent = (
       <>
         {iconPosition === "left" && Icon && (
           <div
             className='relative flex items-center justify-center shrink-0 transition-transform duration-300 ease-in-out group-hover:scale-[1.05]'
             style={{
-              width: "32px",
-              height: "32px",
+              width: `${circleSize}px`,
+              height: `${circleSize}px`,
               borderRadius: "48px",
               paddingTop: "3px",
               paddingRight: "2px",
@@ -53,8 +69,8 @@ export const StartBuildingButton = React.forwardRef<HTMLButtonElement | HTMLAnch
               style={{
                 left: "50%",
                 top: "15%",
-                width: "35px",
-                height: "25px",
+                width: `${circleSize + 3}px`,
+                height: `${circleSize - 7}px`,
                 background:
                   "radial-gradient(ellipse, rgba(108, 255, 162, 1) 0%, rgba(108, 255, 162, 0.7) 40%, rgba(108, 255, 162, 0.4) 60%, transparent 100%)",
                 filter: "blur(8px)",
@@ -68,8 +84,8 @@ export const StartBuildingButton = React.forwardRef<HTMLButtonElement | HTMLAnch
               style={{
                 left: "15%",
                 top: "20%",
-                width: "60px",
-                height: "30px",
+                width: `${circleSize * 1.8}px`,
+                height: `${circleSize - 2}px`,
                 background:
                   "radial-gradient(ellipse, rgba(230, 88, 255, 1) 0%, rgba(230, 88, 255, 0.7) 40%, rgba(230, 88, 255, 0.4) 60%, transparent 100%)",
                 filter: "blur(8px)",
@@ -81,8 +97,8 @@ export const StartBuildingButton = React.forwardRef<HTMLButtonElement | HTMLAnch
             <div
               className='absolute bg-white flex items-center justify-center'
               style={{
-                width: "32px",
-                height: "32px",
+                width: `${circleSize}px`,
+                height: `${circleSize}px`,
                 borderRadius: "48px",
                 zIndex: 1,
                 boxShadow: "0px 1px 2px 0px rgba(0, 0, 0, 0.1)",
@@ -91,8 +107,8 @@ export const StartBuildingButton = React.forwardRef<HTMLButtonElement | HTMLAnch
             <Icon
               className='text-[#0448FD] relative'
               style={{
-                width: "18px",
-                height: "18px",
+                width: `${iconSize}px`,
+                height: `${iconSize}px`,
                 zIndex: 2,
               }}
             />
@@ -113,8 +129,8 @@ export const StartBuildingButton = React.forwardRef<HTMLButtonElement | HTMLAnch
           <div
             className='relative flex items-center justify-center shrink-0 transition-transform duration-300 ease-in-out group-hover:scale-105 group-hover:translate-x-0.5'
             style={{
-              width: "32px",
-              height: "32px",
+              width: `${circleSize}px`,
+              height: `${circleSize}px`,
               borderRadius: "48px",
               paddingTop: "3px",
               paddingRight: "2px",
@@ -130,8 +146,8 @@ export const StartBuildingButton = React.forwardRef<HTMLButtonElement | HTMLAnch
               style={{
                 left: "50%",
                 top: "15%",
-                width: "35px",
-                height: "25px",
+                width: `${circleSize + 3}px`,
+                height: `${circleSize - 7}px`,
                 background:
                   "radial-gradient(ellipse, rgba(108, 255, 162, 1) 0%, rgba(108, 255, 162, 0.7) 40%, rgba(108, 255, 162, 0.4) 60%, transparent 100%)",
                 filter: "blur(8px)",
@@ -145,8 +161,8 @@ export const StartBuildingButton = React.forwardRef<HTMLButtonElement | HTMLAnch
               style={{
                 left: "15%",
                 top: "20%",
-                width: "60px",
-                height: "30px",
+                width: `${circleSize * 1.8}px`,
+                height: `${circleSize - 2}px`,
                 background:
                   "radial-gradient(ellipse, rgba(230, 88, 255, 1) 0%, rgba(230, 88, 255, 0.7) 40%, rgba(230, 88, 255, 0.4) 60%, transparent 100%)",
                 filter: "blur(8px)",
@@ -158,8 +174,8 @@ export const StartBuildingButton = React.forwardRef<HTMLButtonElement | HTMLAnch
             <div
               className='absolute bg-white flex items-center justify-center'
               style={{
-                width: "32px",
-                height: "32px",
+                width: `${circleSize}px`,
+                height: `${circleSize}px`,
                 borderRadius: "48px",
                 zIndex: 1,
                 boxShadow: "0px 1px 2px 0px rgba(0, 0, 0, 0.1)",
@@ -168,8 +184,8 @@ export const StartBuildingButton = React.forwardRef<HTMLButtonElement | HTMLAnch
             <Icon
               className='text-[#0448FD] relative group-hover:animate-[arrowSlideRight_0.6s_ease-in-out]'
               style={{
-                width: "18px",
-                height: "18px",
+                width: `${iconSize}px`,
+                height: `${iconSize}px`,
                 zIndex: 2,
               }}
             />

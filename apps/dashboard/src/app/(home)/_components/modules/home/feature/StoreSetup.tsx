@@ -89,7 +89,7 @@ export function StoreSetup() {
           >
             <div className='flex items-center gap-2'>
               <div className='relative w-16 h-5 sm:w-20 sm:h-6 flex items-center'>
-                <Image src='/logo/framrx.png' alt='FrameX' fill className='object-contain' priority />
+                <Image src='/logo/framex.avif' alt='FrameX' fill className='object-contain' priority />
               </div>
             </div>
             <div className='flex items-center gap-1.5'>

@@ -2,6 +2,7 @@
 
 import React, { useRef } from "react";
 import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import { StartBuildingButton } from "../../../ui/button";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/utils";
@@ -17,6 +18,49 @@ export default function MockContainer() {
   const sectionRef = useRef<HTMLElement>(null);
   const mockupsRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const router = useRouter();
+
+  // Scroll to pricing section
+  const handleScrollToPricing = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    const sectionId = "pricing";
+    const isHomePage = pathname === "/";
+
+    if (!isHomePage) {
+      // If not on home page, navigate to home page with hash
+      router.push(`/#${sectionId}`);
+
+      // Wait for navigation and then scroll
+      setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          const navbarHeight = 80;
+          const elementPosition = element.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - navbarHeight;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth",
+          });
+        }
+      }, 100);
+      return;
+    }
+
+    // If on home page, scroll directly
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const navbarHeight = 80;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - navbarHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+    }
+  };
 
   useGSAP(
     () => {
@@ -66,11 +110,11 @@ export default function MockContainer() {
   return (
     <section
       ref={sectionRef}
-      className='w-full pb-16 pt-16 md:-mt-10 md:pt-0 md:pb-20 2xl:pb-24 relative overflow-x-hidden bg-linear-to-r from-white to-[#E8F4FF]'
+      className='w-full py-12 sm:pb-16 sm:pt-0 relative overflow-x-hidden bg-linear-to-r from-[rgba(232,236,253,0.2)] to-[rgba(32,120,255,0.5)]'
     >
       <div className='w-full relative'>
         <div className='max-w-7xl mx-auto px-3 mb-16 lg:mb-20'>
-          <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-0 items-center'>
+          <div className='flex flex-col lg:flex-row gap-6 lg:gap-0 items-center'>
             {/* Left Side - Device Mockups */}
             <div
               ref={mockupsRef}
@@ -92,12 +136,13 @@ export default function MockContainer() {
                   )}
                 >
                   <Image
-                    src='/mock/laptop-mock.png'
-                    alt='Laptop Dashboard Mockup'
+                    src='/mock/laptop-mock.avif'
+                    alt='E-Commerce Store Dashboard on Laptop'
                     width={1600}
                     height={1200}
                     className='w-full h-auto object-contain'
-                    priority
+                    sizes='(max-width: 1024px) 90vw, 1100px'
+                    quality={70}
                   />
                 </div>
 
@@ -114,12 +159,13 @@ export default function MockContainer() {
                   )}
                 >
                   <Image
-                    src='/mock/iphone.png'
-                    alt='iPhone E-commerce App Mockup'
+                    src='/mock/iphone.avif'
+                    alt='E-Commerce Store on Mobile'
                     width={300}
                     height={600}
                     className='w-full h-auto object-contain'
-                    priority
+                    sizes='(max-width: 1024px) 25vw, 280px'
+                    quality={70}
                   />
                 </div>
               </div>
@@ -141,7 +187,7 @@ export default function MockContainer() {
                   "mb-2 xs:mb-3 sm:mb-4"
                 )}
               >
-                Powerful features to simplify your web building
+                Everything you need to run your e-commerce business
               </h2>
 
               {/* Description */}
@@ -156,16 +202,18 @@ export default function MockContainer() {
                   "mb-3 xs:mb-4 sm:mb-5 md:mb-6"
                 )}
               >
-                Explore powerful features crafted to make your website easier to build, customize, and manage.
+                Get a complete e-commerce solution with all the tools you need to manage products, orders, payments, and grow your online
+                business.
               </p>
 
               {/* Button */}
               <div className='flex justify-center lg:justify-end pt-1 xs:pt-2 sm:pt-3'>
                 <StartBuildingButton
-                  text='Explore Demo'
+                  text='Start Your Store'
                   icon={ArrowRight}
                   iconPosition='right'
                   className='text-xs xs:text-sm sm:text-base md:text-lg w-auto'
+                  onClick={handleScrollToPricing}
                 />
               </div>
             </div>

@@ -14,48 +14,57 @@ if (typeof window !== "undefined") {
 const testimonials: Testimonial[] = [
   {
     id: "1",
-    quote: "matched my skills instead of random listings. It felt like having a personal career coach.",
-    name: "Juwel Ahamed",
-    title: "UX Designer",
+    quote:
+      "Started my online store in just 30 minutes. The setup was so simple and affordable. I've already made my first sale within a week! The payment integration worked perfectly.",
+    name: "Rashida Begum",
+    title: "Fashion Store Owner",
     rating: 5,
+    avatar: "/testimonials/rashida.avif",
   },
   {
     id: "2",
     quote:
-      "We were spending hours manually filtering candidates. After switching to this platform, everything became faster — from outreach to final hiring decisions. Importing past applications saved so much time. Absolutely worth it.",
-    name: "Sabbir Hasan",
-    title: "Hiring Manager",
+      "Finally launched my e-commerce business without breaking the bank. Everything I need is included - product management, order tracking, and customer support. My sales have doubled in the first month.",
+    name: "Karim Hossain",
+    title: "Electronics Merchant",
     rating: 5,
+    avatar: "/testimonials/karim.avif",
   },
   {
     id: "3",
     quote:
-      "Customer support actually listens here. I suggested a feature and they added it within a week. The platform feels human, not robotic - even though it's AI-driven.",
-    name: "Juwel Ahamed",
-    title: "UX Designer",
+      "Best investment for my business. The mobile-friendly design helped me reach more customers, and the analytics show exactly what's selling. Customer support responded quickly when I needed help.",
+    name: "Fatima Akter",
+    title: "Beauty Products Seller",
     rating: 5,
+    avatar: "/testimonials/fatima.avif",
   },
   {
     id: "4",
-    quote: "interview tips to company insights - it felt like I had a personal coach.",
-    name: "Mahadi Miraj",
-    title: "Junior Architect",
+    quote:
+      "Uploaded all my products easily with bulk import. Inventory tracking saved me so much time. The store looks professional and my customers love the smooth checkout process.",
+    name: "Mahmudul Hasan",
+    title: "Home Decor Merchant",
     rating: 5,
+    avatar: "/testimonials/mahmudul.avif",
   },
   {
     id: "5",
     quote:
-      "Got hired without writing a single cover letter. I hate writing cover letters. This system automatically generated mine based on my skills and portfolio. I went from 0 replies to 5 interview calls in one week. It saved me time and stress.",
-    name: "Fivro Studio",
-    title: "Design Agency",
+      "I was skeptical at first, but this platform exceeded my expectations. The conversion tracking for Facebook ads helped me optimize my marketing spend. Sales increased by 300% in 2 months.",
+    name: "Ayesha Rahman",
+    title: "Accessories Store Owner",
     rating: 5,
+    avatar: "/testimonials/ayesha.avif",
   },
   {
     id: "6",
-    quote: "Never thought AI could understand my career goals better than I could.",
-    name: "Olivia Chan",
-    title: "Product Strategist",
+    quote:
+      "Perfect solution for small businesses like mine. The affordable price made it possible to start online. Now I'm selling to customers nationwide and managing everything from one dashboard.",
+    name: "Tarek Ahmed",
+    title: "Grocery Store Owner",
     rating: 5,
+    avatar: "/testimonials/tarek.avif",
   },
 ];
 
@@ -95,52 +104,110 @@ export default function TestimonialContainer() {
         {/* Header */}
         <div ref={headerRef} className='mb-12 sm:mb-16 md:mb-20'>
           <SectionHeader
-            title='Trusted by Thousands of Job Seekers'
-            subtitle='Over 10,000 professionals have landed their dream careers faster using our AI-powered platform — built to match you with the right opportunity at the right time.'
+            title='Trusted by Thousands of Merchants'
+            subtitle='Join thousands of successful merchants who started their e-commerce business with our affordable platform — everything you need to launch and grow your online store.'
           />
         </div>
 
-        {/* Testimonials Grid */}
+        {/* Testimonials Container */}
         <div className='relative'>
-          {/* Top White Gradient - White to Transparent */}
-          <div
-            className='absolute top-0 left-0 right-0 h-24 z-10 pointer-events-none'
-            style={{
-              background: "linear-gradient(to bottom, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%)",
-            }}
-          />
+          {/* Mobile/Tablet - Horizontal Slider with side gradients */}
+          <div className='lg:hidden relative'>
+            {/* Left Gradient - White to Transparent */}
+            <div
+              className='absolute left-0 top-0 bottom-0 w-12 z-10 pointer-events-none'
+              style={{
+                background: "linear-gradient(to right, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%)",
+              }}
+            />
 
-          {/* Bottom White Gradient - Transparent to White */}
-          <div
-            className='absolute bottom-0 left-0 right-0 h-24 z-10 pointer-events-none'
-            style={{
-              background: "linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%)",
-            }}
-          />
+            {/* Right Gradient - Transparent to White */}
+            <div
+              className='absolute right-0 top-0 bottom-0 w-12 z-10 pointer-events-none'
+              style={{
+                background: "linear-gradient(to left, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%)",
+              }}
+            />
 
-          {/* Mobile/Tablet Grid - Static */}
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:hidden gap-6 sm:gap-8 relative z-0'>
-            {testimonials.map((testimonial, index) => (
-              <TestimonialCard key={testimonial.id} testimonial={testimonial} index={index} isVisible={true} />
-            ))}
+            <MobileTestimonialSlider testimonials={testimonials} />
           </div>
 
           {/* Large Device - Vertical Slider Grid with 3 Columns */}
-          <div className='hidden lg:grid lg:grid-cols-3 gap-6 sm:gap-8 relative z-0'>
-            {[0, 1, 2].map((columnIndex) => {
-              // Split testimonials into 3 columns
-              const columnTestimonials = testimonials.filter((_, index) => index % 3 === columnIndex);
-              // Duplicate testimonials for infinite scroll effect
-              const duplicatedTestimonials = [...columnTestimonials, ...columnTestimonials];
+          <div className='hidden lg:block relative'>
+            {/* Top White Gradient - White to Transparent */}
+            <div
+              className='absolute top-0 left-0 right-0 h-24 z-10 pointer-events-none'
+              style={{
+                background: "linear-gradient(to bottom, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%)",
+              }}
+            />
 
-              return (
-                <TestimonialColumn key={columnIndex} columnIndex={columnIndex} testimonials={duplicatedTestimonials} isVisible={true} />
-              );
-            })}
+            {/* Bottom White Gradient - Transparent to White */}
+            <div
+              className='absolute bottom-0 left-0 right-0 h-24 z-10 pointer-events-none'
+              style={{
+                background: "linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%)",
+              }}
+            />
+
+            <div className='grid lg:grid-cols-3 gap-6 sm:gap-8 relative z-0'>
+              {[0, 1, 2].map((columnIndex) => {
+                // Split testimonials into 3 columns
+                const columnTestimonials = testimonials.filter((_, index) => index % 3 === columnIndex);
+                // Duplicate testimonials for infinite scroll effect
+                const duplicatedTestimonials = [...columnTestimonials, ...columnTestimonials];
+
+                return (
+                  <TestimonialColumn key={columnIndex} columnIndex={columnIndex} testimonials={duplicatedTestimonials} isVisible={true} />
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+// Mobile Horizontal Slider Component
+function MobileTestimonialSlider({ testimonials }: { testimonials: Testimonial[] }) {
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<gsap.core.Tween | null>(null);
+
+  // Duplicate testimonials for infinite scroll effect (scroll 50% = one full set)
+  const duplicatedTestimonials = [...testimonials, ...testimonials];
+
+  useGSAP(
+    () => {
+      if (!sliderRef.current) return;
+
+      animationRef.current = gsap.to(sliderRef.current, {
+        x: "-50%",
+        duration: 40,
+        ease: "none",
+        repeat: -1,
+      });
+    },
+    { scope: sliderRef }
+  );
+
+  return (
+    <div className='lg:hidden relative overflow-x-hidden py-4' style={{ height: "auto" }}>
+      <div
+        ref={sliderRef}
+        className='flex gap-4 sm:gap-6 md:gap-8'
+        style={{
+          willChange: "transform",
+          width: "fit-content",
+        }}
+      >
+        {duplicatedTestimonials.map((testimonial, index) => (
+          <div key={`${testimonial.id}-${index}`} className='shrink-0 w-[calc(100vw-3rem)] sm:w-[calc(50vw-2rem)] max-w-[500px]'>
+            <TestimonialCard testimonial={testimonial} index={index % testimonials.length} isVisible={true} />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

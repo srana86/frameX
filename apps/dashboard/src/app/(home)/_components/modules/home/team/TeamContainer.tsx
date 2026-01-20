@@ -21,37 +21,47 @@ interface TeamMember {
   overlayColor: string;
 }
 
+// IMPORTANT: Add professional team photos to /public/team/ folder
+// Recommended: Use professional business headshots (400x500px or similar portrait ratio)
+// Fallback URLs are provided but should be replaced with actual team photos
 const teamMembers: TeamMember[] = [
   {
     id: "1",
     name: "Aiden Clarke",
-    description: "Improves business strategy",
-    role: "Founder",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop",
+    description: "Helps merchants grow their business",
+    role: "Founder & CEO",
+    // Add professional photo at: /public/team/aiden-clarke.jpg or team-member-1.jpg
+    image:
+      "https://media.istockphoto.com/id/1413766112/photo/successful-mature-businessman-looking-at-camera-with-confidence.jpg?s=612x612&w=0&k=20&c=NJSugBzNuZqb7DJ8ZgLfYKb3qPr2EJMvKZ21Sj5Sfq4=",
     overlayColor: "rgba(0, 0, 0, 0.75)",
   },
   {
     id: "2",
     name: "Mia Reynolds",
-    description: "Crafts modern visuals",
+    description: "Creates beautiful store designs",
     role: "Design Lead",
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=500&fit=crop",
+    // Add professional photo at: /public/team/mia-reynolds.jpg or team-member-2.jpg
+    image:
+      "https://plus.unsplash.com/premium_photo-1672691612717-954cdfaaa8c5?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8cHJvZmVzc2lvbmFsJTIwd29tYW58ZW58MHx8MHx8fDA%3D",
     overlayColor: "rgba(0, 0, 0, 0.8)",
   },
   {
     id: "3",
     name: "Noah Carter",
-    description: "Designs clean user flows",
-    role: "UI/UX Designer",
-    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=500&fit=crop",
+    description: "Ensures smooth store experience",
+    role: "E-Commerce Specialist",
+    // Add professional photo at: /public/team/noah-carter.jpg or team-member-3.jpg
+    image: "https://img.freepik.com/free-photo/man-portrait-posing-loft-modern-space_158595-5369.jpg?semt=ais_hybrid&w=740&q=80",
     overlayColor: "rgba(0, 0, 0, 0.75)",
   },
   {
     id: "4",
     name: "Lucas Bennett",
-    description: "Builds smooth interfaces",
-    role: "Frontend Developer",
-    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=500&fit=crop",
+    description: "Builds powerful e-commerce features",
+    role: "Technical Lead",
+    // Add professional photo at: /public/team/lucas-bennett.jpg or team-member-4.jpg
+    image:
+      "https://img.freepik.com/premium-photo/happy-portrait-businessman-with-meeting-office-partnership-collaboration-seminar-employee-workshop-corporate-training-with-pride-company-management-sales-planning_590464-365910.jpg?semt=ais_hybrid&w=740&q=80",
     overlayColor: "rgba(0, 0, 0, 0.8)",
   },
 ];
@@ -87,23 +97,37 @@ export default function TeamContainer() {
   );
 
   return (
-    <section ref={sectionRef} className='w-full pt-12 sm:pt-16 md:pt-20 lg:pt-24 mb-5 md:pb-10 bg-white'>
+    <section ref={sectionRef} className='w-full py-12 sm:py-16 md:py-20 lg:py-24 bg-white'>
       <div className=''>
         {/* Header */}
         <div ref={headerRef} className='max-w-7xl mx-auto px-3 mb-12 sm:mb-16 md:mb-20'>
           <SectionHeader
-            title='The People Behind Our Work'
-            subtitle='A dedicated team of creators, strategists, and developers working together to deliver smooth, high-quality ecommerce experiences.'
+            title='Our Team Dedicated to Your Success'
+            subtitle='Meet the passionate team helping thousands of merchants start and grow their e-commerce businesses every day.'
           />
         </div>
 
         {/* Team Slider Container */}
-        <div className='relative overflow-hidden px-2'>
-          {/* Mobile/Tablet Grid - Static */}
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-2 relative z-0'>
-            {teamMembers.map((member, index) => (
-              <TeamCard key={member.id} member={member} index={index} />
-            ))}
+        <div className='relative overflow-hidden'>
+          {/* Mobile/Tablet - Horizontal Slider with side gradients */}
+          <div className='lg:hidden relative px-2'>
+            {/* Left Gradient - White to Transparent */}
+            <div
+              className='absolute left-0 top-0 bottom-0 w-12 z-10 pointer-events-none'
+              style={{
+                background: "linear-gradient(to right, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%)",
+              }}
+            />
+
+            {/* Right Gradient - Transparent to White */}
+            <div
+              className='absolute right-0 top-0 bottom-0 w-12 z-10 pointer-events-none'
+              style={{
+                background: "linear-gradient(to left, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%)",
+              }}
+            />
+
+            <MobileTeamSlider teamMembers={teamMembers} />
           </div>
 
           {/* Large Device - Horizontal Auto Infinite Slider */}
@@ -116,7 +140,49 @@ export default function TeamContainer() {
   );
 }
 
-// Horizontal Auto Infinite Slider Component
+// Mobile Horizontal Slider Component
+function MobileTeamSlider({ teamMembers }: { teamMembers: TeamMember[] }) {
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<gsap.core.Tween | null>(null);
+
+  // Duplicate team members for infinite scroll effect (scroll 50% = one full set)
+  const duplicatedMembers = [...teamMembers, ...teamMembers];
+
+  useGSAP(
+    () => {
+      if (!sliderRef.current) return;
+
+      animationRef.current = gsap.to(sliderRef.current, {
+        x: "-50%",
+        duration: 35,
+        ease: "none",
+        repeat: -1,
+      });
+    },
+    { scope: sliderRef }
+  );
+
+  return (
+    <div className='lg:hidden relative overflow-x-hidden py-4' style={{ height: "auto" }}>
+      <div
+        ref={sliderRef}
+        className='flex gap-4 sm:gap-6 md:gap-8'
+        style={{
+          willChange: "transform",
+          width: "fit-content",
+        }}
+      >
+        {duplicatedMembers.map((member, index) => (
+          <div key={`${member.id}-${index}`} className='shrink-0 w-[calc(100vw-3rem)] sm:w-[calc(50vw-2rem)] max-w-[350px]'>
+            <TeamCard member={member} index={index % teamMembers.length} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Horizontal Auto Infinite Slider Component (Desktop)
 function TeamSlider({ teamMembers }: { teamMembers: TeamMember[] }) {
   const [isHovered, setIsHovered] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -157,7 +223,7 @@ function TeamSlider({ teamMembers }: { teamMembers: TeamMember[] }) {
 
   return (
     <div className='relative overflow-hidden' onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-      <div ref={sliderRef} className='flex gap-5 md:gap-6' style={{ width: "fit-content", willChange: "transform" }}>
+      <div ref={sliderRef} className='flex gap-6 md:gap-8' style={{ width: "fit-content", willChange: "transform" }}>
         {duplicatedMembers.map((member, index) => {
           const cycleNumber = Math.floor(index / teamMembers.length) + 1;
           const isThirdCycle = cycleNumber === 3;
@@ -214,53 +280,72 @@ function TeamCard({ member, index, isThirdCycle = false }: TeamCardProps) {
     <div
       ref={cardRef}
       className={cn(
-        "relative w-full aspect-3/4 rounded-lg overflow-hidden bg-blue-500/10 max-h-[342px]",
-        isThirdCycle && "shadow-lg ring-2 ring-blue-200/50"
+        "group relative w-full aspect-3/4 rounded-2xl overflow-hidden",
+        "bg-white border border-gray-100",
+        "shadow-sm hover:shadow-xl transition-all duration-500",
+        "max-h-[400px] sm:max-h-[450px]",
+        isThirdCycle && "ring-2 ring-blue-200/60 shadow-xl"
       )}
     >
-      {/* Image */}
-      <div className='relative w-full h-full'>
+      {/* Image Container with Gradient Overlay */}
+      <div className='relative w-full h-full bg-linear-to-b from-gray-100 to-gray-200'>
         <Image
           src={member.image}
           alt={member.name}
           fill
-          className='object-cover'
-          sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 280px'
+          className='object-cover transition-transform duration-700 group-hover:scale-105'
+          sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px'
         />
 
-        {/* Semi-transparent Overlay at Bottom */}
-        <div className='absolute bottom-3 left-8 right-8 px-4 py-2 bg-black/30 rounded-md border border-white/30 backdrop-blur-md'>
-          <div className='text-white space-y-1'>
+        {/* Gradient Overlay - Subtle top to bottom */}
+        <div className='absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent' />
+
+        {/* Professional Content Overlay at Bottom */}
+        <div className='absolute bottom-0 left-0 right-0 p-5 sm:p-6 md:p-7'>
+          <div className='space-y-2'>
+            {/* Name */}
             <h3
-              className='font-semibold text-base sm:text-lg md:text-xl whitespace-nowrap'
+              className='text-white font-bold text-lg sm:text-xl md:text-2xl leading-tight'
               style={{
-                fontFamily: "var(--font-urbanist), sans-serif",
-                fontWeight: 600,
+                fontFamily: "var(--font-nunito-sans), sans-serif",
+                fontWeight: 700,
+                textShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
               }}
             >
               {member.name}
             </h3>
+
+            {/* Role Badge */}
+            <div className='inline-flex items-center'>
+              <span
+                className='text-white/95 text-sm sm:text-base font-medium px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20'
+                style={{
+                  fontFamily: "var(--font-urbanist), sans-serif",
+                  fontWeight: 500,
+                  textShadow: "0 1px 4px rgba(0, 0, 0, 0.2)",
+                }}
+              >
+                {member.role}
+              </span>
+            </div>
+
+            {/* Description */}
             <p
-              className='text-sm sm:text-base text-white/90 whitespace-nowrap'
+              className='text-white/90 text-sm sm:text-base leading-relaxed pt-1 max-w-[90%]'
               style={{
                 fontFamily: '"Segoe UI", system-ui, -apple-system, sans-serif',
                 fontWeight: 400,
+                textShadow: "0 1px 4px rgba(0, 0, 0, 0.3)",
               }}
             >
               {member.description}
             </p>
-            <p
-              className='text-sm sm:text-base text-white/80 font-medium whitespace-nowrap'
-              style={{
-                fontFamily: '"Segoe UI", system-ui, -apple-system, sans-serif',
-                fontWeight: 500,
-              }}
-            >
-              - {member.role}
-            </p>
           </div>
         </div>
       </div>
+
+      {/* Subtle Border Glow on Hover */}
+      <div className='absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-blue-200/40 transition-all duration-500 pointer-events-none' />
     </div>
   );
 }

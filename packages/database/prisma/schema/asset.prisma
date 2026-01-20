@@ -1,0 +1,46 @@
+// ============================================================
+// ASSET MANAGEMENT
+// ============================================================
+
+// Asset - Tracks all uploaded files (images, videos, documents)
+model Asset {
+    id             String    @id @default(uuid())
+    tenantId       String
+    publicId       String // Cloudinary public_id for deletion
+    url            String // Full Cloudinary URL
+    secureUrl      String? // HTTPS URL
+    folder         String? // Cloudinary folder (brand, products, etc)
+    format         String? // jpg, png, webp, mp4, pdf
+    width          Int?
+    height         Int?
+    bytes          Int?
+    resourceType   String    @default("image") // image, video, raw
+    refCount       Int       @default(0) // Number of references
+    markedUnusedAt DateTime? // When refCount hit 0 (for grace period)
+    createdAt      DateTime  @default(now())
+    updatedAt      DateTime  @updatedAt
+
+    tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    references AssetReference[]
+
+    @@unique([tenantId, publicId])
+    @@index([tenantId])
+    @@index([refCount])
+    @@index([markedUnusedAt])
+}
+
+// AssetReference - Links assets to entities (products, brand config, etc)
+model AssetReference {
+    id         String   @id @default(uuid())
+    assetId    String
+    entityType String // "product", "brandConfig", "category", etc.
+    entityId   String // ID of the entity using this asset
+    field      String // "logo", "thumbnail", "images[0]", etc.
+    createdAt  DateTime @default(now())
+
+    asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+    @@unique([assetId, entityType, entityId, field])
+    @@index([entityType, entityId])
+    @@index([assetId])
+}

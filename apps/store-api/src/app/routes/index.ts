@@ -39,6 +39,7 @@ import { ReviewRoutes } from "../module/Review/review.route";
 import { EmailTemplateRoutes } from "../module/EmailTemplate/emailTemplate.route";
 import { EmailProviderRoutes } from "../module/EmailTemplate/emailProvider.route";
 import { AIRoutes } from "../module/AI/ai.route";
+import { AssetRoutes } from "../module/Asset/asset.route";
 
 const router = Router();
 
@@ -204,7 +205,12 @@ const moduleRoutes = [
     path: "/ai-assistant",
     route: AIRoutes,
   },
+  {
+    path: "/assets",
+    route: AssetRoutes,
+  },
 ];
+
 
 // This will automatically loop your routes that you will add in the moduleRoutes array
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

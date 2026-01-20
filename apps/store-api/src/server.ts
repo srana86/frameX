@@ -8,6 +8,8 @@ import config from "./config";
 import { initializeSocketIO, shutdownSocketIO } from "./app/socket/socket";
 import { prisma } from "@framex/database";
 import { connectRedis, disconnectRedis } from "./lib/redis";
+import { initCronJobs } from "./cron";
+
 
 let server: Server;
 
@@ -34,7 +36,11 @@ async function main() {
     console.log("🔄 [Redis] Connecting for BetterAuth sessions...");
     await connectRedis();
 
+    // Initialize distributed cron jobs
+    initCronJobs();
+
     server = app.listen(config.port, () => {
+
       console.log(`🚀 [Server] Store API is listening on port ${config.port}`);
     });
 

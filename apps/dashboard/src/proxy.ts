@@ -5,6 +5,7 @@ import type { NextRequest } from "next/server";
 const publicPaths = [
   "/",
   "/login",
+  "/register",
   "/about-us",
   "/checkout",
   "/contact-us",
@@ -13,7 +14,7 @@ const publicPaths = [
 ];
 
 // File extensions that should be public
-const publicFileExtensions = [".ico", ".png", ".jpg", ".jpeg", ".svg", ".webp"];
+const publicFileExtensions = [".ico", ".png", ".jpg", ".jpeg", ".svg", ".webp", ".avif"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

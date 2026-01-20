@@ -19,8 +19,20 @@ const getBrandConfig = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateBrandConfig = catchAsync(async (req: Request, res: Response) => {
+  // Use tenantId from tenantMiddleware, fallback to user's tenantId for authenticated routes
+  const tenantId = req.tenantId || req.user?.tenantId;
+
+  if (!tenantId) {
+    return sendResponse(res, {
+      statusCode: StatusCodes.BAD_REQUEST,
+      success: false,
+      message: "Tenant identification required",
+      data: null,
+    });
+  }
+
   const result = await ConfigServices.updateBrandConfigIntoDB(
-    req.user?.merchantId as string,
+    tenantId,
     req.body
   );
 
@@ -31,6 +43,7 @@ const updateBrandConfig = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
 
 // Delivery Config
 const getDeliveryConfig = catchAsync(async (req: Request, res: Response) => {

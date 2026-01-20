@@ -2,15 +2,15 @@ import Image from "next/image";
 import { OrbitingCircles } from "@/components/ui/orbiting-circles";
 
 // Integration icons paths
-const bikashImg = "/integration-icons/bikash.png";
-const nagadImg = "/integration-icons/nagad.png";
-const paperflyImg = "/integration-icons/paperfly.png";
-const pathaoImg = "/integration-icons/pathao.png";
-const redxImg = "/integration-icons/redx.png";
-const roketImg = "/integration-icons/roket.png";
-const sslCommerceImg = "/integration-icons/ssl-commerce.png";
-const steadfastImg = "/integration-icons/steadfast.png";
-const upayImg = "/integration-icons/upay.png";
+const bikashImg = "/integration-icons/bikash.avif";
+const nagadImg = "/integration-icons/nagad.avif";
+const paperflyImg = "/integration-icons/paperfly.avif";
+const pathaoImg = "/integration-icons/pathao.avif";
+const redxImg = "/integration-icons/redx.avif";
+const roketImg = "/integration-icons/roket.avif";
+const sslCommerceImg = "/integration-icons/ssl-commerce.avif";
+const steadfastImg = "/integration-icons/steadfast.avif";
+const upayImg = "/integration-icons/upay.avif";
 
 interface IntegrationData {
   src: string;

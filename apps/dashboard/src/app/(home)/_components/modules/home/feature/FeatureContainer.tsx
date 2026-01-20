@@ -3,8 +3,6 @@
 import React, { useRef } from "react";
 import Image from "next/image";
 import SectionHeader from "../../../shared/SectionHeader";
-import { SeamlessUi } from "./SeamlessUi";
-import { StoreSetup } from "./StoreSetup";
 import { RealTimeAnalytics } from "./RealTimeAnalytics";
 import { CardsUi } from "./CardsUi";
 import { MarketingUi } from "./MarketingUi";
@@ -24,40 +22,53 @@ interface Feature {
 
 const features: Feature[] = [
   {
-    title: "Store Setup & Structure",
-    description: "A clean, well-planned store structure designed for smooth browsing and better user experience.",
-    visual: <StoreSetup />,
+    title: "Quick Store Setup & Product Management",
+    description: "Get your e-commerce store up and running instantly. Add products, manage inventory, and organize your catalog with ease.",
+    visual: (
+      <div className='w-full h-full flex items-center justify-center relative'>
+        <Image src='/feature/storesetup.avif' alt='Store Setup & Structure' fill className='object-contain scale-115' loading='lazy' />
+      </div>
+    ),
   },
   {
     title: "Marketing Friendly",
-    description: "Build your pages using flexible layout blocks you can freely customize to match your brand.",
+    description:
+      "Facebook, Instagram, and TikTok Conversion API with server-side tracking. Optimize ad performance and increase sales up to 10x with conversion tracking and SEO.",
     visual: <MarketingUi />,
   },
   {
-    title: "Real-Time Analytics & Insights",
-    description: "Track your store's performance with real-time analytics, sales metrics, and actionable insights to grow your business.",
-    visual: <RealTimeAnalytics />,
-  },
-  {
-    title: "Seamless Integrations",
-    description: "Connect your store with key apps and services effortlessly.",
-    visual: <SeamlessUi />,
-  },
-  {
-    title: "Fully Responsive Design",
-    description: "Enjoy a fully responsive website that adapts beautifully to any screen size or device.",
+    title: "Sales Analytics & Reporting",
+    description:
+      "Monitor your e-commerce performance with detailed sales reports, customer insights, and revenue tracking to make data-driven decisions.",
     visual: (
       <div className='w-full h-full flex items-center justify-center relative'>
         <Image
-          src='/feature/responsive-ui.png'
-          alt='Fully Responsive Design'
-          width={800}
-          height={600}
-          className='w-full h-full object-contain'
+          src='/feature/analytics.avif'
+          alt='Real-Time Analytics & Insights'
+          fill
+          className='object-contain scale-110'
           loading='lazy'
-          placeholder='blur'
-          blurDataURL='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k='
         />
+      </div>
+    ),
+  },
+  {
+    title: "Payment & Shipping Integration",
+    description:
+      "Accept payments securely with multiple payment gateways and manage deliveries with integrated shipping solutions for seamless order fulfillment.",
+    visual: (
+      <div className='w-full h-full flex items-center justify-center relative'>
+        <Image src='/feature/integration.avif' alt='Seamless Integrations' fill className='object-contain scale-115 mt-3' loading='lazy' />
+      </div>
+    ),
+  },
+  {
+    title: "Mobile-Optimized Shopping Experience",
+    description:
+      "Your store works perfectly on all devices. Customers can browse and shop seamlessly on mobile, tablet, or desktop for maximum sales potential.",
+    visual: (
+      <div className='w-full h-full flex items-center justify-center relative'>
+        <Image src='/feature/lastone.avif' alt='Fully Responsive Design' fill className='object-contain scale-105' loading='lazy' />
       </div>
     ),
   },
@@ -142,121 +153,79 @@ export default function FeatureContainer() {
   );
 
   return (
-    <section ref={sectionRef} className='w-full flex flex-col pt-12 sm:py-16 md:pt-20 lg:pt-24 bg-linear-to-b from-white to-gray-100/50'>
-      <div className='max-w-7xl mx-auto px-3'>
+    <section ref={sectionRef} className='w-full flex flex-col pt-4 sm:pt-6 md:pt-8 lg:pt-8 pb-12 sm:pb-16 md:pb-20 lg:pb-24 bg-white'>
+      <div className='max-w-7xl mx-auto px-4 sm:px-6'>
         {/* Header */}
         <div ref={headerRef} className='mb-12 sm:mb-16 md:mb-20'>
           <SectionHeader
-            title='Powerful features to simplify your web building'
-            subtitle='Explore powerful features crafted to make your website easier to build, customize, and manage.'
+            title='Everything you need to launch your e-commerce business'
+            subtitle='Complete features included to help you start selling online and manage your store efficiently.'
           />
         </div>
 
         {/* Top Row - 2 Cards */}
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mb-6'>
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 mb-5 sm:mb-6'>
           {topFeatures.map((feature, index) => (
             <div
               key={index}
               ref={(el) => {
                 topCardsRef.current[index] = el;
               }}
-              className='group relative rounded-2xl sm:rounded-3xl p-6 border border-gray-200/80 hover:border-blue-400/60 shadow-xl overflow-hidden'
+              // className='group relative bg-gray-50 rounded-2xl p-5 sm:p-6 border border-gray-100 hover:border-blue-200 transition-all duration-300 overflow-hidden'
+              className='group relative rounded-2xl sm:rounded-3xl p-6 border border-gray-200/80 hover:border-blue-400/60 shadow-sm overflow-hidden'
               style={{
-                background: "linear-gradient(218.09deg, #D4E5FF 10.71%, #FFFFFF 99.33%)",
+                background: "linear-gradient(170.09deg, rgba(32,120,255,0.8) 30.71%, #FFFFFF 9.33%)",
               }}
             >
-              <div className='relative z-10'>
-                {/* Visual Container */}
-                <div
-                  className='w-full h-80 mb-6 sm:mb-8 relative overflow-hidden rounded-[15px]'
-                  style={{
-                    padding: "1.5px",
-                    background: "linear-gradient(180deg, #3b82f6 0%, #ffffff 100%)",
-                    borderRadius: "15px",
-                  }}
-                >
-                  <div className='w-full h-full rounded-xl overflow-hidden bg-white'>{feature.visual}</div>
-                </div>
+              {/* Visual Container */}
+              <div className='w-full h-72 sm:h-80 mb-5 sm:mb-6 relative overflow-hidden rounded-xl bg-white border border-gray-100'>
+                {feature.visual}
+              </div>
 
-                {/* Content */}
-                <div className='space-y-3 sm:space-y-4'>
-                  <h3
-                    className='text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900 group-hover:text-blue-600'
-                    style={{
-                      fontFamily: "var(--font-nunito-sans)",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {feature.title}
-                  </h3>
-                  <p
-                    className='text-sm sm:text-base md:text-lg text-gray-600 leading-relaxed group-hover:text-gray-700'
-                    style={{
-                      fontFamily: "var(--font-urbanist)",
-                      fontWeight: 400,
-                    }}
-                  >
-                    {feature.description}
-                  </p>
-                </div>
+              {/* Content */}
+              <div className='space-y-2'>
+                <h3 className='text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300'>
+                  {feature.title}
+                </h3>
+                <p className='text-sm sm:text-base text-gray-500 leading-relaxed'>{feature.description}</p>
               </div>
             </div>
           ))}
         </div>
 
         {/* Bottom Row - 3 Cards */}
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 xs:gap-6'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6'>
           {bottomFeatures.map((feature, index) => (
             <div
               key={index + 2}
               ref={(el) => {
                 bottomCardsRef.current[index] = el;
               }}
-              className='group relative rounded-lg sm:rounded-xl md:rounded-2xl p-4 xs:p-5 shadow-xl overflow-hidden'
+              // className='group relative bg-gray-50 rounded-2xl p-5 sm:p-6 border border-gray-100 hover:border-blue-200 transition-all duration-300 overflow-hidden'
+              className='group relative rounded-2xl sm:rounded-3xl p-6 border border-gray-200/80 hover:border-blue-400/60 shadow-sm overflow-hidden'
               style={{
-                background: "linear-gradient(218.09deg, #D4E5FF 10.71%, #FFFFFF 100%)",
+                // background: "linear-gradient(218.09deg, #D4E5FF 10.71%, #FFFFFF 99.33%)",
+                background: "linear-gradient(170.09deg, rgba(32,120,255,0.8) 35.71%, #FFFFFF 9.33%)",
               }}
             >
-              <div className='relative z-10'>
-                {/* Visual Container */}
-                <div
-                  className='w-full h-auto md:h-64 lg:h-72 xl:h-80 mb-4 sm:mb-5 md:mb-6 relative overflow-hidden rounded-xl'
-                  style={{
-                    padding: "1.5px",
-                    background: "linear-gradient(180deg, #3b82f6 0%, #ffffff 100%)",
-                    borderRadius: "15px",
-                  }}
-                >
-                  <div className='w-full h-full rounded-xl overflow-hidden bg-white'>{feature.visual}</div>
-                </div>
+              {/* Visual Container */}
+              <div className='w-full h-48  sm:h-56 md:h-52 mb-5 relative overflow-hidden rounded-xl bg-blue-100 border border-gray-100'>
+                {feature.visual}
+              </div>
 
-                {/* Content */}
-                <div className='space-y-2 sm:space-y-3'>
-                  <h3
-                    className='text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 group-hover:text-blue-600'
-                    style={{
-                      fontFamily: "var(--font-nunito-sans)",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {feature.title}
-                  </h3>
-                  <p
-                    className='text-sm sm:text-base text-gray-600 leading-relaxed group-hover:text-gray-700'
-                    style={{
-                      fontFamily: "var(--font-urbanist)",
-                      fontWeight: 400,
-                    }}
-                  >
-                    {feature.description}
-                  </p>
-                </div>
+              {/* Content */}
+              <div className='space-y-2'>
+                <h3 className='text-lg sm:text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300'>
+                  {feature.title}
+                </h3>
+                <p className='text-sm sm:text-base text-gray-500 leading-relaxed'>{feature.description}</p>
               </div>
             </div>
           ))}
         </div>
       </div>
-      <div className='my-10 md:mt-24 md:mb-16'>
+
+      <div className='mt-12 sm:mt-16 md:mt-20'>
         <CardsUi />
       </div>
     </section>

@@ -7,98 +7,18 @@ import StarIcon from "./icons/StarIcon";
 import GridIcon from "./icons/GridIcon";
 import SparklesIcon from "./icons/SparklesIcon";
 import { cn } from "@/utils";
+import { DEFAULT_PLANS } from "@/lib/pricing-plans";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { getCurrencySymbol, DEFAULT_CURRENCY } from "@/lib/currency";
-import { api } from "@/lib/api-client";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-// Plan interface matching the database structure
-interface Plan {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  billingCycleMonths: number;
-  featuresList: string[];
-  isActive: boolean;
-  isPopular?: boolean;
-  sortOrder?: number;
-  buttonText?: string;
-  buttonVariant?: "default" | "outline" | "gradient";
-  iconType?: "star" | "grid" | "sparkles";
-}
-
-// Default fallback plans - 3 monthly plans
-const DEFAULT_PLANS: Plan[] = [
-  {
-    id: "starter",
-    name: "Starter",
-    description: "For individuals who just need to launch fast.",
-    price: 0,
-    billingCycleMonths: 1,
-    featuresList: [
-      "1 Website",
-      "Basic Templates",
-      "Standard Hosting",
-      "Drag & Drop Editor",
-      "Basic SEO Tools",
-      "Email Support",
-    ],
-    buttonText: "Get Started",
-    buttonVariant: "outline",
-    iconType: "star",
-    isActive: true,
-    sortOrder: 1,
-  },
-  {
-    id: "professional",
-    name: "Professional",
-    description: "For creators and small teams wanting control.",
-    price: 29,
-    billingCycleMonths: 1,
-    featuresList: [
-      "10 Websites",
-      "All Premium Templates",
-      "Priority Hosting",
-      "Advanced SEO",
-      "Custom Domains",
-      "Analytics Dashboard",
-      "Priority Support",
-    ],
-    buttonText: "Upgrade Now",
-    buttonVariant: "gradient",
-    isPopular: true,
-    iconType: "grid",
-    isActive: true,
-    sortOrder: 2,
-  },
-  {
-    id: "business",
-    name: "Business",
-    description: "For teams and businesses scaling without limit.",
-    price: 79,
-    billingCycleMonths: 1,
-    featuresList: [
-      "Unlimited Websites",
-      "Full Template Library",
-      "High-Performance Hosting",
-      "Team Collaboration",
-      "Advanced Integrations",
-      "Custom Code Support",
-      "Dedicated Success Manager",
-    ],
-    buttonText: "Start Scaling",
-    buttonVariant: "outline",
-    iconType: "sparkles",
-    isActive: true,
-    sortOrder: 3,
-  },
-];
+// Default fallback plans - Same plan with 3 billing cycles
+// All plans include the same features, only billing cycle differs
 
 // Get icon component based on iconType
 function getIconComponent(iconType: string | undefined, className: string) {
@@ -115,15 +35,12 @@ function getIconComponent(iconType: string | undefined, className: string) {
 
 // Get icon background based on index
 function getIconBg(index: number, isPopular: boolean) {
-  if (isPopular)
-    return "bg-linear-to-br from-blue-100 via-purple-100 to-purple-200";
+  if (isPopular) return "bg-linear-to-br from-blue-100 via-purple-100 to-purple-200";
   return "bg-linear-to-br from-purple-100 to-purple-200";
 }
 
 export default function PricingContainer() {
-  const [currencySymbol, setCurrencySymbol] = useState(
-    getCurrencySymbol(DEFAULT_CURRENCY)
-  );
+  const [currencySymbol, setCurrencySymbol] = useState(getCurrencySymbol(DEFAULT_CURRENCY));
   const sectionRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
 
@@ -134,11 +51,12 @@ export default function PricingContainer() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const settings = await api
-          .get<any>("settings/general")
-          .catch(() => null);
-        if (settings?.defaultCurrency) {
-          setCurrencySymbol(getCurrencySymbol(settings.defaultCurrency));
+        const settingsRes = await fetch("/api/settings/general");
+        if (settingsRes.ok) {
+          const settings = await settingsRes.json();
+          if (settings.defaultCurrency) {
+            setCurrencySymbol(getCurrencySymbol(settings.defaultCurrency));
+          }
         }
       } catch (error) {
         console.error("Failed to fetch settings:", error);
@@ -175,27 +93,20 @@ export default function PricingContainer() {
   );
 
   return (
-    <section
-      ref={sectionRef}
-      className="w-full py-10 xs:py-12 sm:py-16 md:py-20 lg:py-24"
-    >
-      <div className="max-w-7xl mx-auto px-3">
+    <section ref={sectionRef} className='w-full py-12 sm:py-16 md:py-20 lg:py-24'>
+      <div className='max-w-7xl mx-auto px-3'>
         {/* Header */}
-        <div ref={headerRef} className="mb-6 xs:mb-8 sm:mb-12 md:mb-16">
+        <div ref={headerRef} className='mb-12 sm:mb-16 md:mb-20'>
           <SectionHeader
-            title="Choose a Plan That Matches Your Growth"
-            subtitle="Straightforward tiers with the features you need now — and room to scale when your product demands it."
+            title='Choose Your Billing Cycle'
+            subtitle='Start your e-commerce store at the most affordable price. Save more with longer commitments - all plans include the same features.'
           />
         </div>
 
         {/* Pricing Cards - Always show 3 cards */}
-        <div
-          className={cn(
-            "grid grid-cols-1 gap-8 items-stretch lg:grid-cols-3 lg:gap-9"
-          )}
-        >
+        <div className={cn("grid grid-cols-1 gap-8 items-stretch lg:grid-cols-3 lg:gap-9")}>
           {plans.map((plan, index) => (
-            <div key={plan.id} className="flex lg:h-full">
+            <div key={plan.id} className='flex lg:h-full'>
               <PricingCard
                 plan={{
                   id: plan.id,

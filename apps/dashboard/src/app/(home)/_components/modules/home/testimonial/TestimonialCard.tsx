@@ -65,7 +65,7 @@ export default function TestimonialCard({ testimonial, index, isVisible }: Testi
       <div className='flex items-center gap-2 xs:gap-2.5 sm:gap-3'>
         {/* Avatar */}
         <div
-          className='rounded-full bg-linear-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold shrink-0'
+          className='rounded-full bg-linear-to-br from-[#2078FF] via-[#4F6BFF] to-[#4000FF] flex items-center justify-center text-white font-semibold shrink-0'
           style={{
             width: "clamp(36px, 8vw, 48px)",
             height: "clamp(36px, 8vw, 48px)",
@@ -91,7 +91,7 @@ export default function TestimonialCard({ testimonial, index, isVisible }: Testi
 
         {/* Name and Title */}
         <div className='min-w-0 flex-1'>
-          <h4
+          <h3
             className='text-gray-900 font-semibold truncate'
             style={{
               fontFamily: "var(--font-nunito-sans), sans-serif",
@@ -101,7 +101,7 @@ export default function TestimonialCard({ testimonial, index, isVisible }: Testi
             }}
           >
             {testimonial.name}
-          </h4>
+          </h3>
           <p
             className='text-gray-600 truncate'
             style={{

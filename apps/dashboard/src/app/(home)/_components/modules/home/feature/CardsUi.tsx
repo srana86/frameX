@@ -12,22 +12,22 @@ const stats: StatCard[] = [
   {
     value: 10000,
     suffix: "+",
-    label: "Active Subscriptions",
+    label: "Active Merchants",
   },
   {
-    value: 500,
-    suffix: "K+",
-    label: "Monthly Revenue",
-  },
-  {
-    value: 2500,
+    value: 830000000,
     suffix: "+",
-    label: "Active Stores",
+    label: "Total Revenue (All Merchants)",
   },
   {
-    value: 95,
+    value: 13500,
+    suffix: "+",
+    label: "Active E-Commerce Stores",
+  },
+  {
+    value: 99,
     suffix: "%",
-    label: "Satisfaction Rate",
+    label: "Customer Satisfaction",
   },
 ];
 
@@ -96,11 +96,10 @@ export function CardsUi() {
   }, []);
 
   return (
-    <div ref={sectionRef} className='w-full'>
-      <div className='max-w-7xl mx-auto px-3'>
-        <div className='grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3'>
+    <div ref={sectionRef} className='w-full bg-linear-to-l from-[rgba(232,236,253,0.2)] to-[rgba(32,120,255,0.5)]'>
+      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20'>
+        <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6 lg:gap-8'>
           {stats.map((stat, idx) => {
-            // Make all cards bigger (span 2 columns on large screens)
             return <Card key={idx} stat={stat} index={idx} isVisible={isVisible} />;
           })}
         </div>
@@ -117,35 +116,75 @@ function Card({ stat, index, isVisible }: { stat: StatCard; index: number; isVis
     if (isVisible) {
       const timer = setTimeout(() => {
         setCardVisible(true);
-      }, index * 80);
+      }, index * 100);
       return () => clearTimeout(timer);
     }
   }, [isVisible, index]);
 
-  const formatNumber = (num: number): string => {
-    if (num >= 1000) {
-      return (num / 1000).toFixed(num % 1000 === 0 ? 0 : 1) + "K";
+  const formatNumber = (num: number): { value: string; unit: string } => {
+    if (num >= 1000000000) {
+      const billions = num / 1000000000;
+      return {
+        value: billions % 1 === 0 ? billions.toFixed(0) : billions.toFixed(1),
+        unit: "B",
+      };
+    } else if (num >= 1000000) {
+      const millions = num / 1000000;
+      return {
+        value: millions % 1 === 0 ? millions.toFixed(0) : millions.toFixed(1),
+        unit: "M",
+      };
+    } else if (num >= 1000) {
+      const thousands = num / 1000;
+      return {
+        value: thousands % 1 === 0 ? thousands.toFixed(0) : thousands.toFixed(1),
+        unit: "K",
+      };
     }
-    return num.toString();
+    return {
+      value: num.toString(),
+      unit: "",
+    };
   };
+
+  const formatted = formatNumber(animatedValue);
+  // Combine formatted unit (K/M/B) with original suffix (+, %, etc.)
+  const displayUnit = formatted.unit ? `${formatted.unit}${stat.suffix}` : stat.suffix;
 
   return (
     <div
-      className='bg-white rounded-lg border border-gray-200 px-3 sm:px-4 py-6 md:py-8 text-center'
+      className='bg-white rounded-xl border border-gray-200 px-4 sm:px-5 md:px-6 py-6 sm:py-7 md:py-8 text-center'
       style={{
         opacity: cardVisible ? 1 : 0,
         transform: cardVisible ? "translateY(0)" : "translateY(20px)",
-        transition: `opacity 0.5s ease-out ${index * 0.08}s, transform 0.5s ease-out ${index * 0.08}s`,
+        transition: `opacity 0.5s ease-out ${index * 0.1}s, transform 0.5s ease-out ${index * 0.1}s`,
+        boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
       }}
     >
-      {/* Number */}
-      <div className='mb-1'>
-        <span className='text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 tabular-nums'>{formatNumber(animatedValue)}</span>
-        <span className='text-base sm:text-lg md:text-xl font-bold text-gray-900'>{stat.suffix}</span>
+      {/* Number with suffix on same line */}
+      <div className='mb-3 sm:mb-4'>
+        <span
+          className='text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 tabular-nums leading-tight inline-block'
+          style={{
+            fontFamily: "var(--font-nunito-sans), sans-serif",
+            fontWeight: 700,
+          }}
+        >
+          {formatted.value}
+          {displayUnit && <span className='text-blue-600 ml-0.5'>{displayUnit}</span>}
+        </span>
       </div>
 
       {/* Label */}
-      <p className='text-xs sm:text-sm text-gray-600 font-medium'>{stat.label}</p>
+      <p
+        className='text-xs sm:text-sm md:text-base text-gray-600 font-medium leading-relaxed'
+        style={{
+          fontFamily: "var(--font-urbanist), sans-serif",
+          fontWeight: 500,
+        }}
+      >
+        {stat.label}
+      </p>
     </div>
   );
 }

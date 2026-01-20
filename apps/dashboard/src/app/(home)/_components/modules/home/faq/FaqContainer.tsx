@@ -21,39 +21,39 @@ interface FAQItem {
 const faqItems: FAQItem[] = [
   {
     id: "1",
-    question: "What is BuildX?",
+    question: "How much does it cost to start an e-commerce store?",
     answer:
-      "BuildX is a modern website and eCommerce builder that lets you create professional websites without coding. Choose a template, customize everything, and publish in minutes.",
+      "Our plans start at just ৳500 per month. We also offer 3-month plans at ৳1,300 and 6-month plans at ৳2,500 for even better value. All plans include the same complete features - product management, order processing, payment gateway integration, tracking, and more.",
   },
   {
     id: "2",
-    question: "Do I need any technical skills to use BuildX?",
+    question: "Do I need technical knowledge to set up my online store?",
     answer:
-      "No technical skills are required! BuildX is designed for everyone, from beginners to professionals. Our intuitive drag-and-drop interface makes it easy to create beautiful websites without any coding knowledge.",
+      "No technical skills required! Our platform is designed for merchants of all levels. You can set up your complete e-commerce store in minutes, add products easily, and start selling right away. We provide step-by-step guidance for everything.",
   },
   {
     id: "3",
-    question: "Can I connect my own domain to BuildX?",
+    question: "Can I use my own custom domain?",
     answer:
-      "Yes, absolutely! You can connect your own custom domain to your BuildX website. We provide step-by-step instructions to help you set up your domain quickly and easily.",
+      "Yes! All plans include custom domain support. You can connect your own domain name to your store to build your brand. We provide easy setup instructions to connect your domain quickly.",
   },
   {
     id: "4",
-    question: "Are the templates fully customizable?",
+    question: "What features are included in the plans?",
     answer:
-      "Yes, all templates are fully customizable. You can change colors, fonts, layouts, add your own content, images, and more. Every aspect of your website can be tailored to match your brand.",
+      "All plans include everything you need: complete e-commerce store, unlimited products, product and inventory management, order management, payment gateway integration, Facebook Pixel tracking, Instagram & TikTok Conversion API, advanced analytics, custom domain, brand customization (logo, SEO, theme), mobile responsive design, and email support.",
   },
   {
     id: "5",
-    question: "Can I create an online store with BuildX?",
+    question: "How do I accept payments from customers?",
     answer:
-      "Yes! BuildX includes powerful eCommerce features that allow you to create a fully functional online store. You can add products, manage inventory, process payments, and handle orders all in one place.",
+      "Payment gateway integration is included in all plans. You can accept payments securely through multiple payment methods. We support popular payment gateways in Bangladesh to make it easy for your customers to pay.",
   },
   {
     id: "6",
-    question: "Will my website be mobile friendly?",
+    question: "Will my store work on mobile devices?",
     answer:
-      "Absolutely! All websites created with BuildX are automatically mobile-responsive. Your site will look great and function perfectly on all devices, including smartphones, tablets, and desktops.",
+      "Absolutely! All stores are fully mobile-responsive and optimized for smartphones and tablets. Your customers can browse products, add to cart, and complete purchases seamlessly on any device. This is included in all plans.",
   },
 ];
 
@@ -191,13 +191,13 @@ export default function FaqContainer() {
   };
 
   return (
-    <section ref={sectionRef} className='w-full py-12 sm:py-16 md:py-20 lg:py-28 bg-white'>
+    <section ref={sectionRef} className='w-full py-12 sm:py-16 md:py-20 lg:py-24 bg-white'>
       <div className='max-w-4xl mx-auto px-3'>
         {/* Header */}
         <div ref={headerRef} className='mb-12 sm:mb-16 md:mb-20'>
           <SectionHeader
-            title='Website builder FAQs'
-            subtitle='Find answers to the most frequently asked questions about creating your own website.'
+            title='Frequently Asked Questions'
+            subtitle='Find answers to common questions about starting your e-commerce business with our platform.'
           />
         </div>
 
@@ -212,9 +212,13 @@ export default function FaqContainer() {
                   itemsRef.current[index] = el;
                 }}
                 className={cn(
-                  "rounded-lg border overflow-hidden",
-                  isOpen ? "bg-blue-50/50 border-blue-200 shadow-lg" : "bg-white border-gray-200 hover:border-blue-300"
+                  "rounded-lg border overflow-hidden transition-colors duration-300",
+                  isOpen ? "bg-white" : "bg-white hover:border-[#2078FF]/50"
                 )}
+                style={{
+                  borderColor: isOpen ? "rgba(32, 120, 255, 0.3)" : "rgba(0, 0, 0, 0.1)",
+                  backgroundColor: isOpen ? "rgba(32, 120, 255, 0.05)" : "white",
+                }}
               >
                 {/* Question Button */}
                 <button
@@ -235,9 +239,13 @@ export default function FaqContainer() {
                   </h3>
                   <div
                     className={cn(
-                      "shrink-0 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full relative faq-icon",
-                      isOpen ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-600"
+                      "shrink-0 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full relative faq-icon transition-colors duration-300",
+                      isOpen ? "" : "bg-gray-100 text-gray-600 group-hover:bg-[rgba(32,120,255,0.15)] group-hover:text-[#2078FF]"
                     )}
+                    style={{
+                      backgroundColor: isOpen ? "rgba(32, 120, 255, 0.15)" : undefined,
+                      color: isOpen ? "#2078FF" : undefined,
+                    }}
                   >
                     {isOpen ? <Minus className='w-4 h-4 sm:w-5 sm:h-5' /> : <Plus className='w-4 h-4 sm:w-5 sm:h-5' />}
                   </div>

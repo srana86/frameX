@@ -34,7 +34,7 @@ export function DashboardPreview() {
         {/* Logo */}
         <div className='flex items-center gap-1.5 shrink-0'>
           <div className='hidden sm:flex items-center'>
-            <Image src='/logo/framrx.png' alt='FrameX' width={100} height={32} className='h-5 sm:h-6 md:h-7 w-auto object-contain' />
+            <Image src='/logo/framex.avif' alt='FrameX' width={100} height={32} className='h-5 sm:h-6 md:h-7 w-auto object-contain' />
           </div>
           <Menu className='w-4 h-4 sm:hidden text-gray-600' />
         </div>

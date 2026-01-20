@@ -51,6 +51,7 @@ model Tenant {
   checkouts       Checkout[]
   subscriptions   TenantSubscription[]
   featureRequests FeatureRequest[]
+  assets          Asset[]
 
   @@index([status])
   @@index([createdAt(sort: Desc)])

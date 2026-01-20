@@ -1,65 +1,21 @@
-"use client";
-
-import { useRef } from "react";
 import Image from "next/image";
 import { StartBuildingButton, WatchDemoButton } from "../../../ui/button";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight, Play, Sparkles } from "lucide-react";
 import WhiteShades from "../svg";
 import { DashboardPreview } from "./DashboardPreview";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
 
 const { WhiteShadeLeft1, WhiteShadeLeft2, WhiteShadeRight1, WhiteShadeRight2 } = WhiteShades;
 
 export default function HeroContainer() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  const descriptionRef = useRef<HTMLParagraphElement>(null);
-  const buttonsRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLDivElement>(null);
-
-  useGSAP(
-    () => {
-      if (!containerRef.current) return;
-
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-
-      // Heading - clean fade up
-      if (headingRef.current) {
-        gsap.set(headingRef.current, { opacity: 0, y: 30 });
-        tl.to(headingRef.current, { opacity: 1, y: 0, duration: 0.8 }, 0);
-      }
-
-      // Description - fade up with slight delay
-      if (descriptionRef.current) {
-        gsap.set(descriptionRef.current, { opacity: 0, y: 20 });
-        tl.to(descriptionRef.current, { opacity: 1, y: 0, duration: 0.6 }, 0.15);
-      }
-
-      // Buttons - fade up
-      if (buttonsRef.current) {
-        gsap.set(buttonsRef.current, { opacity: 0, y: 15 });
-        tl.to(buttonsRef.current, { opacity: 1, y: 0, duration: 0.6 }, 0.3);
-      }
-
-      // Image - fade up
-      if (imageRef.current) {
-        gsap.set(imageRef.current, { opacity: 0, y: 25 });
-        tl.to(imageRef.current, { opacity: 1, y: 0, duration: 0.8 }, 0.4);
-      }
-    },
-    { scope: containerRef }
-  );
-
   return (
-    <div
-      ref={containerRef}
+    <header
       className='w-full relative flex flex-col items-center px-3 pt-28 md:pt-32 lg:pt-48 overflow-hidden lg:max-h-[1215px]'
       style={{
         background:
           "linear-gradient(180deg, transparent 0%, rgba(39, 124, 255, 0.2) 30%, rgba(39, 124, 255, 0.5) 60%, rgba(39, 124, 255, 0.8) 85%, #277CFF 100%)",
         height: "auto",
       }}
+      aria-labelledby='hero-title'
     >
       {/* Left White Shades - Close together - Hidden on mobile */}
       <div className='hidden md:block absolute left-0 top-0 h-full pointer-events-none z-0' style={{ width: "auto" }}>
@@ -81,10 +37,24 @@ export default function HeroContainer() {
         </div>
       </div>
       {/* Hero Content */}
-      <div className='w-full max-w-4xl mx-auto text-center space-y-3 sm:space-y-4 md:space-y-6 lg:space-y-8 shrink-0 relative z-10 px-2 sm:px-4'>
+      <div className='w-full max-w-4xl mt-4 md:-mt-4 mx-auto text-center space-y-3 sm:space-y-4 md:space-y-6 lg:space-y-8 shrink-0 relative z-10 px-2 sm:px-4'>
+        {/* Badge */}
+        <div className='inline-flex items-center justify-center gap-2 px-4 py-2 sm:px-5 sm:py-2 rounded-full border border-blue-200 bg-white/25 mx-auto mb-4 md:mb-8'>
+          <Sparkles className='w-4 h-4 text-blue-500' />
+          <span
+            className='text-xs sm:text-base font-semibold text-gray-700'
+            style={{
+              fontFamily: "var(--font-urbanist)",
+              fontWeight: 600,
+            }}
+          >
+            Bangladesh's No.1 Online Growth Partner
+          </span>
+        </div>
+
         {/* Main Heading */}
         <h1
-          ref={headingRef}
+          id='hero-title'
           className='text-gray-900 text-center'
           style={{
             fontFamily: "var(--font-nunito-sans)",
@@ -95,17 +65,20 @@ export default function HeroContainer() {
             textAlign: "center",
           }}
         >
-          <span style={{ display: "inline-block" }}>Build Stunning Websites</span>
+          <span className='inline sm:hidden'>Launch Your FrameX Store</span>
+          <br className='inline sm:hidden' />
+          <span className='inline sm:hidden bg-linear-to-r from-[#2078FF] to-[#4000FF] bg-clip-text text-transparent'>
+            Sell & Grow Fast.
+          </span>
+          <span className='hidden sm:inline'>Launch Your FrameX Store</span>
           <br className='hidden sm:block' />
-          <span className='block sm:inline'> </span>
-          <span className='bg-linear-to-r from-[#2078FF] to-[#4000FF] bg-clip-text text-transparent' style={{ display: "inline-block" }}>
-            In Minutes Not Hours
+          <span className='hidden sm:inline'> </span>
+          <span className='hidden sm:inline bg-linear-to-r from-[#2078FF] to-[#4000FF] bg-clip-text text-transparent'>
+            Sell More. Grow Faster.
           </span>
         </h1>
-
         {/* Description */}
         <p
-          ref={descriptionRef}
           className='text-gray-600 max-w-full md:max-w-2xl mx-auto text-center'
           style={{
             fontFamily: "var(--font-urbanist)",
@@ -117,21 +90,24 @@ export default function HeroContainer() {
             padding: "0 0.5rem",
           }}
         >
-          Create professional websites instantly with our no-code platform. Powerful, intuitive, and designed for creators.
+          Launch your professional e-commerce store in minutes with FrameX Tech. We help merchants in Bangladesh build affordable,
+          fully-featured online stores to start selling and grow faster.
         </p>
-
         {/* CTA Buttons - Always flex */}
-        <div
-          ref={buttonsRef}
-          className='flex flex-row items-center justify-center gap-3 sm:gap-4 md:gap-6 pt-2 sm:pt-3 md:pt-4 flex-wrap mb-12 md:mb-20'
-        >
-          <StartBuildingButton text='Start Building' icon={ArrowRight} iconPosition='right' className='text-xs sm:text-sm md:text-base' />
-          <WatchDemoButton text='Watch Demo' icon={Play} iconPosition='left' className='text-xs sm:text-sm md:text-base' />
+        <div className='flex flex-row items-center justify-center gap-3 sm:gap-4 md:gap-6 pt-2 sm:pt-3 md:pt-4 flex-wrap mb-12 md:mb-20'>
+          <StartBuildingButton
+            text='Start Building'
+            icon={ArrowRight}
+            iconPosition='right'
+            className='text-xs sm:text-sm md:text-base'
+            href='#pricing'
+          />
+          <WatchDemoButton text='Watch Demo' icon={Play} iconPosition='left' className='text-xs sm:text-sm md:text-base' href='#explore' />
         </div>
       </div>
 
       {/* Image Frame with Gradient Border */}
-      <div ref={imageRef} className='w-full max-w-[1100px] mx-auto px-2 sm:px-3 md:px-4 shrink-0 relative z-10 mt-auto mb-0'>
+      <div className='w-full max-w-[1100px] mx-auto px-2 sm:px-3 md:px-4 shrink-0 relative z-10 mt-auto mb-0'>
         {/* White background with padding - only top, left, right */}
         {/* Reduced padding for mobile and tablet */}
         <div className='bg-white pt-0.5 px-0.5 rounded-t-lg sm:rounded-t-xl'>
@@ -165,12 +141,15 @@ export default function HeroContainer() {
               {/* Dashboard Image for Mobile and Tablet */}
               <div className='w-full h-[200px] sm:h-[260px] md:h-72 lg:hidden overflow-hidden'>
                 <Image
-                  src='/mock/dashboard.png'
+                  src='/mock/dashboard.avif'
                   alt='Dashboard Preview'
                   width={1100}
                   height={600}
                   className='w-full h-full object-cover object-top'
                   priority
+                  fetchPriority='high'
+                  sizes='(max-width: 1024px) 100vw, 1100px'
+                  quality={70}
                 />
               </div>
 
@@ -182,6 +161,6 @@ export default function HeroContainer() {
           </div>
         </div>
       </div>
-    </div>
+    </header>
   );
 }
