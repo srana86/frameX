@@ -88,10 +88,10 @@ ENCRYPTION_KEY=your_encryption_key
 
 ### Each Tenant Deployment
 ```env
-MERCHANT_ID=tenant_123
-MERCHANT_DB_NAME=tenant_123_db
+TENANT_ID=tenant_123
+TENANT_DB_NAME=tenant_123_db
 MONGODB_URI=mongodb://.../tenant_123_db
-NEXT_PUBLIC_MERCHANT_ID=tenant_123
+NEXT_PUBLIC_TENANT_ID=tenant_123
 ```
 
 ## 📝 Implementation Checklist
@@ -168,7 +168,7 @@ NEXT_PUBLIC_MERCHANT_ID=tenant_123
    ```typescript
    // In tenant deployments, use:
    import { getCollection } from "@/lib/mongodb-tenant";
-   // This automatically uses MERCHANT_DB_NAME
+   // This automatically uses TENANT_DB_NAME
    ```
 
 2. **Update API Routes:**

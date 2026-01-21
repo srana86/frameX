@@ -15,15 +15,15 @@ All API calls in FrameX-Dashboard have been updated to connect directly to the N
 
 1. **Dashboard** (`src/app/(dashboard)/dashboard/page.tsx`)
 
-   - Updated to use `api.get()` for merchants, subscriptions, deployments, plans, databases
+   - Updated to use `api.get()` for tenants, subscriptions, deployments, plans, databases
 
-2. **Merchants** (`src/app/(dashboard)/merchants/page.tsx`)
+2. **Tenants** (`src/app/(dashboard)/tenants/page.tsx`)
 
-   - Updated to use `api.get()` for merchants, plans, subscriptions
+   - Updated to use `api.get()` for tenants, plans, subscriptions
 
 3. **Subscriptions** (`src/app/(dashboard)/subscriptions/page.tsx`)
 
-   - Updated to use `api.get()` for subscriptions, plans, merchants
+   - Updated to use `api.get()` for subscriptions, plans, tenants
 
 4. **Plans** (`src/app/(dashboard)/plans/page.tsx`)
 
@@ -31,11 +31,11 @@ All API calls in FrameX-Dashboard have been updated to connect directly to the N
 
 5. **Deployments** (`src/app/(dashboard)/deployments/page.tsx`)
 
-   - Updated to use `api.get()` for deployments, merchants
+   - Updated to use `api.get()` for deployments, tenants
 
 6. **Databases** (`src/app/(dashboard)/database/page.tsx`)
 
-   - Updated to use `api.get()` for databases, merchants
+   - Updated to use `api.get()` for databases, tenants
 
 7. **Payments** (`src/app/(dashboard)/payments/page.tsx`)
 
@@ -96,7 +96,7 @@ Since all frontend code now connects directly to the Node.js backend, you can op
 
 ```bash
 # These directories can be deleted (they're no longer used):
-rm -rf src/app/api/merchants
+rm -rf src/app/api/tenants
 rm -rf src/app/api/subscriptions
 rm -rf src/app/api/plans
 rm -rf src/app/api/deployments
@@ -148,13 +148,13 @@ rm -rf src/app/api/checkout
 import { api } from "@/lib/api-client";
 
 // GET request
-const merchants = await api.get<any[]>("merchants");
+const tenants = await api.get<any[]>("tenants");
 
 // POST request
-const newMerchant = await api.post<any>("merchants", { name: "..." });
+const newTenant = await api.post<any>("tenants", { name: "..." });
 
 // PUT request
-const updated = await api.put<any>("merchants/123", { name: "..." });
+const updated = await api.put<any>("tenants/123", { name: "..." });
 
 // PATCH request
 const patched = await api.patch<any>("feature-requests/123", {
@@ -162,15 +162,15 @@ const patched = await api.patch<any>("feature-requests/123", {
 });
 
 // DELETE request
-await api.delete("merchants/123");
+await api.delete("tenants/123");
 ```
 
 ### With Error Handling
 
 ```typescript
 try {
-  const data = await api.get<any[]>("merchants");
-  setMerchants(data);
+  const data = await api.get<any[]>("tenants");
+  setTenants(data);
 } catch (error: any) {
   console.error("Failed to load:", error);
   toast.error(error.message || "Request failed");
@@ -182,8 +182,8 @@ try {
 ```typescript
 import { apiRequestWithMeta } from "@/lib/api-client";
 
-const result = await apiRequestWithMeta<any[]>("merchants?page=1&limit=10");
-console.log(result.data); // Array of merchants
+const result = await apiRequestWithMeta<any[]>("tenants?page=1&limit=10");
+console.log(result.data); // Array of tenants
 console.log(result.meta); // { page, limit, total, totalPage }
 ```
 
@@ -197,7 +197,7 @@ Some files may still have fetch calls that need updating:
 - `src/app/(dashboard)/settings/_components/SSLCommerzSettings.tsx` - May have API calls
 - `src/app/(dashboard)/plans/new/page.tsx` - May have API calls
 - `src/app/(dashboard)/_components/modules/activity/ActivityContainer.tsx` - May have API calls
-- `src/app/(dashboard)/merchants/[id]/page.tsx` - May have API calls
+- `src/app/(dashboard)/tenants/[id]/page.tsx` - May have API calls
 - `src/app/(home)/checkout/_components/CheckoutContainer.tsx` - May have API calls
 
 Check these files and update any remaining `fetch("/api/...")` calls to use the API client.

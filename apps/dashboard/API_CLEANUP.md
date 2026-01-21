@@ -6,7 +6,7 @@ The following Next.js API routes have been removed since all functionality has b
 
 ### Removed Directories:
 
-- ✅ `src/app/api/merchants/` - All merchant endpoints
+- ✅ `src/app/api/tenants/` - All tenant endpoints
 - ✅ `src/app/api/subscriptions/` - All subscription endpoints
 - ✅ `src/app/api/plans/` - All plan endpoints
 - ✅ `src/app/api/deployments/` - All deployment endpoints
@@ -29,10 +29,10 @@ The following Next.js API routes have been removed since all functionality has b
 
 The following routes are kept for specific purposes:
 
-### 1. `merchant-subscription/`
+### 1. `tenant-subscription/`
 
-- **Purpose:** Public endpoint for merchant apps (FrameX-Store) to fetch subscription details
-- **Usage:** Called by merchant apps via `SUPER_ADMIN_URL/api/merchant-subscription`
+- **Purpose:** Public endpoint for tenant apps (FrameX-Store) to fetch subscription details
+- **Usage:** Called by tenant apps via `SUPER_ADMIN_URL/api/tenant-subscription`
 - **Status:** May be migrated to Node.js backend in the future
 
 ### 2. `simulate/`
@@ -49,7 +49,7 @@ The following routes are kept for specific purposes:
 All dashboard pages now use the Node.js backend via the API client:
 
 - ✅ Dashboard → `api.get("analytics")`
-- ✅ Merchants → `api.get("merchants")`
+- ✅ Tenants → `api.get("tenants")`
 - ✅ Subscriptions → `api.get("subscriptions")`
 - ✅ Plans → `api.get("plans")`
 - ✅ Deployments → `api.get("deployments")`
@@ -66,7 +66,7 @@ All dashboard pages now use the Node.js backend via the API client:
 
 ## 📝 Next Steps
 
-1. **Optional:** Migrate `merchant-subscription` endpoint to Node.js backend
+1. **Optional:** Migrate `tenant-subscription` endpoint to Node.js backend
 2. **Optional:** Remove or migrate `simulate` endpoints
 3. **Verify:** Test all dashboard pages to ensure they work with Node.js backend
 4. **Cleanup:** Remove any remaining references to old API routes in code

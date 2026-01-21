@@ -49,8 +49,7 @@ const getTenantFull = async (id: string) => {
   }
 
   return {
-    tenant, // New key name
-    tenant: tenant, // Keep 'tenant' key for backward compatibility with frontend
+    tenant,
     subscription,
     plan,
     deployment: deployment
@@ -183,4 +182,18 @@ export const TenantServices = {
   updateTenant,
   updateTenantDomain,
   deleteTenant,
+};
+
+// Backward compatibility - merchant naming aliases
+export const MerchantServices = {
+  getAllMerchants: getAllTenants,
+  getMerchantById: getTenantById,
+  getMerchantFull: getTenantFull,
+  getMerchantSubscription: getTenantSubscription,
+  getMerchantDeployment: getTenantDeployment,
+  getMerchantDatabase: getTenantDatabase,
+  createMerchant: createTenant,
+  updateMerchant: updateTenant,
+  updateMerchantDomain: updateTenantDomain,
+  deleteMerchant: deleteTenant,
 };

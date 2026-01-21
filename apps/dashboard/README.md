@@ -1,14 +1,14 @@
 # Super Admin Panel
 
-Centralized admin panel for managing all merchants, deployments, and subscriptions.
+Centralized admin panel for managing all tenants, deployments, and subscriptions.
 
 ## Features
 
-- Manage all merchants
+- Manage all tenants
 - View and manage deployments
 - Manage subscription plans
 - Monitor system health
-- Create new merchant deployments
+- Create new tenant deployments
 
 ## Setup
 
@@ -33,5 +33,5 @@ npm run dev
 
 ## Deployment
 
-Deploy to Vercel or your preferred platform. This is a separate deployment from merchant instances.
+Deploy to Vercel or your preferred platform. This is a separate deployment from tenant instances.
 # ecommerce-admin

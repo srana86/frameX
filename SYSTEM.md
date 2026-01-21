@@ -90,7 +90,7 @@ User → signUp/signIn → Session Cookie → Redis (primary) + PostgreSQL (back
 
 - `SUPER_ADMIN` - Platform admin
 - `ADMIN` - Tenant admin
-- `MERCHANT` - Store owner
+- `TENANT` - Store owner
 - `STAFF` - Tenant employee
 - `CUSTOMER` - End user
 

@@ -167,8 +167,8 @@ export async function getTenantDb(tenantId: string) {
 
 1. **Environment Variables Per Tenant**
    ```env
-   MERCHANT_ID=tenant_123
-   MERCHANT_DB_NAME=tenant_123_db
+   TENANT_ID=tenant_123
+   TENANT_DB_NAME=tenant_123_db
    CUSTOM_DOMAIN=shop.example.com
    ```
 
@@ -185,7 +185,7 @@ export async function getTenantDb(tenantId: string) {
    export async function getTenantDb(tenantId?: string) {
      const dbName = tenantId 
        ? `tenant_${tenantId}` 
-       : process.env.MERCHANT_DB_NAME || "shoestore";
+       : process.env.TENANT_DB_NAME || "shoestore";
      const client = await clientPromise;
      return client.db(dbName);
    }

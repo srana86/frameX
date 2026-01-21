@@ -113,7 +113,7 @@ Responsibilities:
 #### Step 2: Connection Management
 ```typescript
 // Each tenant deployment uses their own DB
-MERCHANT_DB_NAME=tenant_123_db
+TENANT_DB_NAME=tenant_123_db
 MONGODB_URI=mongodb://.../tenant_123_db
 ```
 
@@ -131,8 +131,8 @@ MONGODB_URI=mongodb://.../tenant_123_db
 #### Step 2: Environment Variables
 ```typescript
 // Auto-configured per tenant
-MERCHANT_ID=tenant_123
-MERCHANT_DB_NAME=tenant_123_db
+TENANT_ID=tenant_123
+TENANT_DB_NAME=tenant_123_db
 MONGODB_URI=mongodb://.../tenant_123_db
 CUSTOM_DOMAIN=shop.example.com (if configured)
 ```
@@ -274,11 +274,11 @@ GITHUB_REPO=your_repo_url
 
 ### Each Tenant Deployment
 ```env
-MERCHANT_ID=tenant_123
-MERCHANT_DB_NAME=tenant_123_db
+TENANT_ID=tenant_123
+TENANT_DB_NAME=tenant_123_db
 MONGODB_URI=mongodb://.../tenant_123_db
 CUSTOM_DOMAIN=shop.example.com
-NEXT_PUBLIC_MERCHANT_ID=tenant_123
+NEXT_PUBLIC_TENANT_ID=tenant_123
 ```
 
 ## 🔐 Security Considerations

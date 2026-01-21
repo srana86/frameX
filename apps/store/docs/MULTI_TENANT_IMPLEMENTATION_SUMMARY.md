@@ -86,7 +86,7 @@ Your platform now supports **multiple tenants** with **separate deployments** (f
   deploymentStatus: "active",
   deploymentUrl: "https://shop.example.com",
   environmentVariables: {
-    MERCHANT_ID: "tenant_123",
+    TENANT_ID: "tenant_123",
     CUSTOM_DOMAIN: "shop.example.com"
   }
 }
@@ -119,7 +119,7 @@ const products = await productsCol.find({}).toArray();
 
 ```env
 # Tenant-specific environment variables
-MERCHANT_ID=tenant_123
+TENANT_ID=tenant_123
 CUSTOM_DOMAIN=shop.example.com
 MONGODB_DB=shoestore  # Shared database
 ```

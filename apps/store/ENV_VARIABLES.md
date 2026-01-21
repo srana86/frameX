@@ -58,17 +58,17 @@
 
 - `FRAUDSHIELD_API_KEY` - Still supported for backward compatibility (will be used if ONECODESOFT_FRAUD_CHECK_API_KEY is not set)
 
-## Multi-Tenant Setup (Auto-Deployed Merchants)
+## Multi-Tenant Setup (Auto-Deployed Tenants)
 
 When deployed via super-admin simulation, these variables are automatically set:
 
 | Variable                    | Description                              |
 | --------------------------- | ---------------------------------------- |
-| `MERCHANT_ID`               | Unique merchant identifier               |
-| `NEXT_PUBLIC_MERCHANT_ID`   | Same, for client-side                    |
-| `MERCHANT_DB_NAME`          | Merchant's database name                 |
-| `MONGODB_DB`                | Same as MERCHANT_DB_NAME                 |
-| `MONGODB_URI`               | Connection string to merchant DB         |
+| `TENANT_ID`               | Unique tenant identifier               |
+| `NEXT_PUBLIC_TENANT_ID`   | Same, for client-side                    |
+| `TENANT_DB_NAME`          | Tenant's database name                 |
+| `MONGODB_DB`                | Same as TENANT_DB_NAME                 |
+| `MONGODB_URI`               | Connection string to tenant DB         |
 | `SUPER_ADMIN_URL`           | Central API URL (https://framextech.com) |
 | `JWT_SECRET`                | For authentication                       |
 | `ENCRYPTION_KEY`            | For encryption                           |
@@ -84,9 +84,9 @@ JWT_SECRET=your_random_secret
 ENCRYPTION_KEY=your_random_key
 
 # Multi-Tenant (set by super-admin during deployment)
-MERCHANT_ID=merchant_xxxxx
-NEXT_PUBLIC_MERCHANT_ID=merchant_xxxxx
-MERCHANT_DB_NAME=merchant_xxxxx_db
+TENANT_ID=tenant_xxxxx
+NEXT_PUBLIC_TENANT_ID=tenant_xxxxx
+TENANT_DB_NAME=tenant_xxxxx_db
 
 # Super Admin URL (optional - defaults to https://framextech.com)
 # SUPER_ADMIN_URL=https://framextech.com
@@ -130,7 +130,7 @@ my-app framextech.com (super-admin)
 | |
 |----------------------------------->|
 | POST /api/cloudinary/upload |
-| X-Merchant-ID: merchant_xxx |
+| X-Tenant-ID: tenant_xxx |
 | |
 | |---> Cloudinary API
 | | (credentials on super-admin)
@@ -144,8 +144,8 @@ my-app framextech.com (super-admin)
 
 ### Key Points
 
-1. **No Cloudinary credentials needed in merchant apps**
+1. **No Cloudinary credentials needed in tenant apps**
 2. **Images saved as full URLs** - Store `secure_url` directly in database
 3. **Display images using standard `<img>` or Next.js `<Image>`** - No special Cloudinary SDK needed
-4. **Central tracking** - All uploads tracked by merchant ID
+4. **Central tracking** - All uploads tracked by tenant ID
 ```

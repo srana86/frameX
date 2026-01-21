@@ -1,5 +1,5 @@
 // ============================================================
-// MULTI-TENANT CORE (Merged with Merchant)
+// MULTI-TENANT CORE (Merged with Tenant)
 // ============================================================
 
 model Tenant {
@@ -20,7 +20,7 @@ model Tenant {
   backendHost String @default("127.0.0.1") // Backend server host
   backendPort Int    @default(3000) // Backend server port
 
-  // Deployment Info (merged from Merchant)
+  // Deployment Info (merged from Tenant)
   customDomain   String? // Custom domain for the store
   deploymentUrl  String? // Deployed URL
   subscriptionId String? // Current subscription reference
@@ -43,7 +43,7 @@ model Tenant {
   inventoryTransactions InventoryTransaction[]
   settingsList          Settings[]
 
-  // Billing Relations (merged from Merchant)
+  // Billing Relations (merged from Tenant)
   invoices        Invoice[]
   sales           Sales[]
   deployments     Deployment[]

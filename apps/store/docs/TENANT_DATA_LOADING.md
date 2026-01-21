@@ -25,7 +25,7 @@ The tenant data loading system automatically detects and loads tenant-specific d
 
 The system detects tenant ID from multiple sources (in order):
 
-1. **Environment Variable** (`MERCHANT_ID`) - For deployed tenant instances
+1. **Environment Variable** (`TENANT_ID`) - For deployed tenant instances
 2. **Request Headers** (`x-tenant-id`) - For API requests
 3. **Domain/Subdomain** - Looks up tenant by custom domain
 
@@ -157,10 +157,10 @@ Get current tenant context data.
 For deployed tenant instances, set:
 
 ```env
-MERCHANT_ID=tenant_123
-MERCHANT_DB_NAME=tenant_123_db
+TENANT_ID=tenant_123
+TENANT_DB_NAME=tenant_123_db
 MONGODB_URI=mongodb://.../tenant_123_db
-NEXT_PUBLIC_MERCHANT_ID=tenant_123
+NEXT_PUBLIC_TENANT_ID=tenant_123
 ```
 
 ## Middleware

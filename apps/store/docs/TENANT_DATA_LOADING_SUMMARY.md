@@ -24,7 +24,7 @@ A comprehensive system to automatically load each tenant's data based on request
 ### 1. Automatic Tenant Detection
 
 The system detects tenant from:
-- **Environment Variable** (`MERCHANT_ID`) - For deployed instances
+- **Environment Variable** (`TENANT_ID`) - For deployed instances
 - **Request Headers** (`x-tenant-id`) - For API requests
 - **Domain/Subdomain** - Looks up tenant by custom domain
 
