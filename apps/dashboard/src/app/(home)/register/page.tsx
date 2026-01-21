@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 export default function RegisterPage() {
   return (
     <AuthShell
-      title='Create your merchant account'
+      title='Create your tenant account'
       description='Create one account to manage multiple stores, products, orders, and payments from a single workspace.'
       benefits={[
         "Add new stores anytime under one login.",
@@ -15,7 +15,7 @@ export default function RegisterPage() {
         "Manage inventory, pricing, and promotions.",
         "Access growth tools built for multi-store teams.",
       ]}
-      formTitle='Merchant registration'
+      formTitle='Tenant registration'
       formDescription='Use your email and choose a strong password to begin.'
       autoScrollToFormOnMobile
       footer={
@@ -37,7 +37,7 @@ export default function RegisterPage() {
             id='name'
             type='text'
             autoComplete='name'
-            placeholder='Merchant owner name'
+            placeholder='Tenant owner name'
             required
             className='h-11 rounded-xl border-slate-200 bg-white/90 text-base shadow-sm'
           />
@@ -50,7 +50,7 @@ export default function RegisterPage() {
             id='email'
             type='email'
             autoComplete='email'
-            placeholder='merchant@yourstore.com'
+            placeholder='tenant@yourstore.com'
             required
             className='h-11 rounded-xl border-slate-200 bg-white/90 text-base shadow-sm'
           />
@@ -87,7 +87,7 @@ export default function RegisterPage() {
             required
             className='mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40'
           />
-          I agree to the FrameX Tech terms, privacy policy, and merchant account guidelines.
+          I agree to the FrameX Tech terms, privacy policy, and tenant account guidelines.
         </label>
         <Button
           type='submit'

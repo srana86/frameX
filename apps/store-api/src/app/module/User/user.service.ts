@@ -58,7 +58,7 @@ const updateUserIntoDB = async (
     email: string;
     phone: string;
     status: "ACTIVE" | "INACTIVE" | "BLOCKED";
-    role: "CUSTOMER" | "MERCHANT" | "ADMIN" | "STAFF";
+    role: "CUSTOMER" | "TENANT" | "ADMIN" | "STAFF";
   }>
 ) => {
   const result = await prisma.user.updateMany({
@@ -95,7 +95,7 @@ const changeStatus = async (
 const changeRole = async (
   tenantId: string,
   id: string,
-  payload: { role: "CUSTOMER" | "MERCHANT" | "ADMIN" | "STAFF" }
+  payload: { role: "CUSTOMER" | "TENANT" | "ADMIN" | "STAFF" }
 ) => {
   const result = await prisma.user.updateMany({
     where: { id, tenantId },

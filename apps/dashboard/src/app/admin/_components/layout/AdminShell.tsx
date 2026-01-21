@@ -52,8 +52,8 @@ const NAV_GROUPS: NavGroup[] = [
         description: "Operational snapshot",
       },
       {
-        title: "Merchants",
-        href: "/admin/merchants",
+        title: "Tenants",
+        href: "/admin/tenants",
         icon: Users,
         description: "Account management",
       },
@@ -142,7 +142,7 @@ const NAV_GROUPS: NavGroup[] = [
         title: "Feature Requests",
         href: "/admin/feature-requests",
         icon: Lightbulb,
-        description: "Merchant feedback",
+        description: "Tenant feedback",
       },
       {
         title: "Settings",
@@ -215,9 +215,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     const role = user.role?.toUpperCase();
     if (role === "ADMIN" || role === "SUPER_ADMIN") {
       setIsAuthorized(true);
-    } else if (role === "MERCHANT") {
-      // Redirect MERCHANT to store app's merchant panel
-      window.location.href = process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3000/merchant";
+    } else if (role === "TENANT") {
+      // Redirect TENANT to store app's tenant panel
+      window.location.href = process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3000/tenant";
     } else {
       // Other roles (CUSTOMER, STAFF) - redirect to store home
       window.location.href = process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3000";

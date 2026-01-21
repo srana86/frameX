@@ -1,5 +1,5 @@
 export const USER_ROLE = {
   superAdmin: 'superAdmin',
   admin: 'admin',
-  merchant: 'merchant',
+  tenant: 'tenant',
 } as const;

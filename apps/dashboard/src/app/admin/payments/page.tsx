@@ -72,9 +72,9 @@ import { api } from "@/lib/api-client";
 interface Payment {
   id: string;
   tranId: string;
-  merchantId?: string;
-  merchantName: string;
-  merchantEmail: string;
+  tenantId?: string;
+  tenantName: string;
+  tenantEmail: string;
   planId: string;
   planName: string;
   amount: number;
@@ -266,8 +266,8 @@ export default function PaymentsPage() {
     return payments.filter((p) => {
       const matchesSearch =
         searchQuery === "" ||
-        p.merchantName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.merchantEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.tenantName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.tenantEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.tranId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.planName?.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -316,7 +316,7 @@ export default function PaymentsPage() {
     const csvContent = [
       [
         "Transaction ID",
-        "Merchant",
+        "Tenant",
         "Email",
         "Plan",
         "Amount",
@@ -326,8 +326,8 @@ export default function PaymentsPage() {
       ...filteredPayments.map((p) =>
         [
           p.tranId,
-          p.merchantName,
-          p.merchantEmail,
+          p.tenantName,
+          p.tenantEmail,
           p.planName,
           p.amount,
           p.status,
@@ -569,7 +569,7 @@ export default function PaymentsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search by merchant, email, or transaction ID..."
+                placeholder="Search by tenant, email, or transaction ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -642,7 +642,7 @@ export default function PaymentsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Transaction</TableHead>
-                    <TableHead>Merchant</TableHead>
+                    <TableHead>Tenant</TableHead>
                     <TableHead>Plan</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
@@ -669,16 +669,16 @@ export default function PaymentsPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
-                            {(payment.merchantName || "?")
+                            {(payment.tenantName || "?")
                               .charAt(0)
                               .toUpperCase()}
                           </div>
                           <div>
                             <p className="font-medium">
-                              {payment.merchantName}
+                              {payment.tenantName}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {payment.merchantEmail}
+                              {payment.tenantEmail}
                             </p>
                           </div>
                         </div>
@@ -784,19 +784,19 @@ export default function PaymentsPage() {
               </div>
 
               <div className="rounded-lg border p-4">
-                <h4 className="mb-3 font-medium">Merchant Details</h4>
+                <h4 className="mb-3 font-medium">Tenant Details</h4>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">
                       Name
                     </Label>
-                    <p className="text-sm">{viewingPayment.merchantName}</p>
+                    <p className="text-sm">{viewingPayment.tenantName}</p>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">
                       Email
                     </Label>
-                    <p className="text-sm">{viewingPayment.merchantEmail}</p>
+                    <p className="text-sm">{viewingPayment.tenantEmail}</p>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">

@@ -6,14 +6,14 @@ import { socketRateLimiter } from "../socket.rateLimiter";
 /**
  * Order-related socket events
  * Emits order updates, status changes, and notifications
- * Uses rooms to target specific merchants/users
+ * Uses rooms to target specific tenants/users
  */
 export const registerOrderEvents = (
   io: Server,
   socket: AuthenticatedSocket
 ) => {
-  // Join merchant room for order updates
-  socket.on("order:join-merchant", async (merchantId: string) => {
+  // Join tenant room for order updates
+  socket.on("order:join-tenant", async (tenantId: string) => {
     const startTime = Date.now();
     try {
       // Rate limiting
@@ -22,24 +22,24 @@ export const registerOrderEvents = (
         return;
       }
 
-      // Verify user has access to this merchant
-      if (socket.userRole !== "admin" && socket.merchantId !== merchantId) {
+      // Verify user has access to this tenant
+      if (socket.userRole !== "admin" && socket.tenantId !== tenantId) {
         socket.emit("error", { message: "Unauthorized" });
         return;
       }
 
-      const room = `merchant:${merchantId}`;
+      const room = `tenant:${tenantId}`;
       await socket.join(room);
 
-      socket.emit("order:joined", { merchantId, room });
+      socket.emit("order:joined", { tenantId, room });
 
       const duration = Date.now() - startTime;
-      socketLogger.logEvent("order:join-merchant", socket, duration);
+      socketLogger.logEvent("order:join-tenant", socket, duration);
       socketMetrics.incrementEventsReceived();
     } catch (error: any) {
       const duration = Date.now() - startTime;
       socketLogger.logEvent(
-        "order:join-merchant",
+        "order:join-tenant",
         socket,
         duration,
         error.message
@@ -79,11 +79,11 @@ export const registerOrderEvents = (
     }
   });
 
-  // Leave merchant room
-  socket.on("order:leave-merchant", async (merchantId: string) => {
-    const room = `merchant:${merchantId}`;
+  // Leave tenant room
+  socket.on("order:leave-tenant", async (tenantId: string) => {
+    const room = `tenant:${tenantId}`;
     await socket.leave(room);
-    socket.emit("order:left", { merchantId, room });
+    socket.emit("order:left", { tenantId, room });
   });
 
   // Leave user room
@@ -97,16 +97,16 @@ export const registerOrderEvents = (
 };
 
 /**
- * Emit order update to merchant room
+ * Emit order update to tenant room
  * Called from order service when order status changes
  */
 export const emitOrderUpdate = (
   io: Server,
-  merchantId: string,
+  tenantId: string,
   order: any,
   updateType: "created" | "updated" | "deleted"
 ) => {
-  const room = `merchant:${merchantId}`;
+  const room = `tenant:${tenantId}`;
   io.to(room).emit("order:update", {
     type: updateType,
     order,

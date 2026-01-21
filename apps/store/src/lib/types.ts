@@ -68,7 +68,7 @@ export type OrderCourierInfo = {
   serviceId: CourierServiceId;
   serviceName?: string;
   consignmentId: string; // Courier's tracking ID (e.g., Pathao consignment_id)
-  merchantOrderId?: string; // Your custom order ID sent to courier (e.g., "SHO-3K9M2P7")
+  tenantOrderId?: string; // Your custom order ID sent to courier (e.g., "SHO-3K9M2P7")
   deliveryStatus?: string;
   lastSyncedAt?: string;
   rawStatus?: any;
@@ -167,7 +167,7 @@ export type Order = {
   timeline?: OrderTimelineEvent[]; // Order status timeline history
 };
 
-export type UserRole = "customer" | "merchant" | "admin";
+export type UserRole = "customer" | "tenant" | "admin";
 
 export interface ProductCategory {
   id: string;

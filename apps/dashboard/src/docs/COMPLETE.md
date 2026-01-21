@@ -3,15 +3,15 @@
 ## 🎉 What's Been Built
 
 ### 1. **Full Database Management**
-- ✅ View all databases (merchant + system)
+- ✅ View all databases (tenant + system)
 - ✅ See database sizes
-- ✅ View merchant database info
+- ✅ View tenant database info
 - ✅ Real-time stats
 
-### 2. **Merchant Management**
-- ✅ View all merchants
-- ✅ Create new merchants
-- ✅ See merchant status, domains, deployments
+### 2. **Tenant Management**
+- ✅ View all tenants
+- ✅ Create new tenants
+- ✅ See tenant status, domains, deployments
 - ✅ Full CRUD operations
 
 ### 3. **Subscription Management**
@@ -36,23 +36,23 @@
 - `app/api/databases/route.ts` - Database listing
 - `app/api/subscriptions/route.ts` - Subscription listing
 - `app/api/plans/route.ts` - Plan listing
-- `app/api/merchants/route.ts` - Merchant CRUD
+- `app/api/tenants/route.ts` - Tenant CRUD
 
 ### Pages:
 - `app/page.tsx` - Dashboard with stats
 - `app/database/page.tsx` - Database management (FULLY FUNCTIONAL)
 - `app/subscriptions/page.tsx` - Subscription management (FULLY FUNCTIONAL)
-- `app/merchants/page.tsx` - Merchant management with create
+- `app/tenants/page.tsx` - Tenant management with create
 - `app/deployments/page.tsx` - Deployment viewing
 
 ## 🚀 Features
 
 ### Database Page:
-- Lists all merchant databases
+- Lists all tenant databases
 - Shows database sizes
-- Displays merchant IDs
+- Displays tenant IDs
 - Shows creation dates
-- Separates merchant DBs from system DBs
+- Separates tenant DBs from system DBs
 
 ### Subscriptions Page:
 - Lists all subscriptions
@@ -61,9 +61,9 @@
 - Status badges
 - Period information
 
-### Merchants Page:
-- Create new merchants
-- View all merchants
+### Tenants Page:
+- Create new tenants
+- View all tenants
 - Status management
 - Domain information
 - Deployment links
@@ -73,7 +73,7 @@
 Everything is fully functional now:
 - ✅ Database page shows real data
 - ✅ Subscriptions page shows real data
-- ✅ Merchants page has create functionality
+- ✅ Tenants page has create functionality
 - ✅ All pages are connected to database
 
 ## 🎯 How to Use
@@ -88,7 +88,7 @@ Everything is fully functional now:
 
 3. **Navigate:**
    - Dashboard: `/`
-   - Merchants: `/merchants` (can create new)
+   - Tenants: `/tenants` (can create new)
    - Deployments: `/deployments`
    - Subscriptions: `/subscriptions` (shows all)
    - Databases: `/database` (shows all)

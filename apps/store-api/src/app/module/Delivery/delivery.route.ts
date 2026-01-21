@@ -17,10 +17,10 @@ router.post(
   DeliveryControllers.calculateShipping
 );
 
-// Courier services config (admin/merchant)
+// Courier services config (admin/tenant)
 router.get(
   "/courier-services",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   DeliveryControllers.getCourierServicesConfig
 );
 

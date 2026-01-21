@@ -4,8 +4,8 @@ import sendResponse from "../../utils/sendResponse";
 import { SimulateServices } from "./simulate.service";
 
 const createDatabase = catchAsync(async (req, res) => {
-  const { merchantId } = req.body;
-  const result = await SimulateServices.createDatabase(merchantId);
+  const { tenantId } = req.body;
+  const result = await SimulateServices.createDatabase(tenantId);
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,

@@ -70,7 +70,7 @@ async function main() {
                 where: { id: result.user.id },
                 data: {
                     tenantId: tenantId,
-                    role: "MERCHANT", // Enum value matching UserRole
+                    role: "TENANT", // Enum value matching UserRole
                     phone: "+1234567890",
                     emailVerified: true // Set verified
                 }

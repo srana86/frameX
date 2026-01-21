@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { UserRoutes } from "../module/User/user.route";
-import { MerchantRoutes } from "../module/Merchant/merchant.route";
+import { TenantRoutes } from "../module/Tenant/tenant.route";
 import { SubscriptionRoutes } from "../module/Subscription/subscription.route";
 import { PlanRoutes } from "../module/Plan/plan.route";
 import { PaymentRoutes } from "../module/Payment/payment.route";
@@ -18,7 +18,7 @@ import { FraudCheckRoutes } from "../module/FraudCheck/fraudCheck.route";
 import { CloudinaryRoutes } from "../module/Cloudinary/cloudinary.route";
 import { SimulateRoutes } from "../module/Simulate/simulate.route";
 import { AuthRoutes } from '../module/Auth/auth.route';
-import { MerchantSubscriptionRoutes } from "../module/MerchantSubscription/merchantSubscription.route";
+import { TenantSubscriptionRoutes } from "../module/TenantSubscription/tenantSubscription.route";
 import { OwnerRoutes } from "../module/Owner/owner.route";
 
 const router = Router();
@@ -33,8 +33,8 @@ const moduleRoutes = [
     route: UserRoutes,
   },
   {
-    path: "/merchants",
-    route: MerchantRoutes,
+    path: "/tenants",
+    route: TenantRoutes,
   },
   {
     path: "/subscriptions",
@@ -101,8 +101,8 @@ const moduleRoutes = [
     route: SimulateRoutes,
   },
   {
-    path: "/merchant-subscription",
-    route: MerchantSubscriptionRoutes,
+    path: "/tenant-subscription",
+    route: TenantSubscriptionRoutes,
   },
   {
     path: "/owner",

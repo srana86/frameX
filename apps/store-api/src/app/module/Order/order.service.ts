@@ -214,7 +214,7 @@ const createOrderIntoDB = async (payload: TOrderCreate) => {
     }
   }
 
-  // Create notification for merchant
+  // Create notification for tenant
   await prisma.notification.create({
     data: {
       tenantId: payload.tenantId,

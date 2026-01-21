@@ -5,12 +5,12 @@ import { StatisticsControllers } from "./statistics.controller";
 
 const router = express.Router();
 
-// Get comprehensive statistics (admin/merchant only)
+// Get comprehensive statistics (admin/tenant only)
 // tenantMiddleware MUST come before auth
 router.get(
   "/",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   StatisticsControllers.getStatistics
 );
 

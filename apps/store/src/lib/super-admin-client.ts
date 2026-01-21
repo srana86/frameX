@@ -29,9 +29,9 @@ function buildUrl(path: string): string {
   return `${baseUrl}${cleanPath}`;
 }
 
-export interface SuperAdminMerchantSubscription {
+export interface SuperAdminTenantSubscription {
   id: string;
-  merchantId: string;
+  tenantId: string;
   planId: string;
   status: string;
   currentPeriodStart: string;
@@ -45,9 +45,9 @@ export interface SuperAdminMerchantSubscription {
   plan?: any;
 }
 
-export interface SuperAdminMerchantDeployment {
+export interface SuperAdminTenantDeployment {
   id: string;
-  merchantId: string;
+  tenantId: string;
   deploymentType: string;
   subdomain?: string;
   customDomain?: string;
@@ -62,9 +62,9 @@ export interface SuperAdminMerchantDeployment {
   updatedAt?: string;
 }
 
-export interface SuperAdminMerchantDatabase {
+export interface SuperAdminTenantDatabase {
   id: string;
-  merchantId: string;
+  tenantId: string;
   databaseName: string;
   connectionString?: string;
   useSharedDatabase: boolean;
@@ -73,21 +73,21 @@ export interface SuperAdminMerchantDatabase {
   updatedAt?: string;
 }
 
-export interface SuperAdminMerchantFullData {
-  merchant: any;
-  subscription: SuperAdminMerchantSubscription | null;
+export interface SuperAdminTenantFullData {
+  tenant: any;
+  subscription: SuperAdminTenantSubscription | null;
   plan: any | null;
-  deployment: SuperAdminMerchantDeployment | null;
-  database: SuperAdminMerchantDatabase | null;
+  deployment: SuperAdminTenantDeployment | null;
+  database: SuperAdminTenantDatabase | null;
 }
 
 /**
- * Get merchant subscription from super-admin
+ * Get tenant subscription from super-admin
  * Cached per request to prevent duplicate API calls
  */
-export const getMerchantSubscriptionFromSuperAdmin = cache(async (merchantId: string): Promise<SuperAdminMerchantSubscription | null> => {
+export const getTenantSubscriptionFromSuperAdmin = cache(async (tenantId: string): Promise<SuperAdminTenantSubscription | null> => {
   try {
-    const url = buildUrl(`/api/merchants/${merchantId}/subscription`);
+    const url = buildUrl(`/api/tenants/${tenantId}/subscription`);
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -106,7 +106,7 @@ export const getMerchantSubscriptionFromSuperAdmin = cache(async (merchantId: st
     }
 
     const data = await response.json();
-    console.log(`\n📦 [API Data] Subscription Data for merchant ${merchantId}:`, JSON.stringify(data, null, 2));
+    console.log(`\n📦 [API Data] Subscription Data for tenant ${tenantId}:`, JSON.stringify(data, null, 2));
     return data;
   } catch (error: any) {
     // Silently handle connection errors - don't spam console
@@ -114,7 +114,7 @@ export const getMerchantSubscriptionFromSuperAdmin = cache(async (merchantId: st
 
     // Only log non-connection errors during runtime, not during build
     if (!isConnectionError && process.env.NEXT_PHASE !== "phase-production-build") {
-      console.error("❌ [super-admin-client] Error fetching merchant subscription:", error);
+      console.error("❌ [super-admin-client] Error fetching tenant subscription:", error);
     }
     // During build or connection errors, return null instead of throwing
     if (process.env.NEXT_PHASE === "phase-production-build" || isConnectionError) {
@@ -125,12 +125,12 @@ export const getMerchantSubscriptionFromSuperAdmin = cache(async (merchantId: st
 });
 
 /**
- * Get merchant deployment from super-admin
+ * Get tenant deployment from super-admin
  * Cached per request to prevent duplicate API calls
  */
-export const getMerchantDeploymentFromSuperAdmin = cache(async (merchantId: string): Promise<SuperAdminMerchantDeployment | null> => {
+export const getTenantDeploymentFromSuperAdmin = cache(async (tenantId: string): Promise<SuperAdminTenantDeployment | null> => {
   try {
-    const url = buildUrl(`/api/merchants/${merchantId}/deployment`);
+    const url = buildUrl(`/api/tenants/${tenantId}/deployment`);
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -151,7 +151,7 @@ export const getMerchantDeploymentFromSuperAdmin = cache(async (merchantId: stri
     const data = await response.json();
     // Only log in development with debug flag
     if (process.env.NODE_ENV === "development" && process.env.DEBUG_SUPER_ADMIN === "true") {
-      console.log(`\n🚀 [API Data] Deployment Data for merchant ${merchantId}:`, JSON.stringify(data, null, 2));
+      console.log(`\n🚀 [API Data] Deployment Data for tenant ${tenantId}:`, JSON.stringify(data, null, 2));
     }
     return data;
   } catch (error: any) {
@@ -160,7 +160,7 @@ export const getMerchantDeploymentFromSuperAdmin = cache(async (merchantId: stri
 
     // Only log non-connection errors during runtime, not during build
     if (!isConnectionError && process.env.NEXT_PHASE !== "phase-production-build") {
-      console.error("❌ [super-admin-client] Error fetching merchant deployment:", error);
+      console.error("❌ [super-admin-client] Error fetching tenant deployment:", error);
     }
     // During build or connection errors, return null instead of throwing
     if (process.env.NEXT_PHASE === "phase-production-build" || isConnectionError) {
@@ -171,12 +171,12 @@ export const getMerchantDeploymentFromSuperAdmin = cache(async (merchantId: stri
 });
 
 /**
- * Get merchant database from super-admin
+ * Get tenant database from super-admin
  * Cached per request to prevent duplicate API calls
  */
-export const getMerchantDatabaseFromSuperAdmin = cache(async (merchantId: string): Promise<SuperAdminMerchantDatabase | null> => {
+export const getTenantDatabaseFromSuperAdmin = cache(async (tenantId: string): Promise<SuperAdminTenantDatabase | null> => {
   try {
-    const url = buildUrl(`/api/merchants/${merchantId}/database`);
+    const url = buildUrl(`/api/tenants/${tenantId}/database`);
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -195,7 +195,7 @@ export const getMerchantDatabaseFromSuperAdmin = cache(async (merchantId: string
     }
 
     const data = await response.json();
-    console.log(`\n💾 [API Data] Database Data for merchant ${merchantId}:`, JSON.stringify(data, null, 2));
+    console.log(`\n💾 [API Data] Database Data for tenant ${tenantId}:`, JSON.stringify(data, null, 2));
     return data;
   } catch (error: any) {
     // Silently handle connection errors - don't spam console
@@ -203,7 +203,7 @@ export const getMerchantDatabaseFromSuperAdmin = cache(async (merchantId: string
 
     // Only log non-connection errors during runtime, not during build
     if (!isConnectionError && process.env.NEXT_PHASE !== "phase-production-build") {
-      console.error("❌ [super-admin-client] Error fetching merchant database:", error);
+      console.error("❌ [super-admin-client] Error fetching tenant database:", error);
     }
     // During build or connection errors, return null instead of throwing
     if (process.env.NEXT_PHASE === "phase-production-build" || isConnectionError) {
@@ -214,23 +214,23 @@ export const getMerchantDatabaseFromSuperAdmin = cache(async (merchantId: string
 });
 
 /**
- * Get merchant subscription and plan data using the public endpoint
- * This is the recommended method as it uses the public /api/merchant-subscription endpoint
+ * Get tenant subscription and plan data using the public endpoint
+ * This is the recommended method as it uses the public /api/tenant-subscription endpoint
  * Cached per request to prevent duplicate API calls
  */
-export const getMerchantSubscriptionData = cache(async (merchantId: string): Promise<SuperAdminMerchantFullData | null> => {
+export const getTenantSubscriptionData = cache(async (tenantId: string): Promise<SuperAdminTenantFullData | null> => {
   try {
-    const url = buildUrl(`/api/merchant-subscription?merchantId=${merchantId}`);
+    const url = buildUrl(`/api/tenant-subscription?tenantId=${tenantId}`);
     // Reduced logging - only log in development or on errors
     if (process.env.NODE_ENV === "development") {
-      console.log(`[super-admin-client] Fetching subscription for merchantId: ${merchantId}`);
+      console.log(`[super-admin-client] Fetching subscription for tenantId: ${tenantId}`);
     }
 
     const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-Merchant-ID": merchantId,
+        "X-Tenant-ID": tenantId,
       },
       // Cache for 5 minutes to reduce API calls
       next: { revalidate: 300 }, // 5 minutes
@@ -239,19 +239,19 @@ export const getMerchantSubscriptionData = cache(async (merchantId: string): Pro
 
     if (!response.ok) {
       if (response.status === 404) {
-        console.log(`[super-admin-client] Merchant ${merchantId} not found in super-admin`);
+        console.log(`[super-admin-client] Tenant ${tenantId} not found in super-admin`);
         return null;
       }
       const errorText = await response.text();
       console.error(`[super-admin-client] Error response: ${errorText}`);
-      throw new Error(`Failed to get merchant subscription: ${response.statusText}`);
+      throw new Error(`Failed to get tenant subscription: ${response.statusText}`);
     }
 
     const data = await response.json();
     // Only log in development to reduce console noise
     if (process.env.NODE_ENV === "development") {
       console.log(`[super-admin-client] Received data:`, {
-        hasMerchant: !!data.merchant,
+        hasTenant: !!data.tenant,
         hasSubscription: !!data.subscription,
         hasPlan: !!data.plan,
         subscriptionId: data.subscription?.id,
@@ -259,9 +259,9 @@ export const getMerchantSubscriptionData = cache(async (merchantId: string): Pro
       });
     }
 
-    // Transform to match SuperAdminMerchantFullData format
+    // Transform to match SuperAdminTenantFullData format
     return {
-      merchant: data.merchant,
+      tenant: data.tenant,
       subscription: data.subscription,
       plan: data.plan,
       deployment: null, // Not included in this endpoint
@@ -271,7 +271,7 @@ export const getMerchantSubscriptionData = cache(async (merchantId: string): Pro
     // Silently handle connection errors - don't spam console
     const isConnectionError = error?.cause?.code === "ECONNREFUSED" || error?.code === "ECONNREFUSED";
 
-    console.error("❌ [super-admin-client] Error fetching merchant subscription:", error?.message);
+    console.error("❌ [super-admin-client] Error fetching tenant subscription:", error?.message);
 
     // During build or connection errors, return null instead of throwing
     if (process.env.NEXT_PHASE === "phase-production-build" || isConnectionError) {
@@ -282,20 +282,20 @@ export const getMerchantSubscriptionData = cache(async (merchantId: string): Pro
 });
 
 /**
- * Get complete merchant data (merchant + subscription + plan + deployment + database) from super-admin
- * Uses the public /api/merchant-subscription endpoint first, then falls back to /api/merchants/{id}/full
+ * Get complete tenant data (tenant + subscription + plan + deployment + database) from super-admin
+ * Uses the public /api/tenant-subscription endpoint first, then falls back to /api/tenants/{id}/full
  * Cached per request to prevent duplicate API calls
  */
-export const getMerchantFullDataFromSuperAdmin = cache(async (merchantId: string): Promise<SuperAdminMerchantFullData | null> => {
+export const getTenantFullDataFromSuperAdmin = cache(async (tenantId: string): Promise<SuperAdminTenantFullData | null> => {
   // Try the public endpoint first (recommended)
-  const subscriptionData = await getMerchantSubscriptionData(merchantId);
+  const subscriptionData = await getTenantSubscriptionData(tenantId);
   if (subscriptionData) {
     return subscriptionData;
   }
 
   // Fallback to the old endpoint (for backwards compatibility)
   try {
-    const url = buildUrl(`/api/merchants/${merchantId}/full`);
+    const url = buildUrl(`/api/tenants/${tenantId}/full`);
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -310,11 +310,11 @@ export const getMerchantFullDataFromSuperAdmin = cache(async (merchantId: string
       if (response.status === 404) {
         return null;
       }
-      throw new Error(`Failed to get merchant data: ${response.statusText}`);
+      throw new Error(`Failed to get tenant data: ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log(`[super-admin-client] Full merchant data received for ${merchantId}`);
+    console.log(`[super-admin-client] Full tenant data received for ${tenantId}`);
     return data;
   } catch (error: any) {
     // Silently handle connection errors - don't spam console
@@ -322,7 +322,7 @@ export const getMerchantFullDataFromSuperAdmin = cache(async (merchantId: string
 
     // Only log non-connection errors during runtime, not during build
     if (!isConnectionError && process.env.NEXT_PHASE !== "phase-production-build") {
-      console.error("❌ [super-admin-client] Error fetching merchant full data:", error?.message);
+      console.error("❌ [super-admin-client] Error fetching tenant full data:", error?.message);
     }
     // During build or connection errors, return null instead of throwing
     if (process.env.NEXT_PHASE === "phase-production-build" || isConnectionError) {
@@ -338,7 +338,7 @@ export const getMerchantFullDataFromSuperAdmin = cache(async (merchantId: string
 
 export interface SuperAdminDomainConfig {
   id: string;
-  merchantId: string;
+  tenantId: string;
   domain: string;
 
   redirect?: string | null;
@@ -361,19 +361,19 @@ export interface SuperAdminDomainResponse {
 /**
  * Get domain configuration from super-admin
  */
-export async function getDomainConfigFromSuperAdmin(merchantId: string): Promise<{
+export async function getDomainConfigFromSuperAdmin(tenantId: string): Promise<{
   domain: SuperAdminDomainConfig | null;
 
 } | null> {
   try {
-    const url = buildUrl(`/api/merchants/${merchantId}/domain`);
+    const url = buildUrl(`/api/tenants/${tenantId}/domain`);
     console.log(`[super-admin-client] Getting domain config from: ${url}`);
 
     const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-Merchant-ID": merchantId,
+        "X-Tenant-ID": tenantId,
       },
       cache: "no-store", // Don't cache - always fetch fresh
     });
@@ -382,7 +382,7 @@ export async function getDomainConfigFromSuperAdmin(merchantId: string): Promise
 
     if (!response.ok) {
       if (response.status === 404) {
-        console.log(`[super-admin-client] Domain not found (404) for merchantId: ${merchantId}`);
+        console.log(`[super-admin-client] Domain not found (404) for tenantId: ${tenantId}`);
         return null;
       }
       const errorData = await response.json().catch(() => ({}));
@@ -414,19 +414,19 @@ export async function getDomainConfigFromSuperAdmin(merchantId: string): Promise
  * Configure domain via super-admin proxy
  */
 export async function configureDomainViaSuperAdmin(
-  merchantId: string,
+  tenantId: string,
   domain: string,
   redirect?: string,
   redirectStatusCode?: number
 ): Promise<SuperAdminDomainResponse> {
-  const url = buildUrl(`/api/merchants/${merchantId}/domain`);
+  const url = buildUrl(`/api/tenants/${tenantId}/domain`);
   console.log(`[super-admin-client] Configuring domain via: ${url}`);
 
   const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Merchant-ID": merchantId,
+      "X-Tenant-ID": tenantId,
     },
     body: JSON.stringify({
       domain,
@@ -446,15 +446,15 @@ export async function configureDomainViaSuperAdmin(
 /**
  * Remove domain via super-admin proxy
  */
-export async function removeDomainViaSuperAdmin(merchantId: string, domain: string): Promise<{ success: boolean; message: string }> {
-  const url = buildUrl(`/api/merchants/${merchantId}/domain?domain=${encodeURIComponent(domain)}`);
+export async function removeDomainViaSuperAdmin(tenantId: string, domain: string): Promise<{ success: boolean; message: string }> {
+  const url = buildUrl(`/api/tenants/${tenantId}/domain?domain=${encodeURIComponent(domain)}`);
   console.log(`[super-admin-client] Removing domain via: ${url}`);
 
   const response = await fetch(url, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
-      "X-Merchant-ID": merchantId,
+      "X-Tenant-ID": tenantId,
     },
   });
 
@@ -470,17 +470,17 @@ export async function removeDomainViaSuperAdmin(merchantId: string, domain: stri
  * Verify domain via super-admin proxy
  */
 export async function verifyDomainViaSuperAdmin(
-  merchantId: string,
+  tenantId: string,
   domain: string
 ): Promise<{ success: boolean; verified: boolean; message: string; misconfigured?: boolean }> {
-  const url = buildUrl(`/api/merchants/${merchantId}/domain`);
+  const url = buildUrl(`/api/tenants/${tenantId}/domain`);
   console.log(`[super-admin-client] Verifying domain via: ${url}`);
 
   const response = await fetch(url, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
-      "X-Merchant-ID": merchantId,
+      "X-Tenant-ID": tenantId,
     },
     body: JSON.stringify({ domain }),
   });
@@ -577,9 +577,9 @@ export const getPlanFromSuperAdmin = cache(async (planId: string): Promise<Super
 export interface SuperAdminInvoice {
   id: string;
   invoiceNumber: string;
-  merchantId: string;
-  merchantName?: string;
-  merchantEmail?: string;
+  tenantId: string;
+  tenantName?: string;
+  tenantEmail?: string;
   subscriptionId?: string;
   planId?: string;
   planName?: string;
@@ -599,11 +599,11 @@ export interface SuperAdminInvoice {
 }
 
 /**
- * Get invoices for a merchant from super-admin
+ * Get invoices for a tenant from super-admin
  */
-export async function getInvoicesFromSuperAdmin(merchantId: string, status?: string): Promise<SuperAdminInvoice[]> {
+export async function getInvoicesFromSuperAdmin(tenantId: string, status?: string): Promise<SuperAdminInvoice[]> {
   try {
-    let url = buildUrl(`/api/invoices?merchantId=${merchantId}`);
+    let url = buildUrl(`/api/invoices?tenantId=${tenantId}`);
     if (status) {
       url += `&status=${status}`;
     }
@@ -629,9 +629,9 @@ export async function getInvoicesFromSuperAdmin(merchantId: string, status?: str
  * Create an invoice via super-admin
  */
 export async function createInvoiceViaSuperAdmin(invoice: {
-  merchantId: string;
-  merchantName: string;
-  merchantEmail: string;
+  tenantId: string;
+  tenantName: string;
+  tenantEmail: string;
   subscriptionId?: string;
   planId?: string;
   planName?: string;
@@ -696,7 +696,7 @@ export async function updateInvoiceViaSuperAdmin(
 /**
  * Get subscription by ID from super-admin
  */
-export async function getSubscriptionFromSuperAdmin(subscriptionId: string): Promise<SuperAdminMerchantSubscription | null> {
+export async function getSubscriptionFromSuperAdmin(subscriptionId: string): Promise<SuperAdminTenantSubscription | null> {
   try {
     const url = buildUrl(`/api/subscriptions/${subscriptionId}`);
     const response = await fetch(url, {
@@ -792,8 +792,8 @@ export async function renewSubscriptionViaSuperAdmin(
 export interface SuperAdminPayment {
   id: string;
   tranId: string;
-  merchantId: string;
-  merchantName?: string;
+  tenantId: string;
+  tenantName?: string;
   amount: number;
   currency: string;
   status: string;
@@ -803,13 +803,13 @@ export interface SuperAdminPayment {
 }
 
 /**
- * Get payments for a merchant from super-admin
+ * Get payments for a tenant from super-admin
  */
-export async function getPaymentsFromSuperAdmin(merchantId?: string): Promise<SuperAdminPayment[]> {
+export async function getPaymentsFromSuperAdmin(tenantId?: string): Promise<SuperAdminPayment[]> {
   try {
     let url = buildUrl("/api/payments");
-    if (merchantId) {
-      url += `?merchantId=${merchantId}`;
+    if (tenantId) {
+      url += `?tenantId=${tenantId}`;
     }
 
     const response = await fetch(url, {
@@ -838,9 +838,9 @@ export async function getPaymentsFromSuperAdmin(merchantId?: string): Promise<Su
  * Initialize checkout via super-admin
  */
 export async function initCheckoutViaSuperAdmin(checkoutData: {
-  merchantName: string;
-  merchantEmail: string;
-  merchantPhone: string;
+  tenantName: string;
+  tenantEmail: string;
+  tenantPhone: string;
   customSubdomain: string;
   customerName: string;
   customerEmail: string;
@@ -910,18 +910,6 @@ export async function getCheckoutSessionFromSuperAdmin(tranId: string): Promise<
 // Tenant Aliases for Backward Compatibility
 // ============================================================
 
-// Type aliases - tenant terminology
-export type SuperAdminTenantSubscription = SuperAdminMerchantSubscription;
-export type SuperAdminTenantDeployment = SuperAdminMerchantDeployment;
-export type SuperAdminTenantDatabase = SuperAdminMerchantDatabase;
-export type SuperAdminTenantFullData = SuperAdminMerchantFullData;
-
-// Function aliases - use tenantId parameter names but call merchant functions
-// These maintain API compatibility while allowing code to use tenant terminology
-
-export const getTenantSubscriptionFromSuperAdmin = getMerchantSubscriptionFromSuperAdmin;
-export const getTenantDeploymentFromSuperAdmin = getMerchantDeploymentFromSuperAdmin;
-export const getTenantDatabaseFromSuperAdmin = getMerchantDatabaseFromSuperAdmin;
-export const getTenantSubscriptionData = getMerchantSubscriptionData;
-export const getTenantFullDataFromSuperAdmin = getMerchantFullDataFromSuperAdmin;
+// Type aliases maintained for internal consistency if needed, 
+// but primary names are now Tenant based.
 

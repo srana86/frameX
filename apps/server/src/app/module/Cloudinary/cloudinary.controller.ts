@@ -4,12 +4,12 @@ import sendResponse from "../../utils/sendResponse";
 import { CloudinaryServices } from "./cloudinary.service";
 
 const uploadImage = catchAsync(async (req, res) => {
-  const merchantId = (req.headers["x-merchant-id"] as string) || "unknown";
+  const tenantId = (req.headers["x-tenant-id"] as string) || "unknown";
 
   // Handle multipart/form-data
   let file: any = null;
   let url: string | null = null;
-  let folder = `merchants/${merchantId}`;
+  let folder = `tenants/${tenantId}`;
   let public_id: string | undefined;
   let resource_type = "auto";
 
@@ -28,7 +28,7 @@ const uploadImage = catchAsync(async (req, res) => {
     folder,
     public_id,
     resource_type,
-    merchantId
+    tenantId
   );
   res.set(CloudinaryServices.corsHeaders);
   sendResponse(res, {
@@ -40,13 +40,13 @@ const uploadImage = catchAsync(async (req, res) => {
 });
 
 const deleteImage = catchAsync(async (req, res) => {
-  const merchantId = (req.headers["x-merchant-id"] as string) || "unknown";
+  const tenantId = (req.headers["x-tenant-id"] as string) || "unknown";
   const { public_id, resource_type = "image" } = req.body;
 
   const result = await CloudinaryServices.deleteImage(
     public_id,
     resource_type,
-    merchantId
+    tenantId
   );
   res.set(CloudinaryServices.corsHeaders);
   sendResponse(res, {

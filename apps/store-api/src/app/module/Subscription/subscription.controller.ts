@@ -30,7 +30,7 @@ const getCurrentSubscription = catchAsync(
     }
 
     const result =
-      await SubscriptionServices.getCurrentMerchantSubscriptionFromDB(
+      await SubscriptionServices.getCurrentTenantSubscriptionFromDB(
         tenantId as string
       );
 
@@ -77,7 +77,7 @@ const createSubscription = catchAsync(async (req: Request, res: Response) => {
     return sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
-      message: "Merchant ID is required",
+      message: "Tenant ID is required",
       data: null,
     });
   }

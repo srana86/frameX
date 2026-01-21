@@ -10,7 +10,7 @@ If your password was saved before encryption was properly set up, it might still
 
 **Solution:**
 
-1. Go to **Settings → Email Settings** in your merchant dashboard
+1. Go to **Settings → Email Settings** in your tenant dashboard
 2. **Re-enter your SMTP password** (even if it looks correct)
 3. Click **Save**
 4. Click **Test Connection** to verify

@@ -14,31 +14,31 @@ import {
  *
  * Example usage in order.service.ts:
  * import { emitOrderCreated } from '../socket/socket.emitter';
- * emitOrderCreated(merchantId, order);
+ * emitOrderCreated(tenantId, order);
  */
 
 /**
- * Emit order created event to merchant room
+ * Emit order created event to tenant room
  */
-export const emitOrderCreated = (merchantId: string, order: any) => {
+export const emitOrderCreated = (tenantId: string, order: any) => {
   const io = getSocketIO();
-  emitOrderUpdate(io, merchantId, order, "created");
+  emitOrderUpdate(io, tenantId, order, "created");
 };
 
 /**
- * Emit order updated event to merchant room
+ * Emit order updated event to tenant room
  */
-export const emitOrderUpdated = (merchantId: string, order: any) => {
+export const emitOrderUpdated = (tenantId: string, order: any) => {
   const io = getSocketIO();
-  emitOrderUpdate(io, merchantId, order, "updated");
+  emitOrderUpdate(io, tenantId, order, "updated");
 };
 
 /**
- * Emit order deleted event to merchant room
+ * Emit order deleted event to tenant room
  */
-export const emitOrderDeleted = (merchantId: string, orderId: string) => {
+export const emitOrderDeleted = (tenantId: string, orderId: string) => {
   const io = getSocketIO();
-  emitOrderUpdate(io, merchantId, { id: orderId }, "deleted");
+  emitOrderUpdate(io, tenantId, { id: orderId }, "deleted");
 };
 
 /**

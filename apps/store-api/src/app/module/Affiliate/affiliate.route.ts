@@ -28,7 +28,7 @@ router.post(
 router.get(
   "/me",
   tenantMiddleware,
-  auth("customer", "merchant", "admin"),
+  auth("customer", "tenant", "admin"),
   AffiliateControllers.getMyAffiliate
 );
 
@@ -36,15 +36,15 @@ router.get(
 router.post(
   "/me",
   tenantMiddleware,
-  auth("customer", "merchant", "admin"),
+  auth("customer", "tenant", "admin"),
   AffiliateControllers.createMyAffiliate
 );
 
-// Get all affiliates (admin/merchant only)
+// Get all affiliates (admin/tenant only)
 router.get(
   "/list",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   AffiliateControllers.getAllAffiliates
 );
 
@@ -52,7 +52,7 @@ router.get(
 router.get(
   "/commissions",
   tenantMiddleware,
-  auth("admin", "merchant", "customer"),
+  auth("admin", "tenant", "customer"),
   AffiliateControllers.getCommissions
 );
 
@@ -60,7 +60,7 @@ router.get(
 router.get(
   "/progress",
   tenantMiddleware,
-  auth("admin", "merchant", "customer"),
+  auth("admin", "tenant", "customer"),
   AffiliateControllers.getAffiliateProgress
 );
 
@@ -68,7 +68,7 @@ router.get(
 router.get(
   "/withdrawals",
   tenantMiddleware,
-  auth("admin", "merchant", "customer"),
+  auth("admin", "tenant", "customer"),
   AffiliateControllers.getWithdrawals
 );
 
@@ -76,33 +76,33 @@ router.get(
 router.post(
   "/withdrawals",
   tenantMiddleware,
-  auth("customer", "merchant", "admin"),
+  auth("customer", "tenant", "admin"),
   validateRequest(AffiliateValidation.createWithdrawalValidationSchema),
   AffiliateControllers.handleWithdrawal
 );
 
-// Get affiliate settings (admin/merchant only)
+// Get affiliate settings (admin/tenant only)
 router.get(
   "/settings",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   AffiliateControllers.getSettings
 );
 
-// Update affiliate settings (admin/merchant only)
+// Update affiliate settings (admin/tenant only)
 router.put(
   "/settings",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(AffiliateValidation.updateSettingsValidationSchema),
   AffiliateControllers.updateSettings
 );
 
-// Assign coupon to affiliate (admin/merchant only)
+// Assign coupon to affiliate (admin/tenant only)
 router.post(
   "/assign-coupon",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(AffiliateValidation.assignCouponValidationSchema),
   AffiliateControllers.assignCoupon
 );

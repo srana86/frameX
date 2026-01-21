@@ -67,7 +67,7 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
-import type { MerchantDeployment } from "@/lib/types";
+import type { TenantDeployment } from "@/lib/types";
 import { api } from "@/lib/api-client";
 
 const CHART_COLORS = [
@@ -137,41 +137,40 @@ function DeploymentHealthIndicator({ status }: { status: string }) {
     <div className="flex items-center gap-2">
       <div className={`h-2 w-2 rounded-full ${config.color}`} />
       <Icon
-        className={`h-4 w-4 ${
-          status === "active"
-            ? "text-green-500"
-            : status === "pending"
+        className={`h-4 w-4 ${status === "active"
+          ? "text-green-500"
+          : status === "pending"
             ? "text-yellow-500"
             : status === "failed"
-            ? "text-red-500"
-            : "text-gray-500"
-        }`}
+              ? "text-red-500"
+              : "text-gray-500"
+          }`}
       />
     </div>
   );
 }
 
 export default function DeploymentsPage() {
-  const [deployments, setDeployments] = useState<MerchantDeployment[]>([]);
-  const [merchants, setMerchants] = useState<any[]>([]);
+  const [deployments, setDeployments] = useState<TenantDeployment[]>([]);
+  const [tenants, setTenants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewingDeployment, setViewingDeployment] =
-    useState<MerchantDeployment | null>(null);
+    useState<TenantDeployment | null>(null);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [deploymentsData, merchantsData] = await Promise.all([
-        api.get<MerchantDeployment[]>("deployments"),
-        api.get<any[]>("merchants").catch(() => []),
+      const [deploymentsData, tenantsData] = await Promise.all([
+        api.get<TenantDeployment[]>("deployments"),
+        api.get<any[]>("tenants").catch(() => []),
       ]);
 
       setDeployments(deploymentsData);
-      setMerchants(merchantsData);
+      setTenants(tenantsData);
     } catch (error: any) {
       console.error("Failed to load data:", error);
       toast.error(error?.message || "Failed to load deployments");
@@ -184,10 +183,10 @@ export default function DeploymentsPage() {
     loadData();
   }, []);
 
-  // Get merchant name by ID
-  const getMerchantName = (merchantId: string) => {
-    const merchant = merchants.find((m) => m.id === merchantId);
-    return merchant?.name || merchantId;
+  // Get tenant name by ID
+  const getTenantName = (tenantId: string) => {
+    const tenant = tenants.find((m) => m.id === tenantId);
+    return tenant?.name
   };
 
   // Stats
@@ -225,14 +224,14 @@ export default function DeploymentsPage() {
   // Filtered deployments
   const filteredDeployments = useMemo(() => {
     return deployments.filter((deployment) => {
-      const merchantName = getMerchantName(deployment.merchantId);
+      const tenantName = getTenantName(deployment.tenantId);
       const matchesSearch =
         searchQuery === "" ||
-        merchantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tenantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         deployment.deploymentUrl
           ?.toLowerCase()
           .includes(searchQuery.toLowerCase()) ||
-        deployment.merchantId.toLowerCase().includes(searchQuery.toLowerCase());
+        deployment.tenantId.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesStatus =
         statusFilter === "all" || deployment.deploymentStatus === statusFilter;
@@ -241,7 +240,7 @@ export default function DeploymentsPage() {
 
       return matchesSearch && matchesStatus && matchesType;
     });
-  }, [deployments, searchQuery, statusFilter, typeFilter, merchants]);
+  }, [deployments, searchQuery, statusFilter, typeFilter, tenants]);
 
   // Status distribution for pie chart
   const statusDistribution = useMemo(() => {
@@ -273,17 +272,17 @@ export default function DeploymentsPage() {
     return Object.entries(counts).map(([name, count]) => ({ name, count }));
   }, [deployments]);
 
-  const handleViewDeployment = (deployment: MerchantDeployment) => {
+  const handleViewDeployment = (deployment: TenantDeployment) => {
     setViewingDeployment(deployment);
     setShowViewDialog(true);
   };
 
   const exportDeployments = () => {
     const csvContent = [
-      ["Merchant", "URL", "Type", "Status", "Provider", "Created At"].join(","),
+      ["Tenant", "URL", "Type", "Status", "Provider", "Created At"].join(","),
       ...filteredDeployments.map((d) =>
         [
-          getMerchantName(d.merchantId),
+          getTenantName(d.tenantId),
           d.deploymentUrl || "",
           d.deploymentType,
           d.deploymentStatus,
@@ -425,10 +424,10 @@ export default function DeploymentsPage() {
                           entry.name === "active"
                             ? "#22c55e"
                             : entry.name === "pending"
-                            ? "#eab308"
-                            : entry.name === "failed"
-                            ? "#ef4444"
-                            : "#6b7280"
+                              ? "#eab308"
+                              : entry.name === "failed"
+                                ? "#ef4444"
+                                : "#6b7280"
                         }
                       />
                     ))}
@@ -499,7 +498,7 @@ export default function DeploymentsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search by merchant, URL, or ID..."
+                placeholder="Search by tenant, URL, or ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -580,7 +579,7 @@ export default function DeploymentsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Health</TableHead>
-                    <TableHead>Merchant</TableHead>
+                    <TableHead>Tenant</TableHead>
                     <TableHead>URL</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Status</TableHead>
@@ -599,16 +598,16 @@ export default function DeploymentsPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
-                            {getMerchantName(deployment.merchantId)
+                            {getTenantName(deployment.tenantId)
                               .charAt(0)
                               .toUpperCase()}
                           </div>
                           <div>
                             <p className="font-medium">
-                              {getMerchantName(deployment.merchantId)}
+                              {getTenantName(deployment.tenantId)}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              ID: {deployment.merchantId.slice(0, 12)}...
+                              ID: {deployment.tenantId.slice(0, 12)}...
                             </p>
                           </div>
                         </div>
@@ -696,13 +695,13 @@ export default function DeploymentsPage() {
             <div className="space-y-6">
               <div className="flex items-center gap-4">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
-                  {getMerchantName(viewingDeployment.merchantId)
+                  {getTenantName(viewingDeployment.tenantId)
                     .charAt(0)
                     .toUpperCase()}
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold">
-                    {getMerchantName(viewingDeployment.merchantId)}
+                    {getTenantName(viewingDeployment.tenantId)}
                   </h3>
                   <p className="text-muted-foreground">
                     {viewingDeployment.deploymentUrl || "No URL"}
@@ -720,10 +719,10 @@ export default function DeploymentsPage() {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">
-                    Merchant ID
+                    Tenant ID
                   </Label>
                   <p className="font-mono text-sm">
-                    {viewingDeployment.merchantId}
+                    {viewingDeployment.tenantId}
                   </p>
                 </div>
                 <div className="space-y-1">

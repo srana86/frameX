@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const activityLogTypeEnum = z.enum([
-  "merchant",
+  "tenant",
   "subscription",
   "plan",
   "deployment",

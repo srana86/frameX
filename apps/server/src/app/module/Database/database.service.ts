@@ -19,7 +19,7 @@ const getAllDatabases = async () => {
     // ignore
   }
 
-  // Get merchant databases info
+  // Get tenant databases info
   const dbInfo = await prisma.databaseInfo.findMany();
 
   // Map database info

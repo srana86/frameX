@@ -1,59 +1,59 @@
-# ✅ Authentication - Merchant Database Integration
+# ✅ Authentication - Tenant Database Integration
 
 ## 🎯 Overview
 
-All authentication routes have been updated to save and retrieve user data from merchant-specific databases instead of the main/non-merchant database.
+All authentication routes have been updated to save and retrieve user data from tenant-specific databases instead of the main/non-tenant database.
 
 ## 📋 Updated Auth Routes
 
 ### ✅ Registration (`/api/auth/register`)
 - **Before**: Saved users to main database
-- **After**: Saves users to merchant-specific database
+- **After**: Saves users to tenant-specific database
 - **Changes**:
-  - Uses `getMerchantCollectionForAPI("users")`
-  - Checks for existing users within merchant scope
-  - Adds `merchantId` to user document if using shared database
+  - Uses `getTenantCollectionForAPI("users")`
+  - Checks for existing users within tenant scope
+  - Adds `tenantId` to user document if using shared database
 
 ### ✅ Login (`/api/auth/login`)
 - **Before**: Searched users in main database
-- **After**: Searches users in merchant-specific database
+- **After**: Searches users in tenant-specific database
 - **Changes**:
-  - Uses `getMerchantCollectionForAPI("users")`
-  - Queries users within merchant scope only
+  - Uses `getTenantCollectionForAPI("users")`
+  - Queries users within tenant scope only
 
 ### ✅ Get Current User (`/api/auth/me`)
 - **Before**: Retrieved user from main database
-- **After**: Retrieves user from merchant-specific database
+- **After**: Retrieves user from tenant-specific database
 - **Changes**:
-  - Uses `getMerchantCollectionForAPI("users")`
-  - Validates user exists within merchant scope
+  - Uses `getTenantCollectionForAPI("users")`
+  - Validates user exists within tenant scope
 
 ### ✅ Google OAuth (`/api/auth/google`)
 - **Before**: Saved/updated users in main database
-- **After**: Saves/updates users in merchant-specific database
+- **After**: Saves/updates users in tenant-specific database
 - **Changes**:
-  - Uses `getMerchantCollectionForAPI("users")`
-  - Creates/updates users within merchant scope
-  - Adds `merchantId` to new users if using shared database
+  - Uses `getTenantCollectionForAPI("users")`
+  - Creates/updates users within tenant scope
+  - Adds `tenantId` to new users if using shared database
 
 ## 🔧 Implementation Details
 
 ### Registration Flow
 
 ```typescript
-const col = await getMerchantCollectionForAPI("users");
-const baseQuery = await buildMerchantQuery();
-const merchantId = await getMerchantIdForAPI();
+const col = await getTenantCollectionForAPI("users");
+const baseQuery = await buildTenantQuery();
+const tenantId = await getTenantIdForAPI();
 
-// Check if user exists within merchant scope
+// Check if user exists within tenant scope
 const existingUser = await col.findOne({ ...baseQuery, email });
 
-// Create user with merchant context
+// Create user with tenant context
 const newUser: any = { ...userData };
-if (merchantId) {
+if (tenantId) {
   const useShared = await isUsingSharedDatabase();
   if (useShared) {
-    newUser.merchantId = merchantId;
+    newUser.tenantId = tenantId;
   }
 }
 await col.insertOne(newUser);
@@ -62,47 +62,47 @@ await col.insertOne(newUser);
 ### Login Flow
 
 ```typescript
-const col = await getMerchantCollectionForAPI("users");
-const baseQuery = await buildMerchantQuery();
+const col = await getTenantCollectionForAPI("users");
+const baseQuery = await buildTenantQuery();
 
-// Find user within merchant scope
+// Find user within tenant scope
 const user = await col.findOne({ ...baseQuery, email });
 ```
 
 ## ✨ Benefits
 
-1. **Data Isolation** - Each merchant has their own user database
-2. **Security** - Users can only log in to their merchant's store
-3. **Scalability** - User data is distributed across merchant databases
-4. **Multi-tenancy** - Complete separation of user data per merchant
+1. **Data Isolation** - Each tenant has their own user database
+2. **Security** - Users can only log in to their tenant's store
+3. **Scalability** - User data is distributed across tenant databases
+4. **Multi-tenancy** - Complete separation of user data per tenant
 
 ## 🎯 User Scoping
 
 ### Separate Database (Default)
-- Each merchant has their own `users` collection in their dedicated database
+- Each tenant has their own `users` collection in their dedicated database
 - Complete data isolation
-- No need for `merchantId` field
+- No need for `tenantId` field
 
 ### Shared Database (Optional)
-- All merchants share one database
-- Users are filtered by `merchantId` field
-- Automatic `merchantId` assignment on registration
+- All tenants share one database
+- Users are filtered by `tenantId` field
+- Automatic `tenantId` assignment on registration
 
 ## 🔒 Security Implications
 
-- Users registered on Merchant A's store cannot log in to Merchant B's store
-- Each merchant maintains their own customer base
-- User authentication is scoped to the merchant's database
+- Users registered on Tenant A's store cannot log in to Tenant B's store
+- Each tenant maintains their own customer base
+- User authentication is scoped to the tenant's database
 
 ## 📝 Notes
 
-- **Existing Users**: Users created before this update may need migration to merchant databases
-- **JWT Tokens**: Tokens remain valid but user lookup is now merchant-scoped
-- **OAuth**: Google OAuth users are also saved to merchant-specific databases
+- **Existing Users**: Users created before this update may need migration to tenant databases
+- **JWT Tokens**: Tokens remain valid but user lookup is now tenant-scoped
+- **OAuth**: Google OAuth users are also saved to tenant-specific databases
 
 ## 🚀 Status
 
-**✅ Complete** - All authentication routes now use merchant-specific databases!
+**✅ Complete** - All authentication routes now use tenant-specific databases!
 
-Users are now properly isolated per merchant, ensuring complete data separation and security.
+Users are now properly isolated per tenant, ensuring complete data separation and security.
 

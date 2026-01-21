@@ -9,21 +9,21 @@ const router = express.Router();
 // Get all inventory transactions
 router.get(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   InventoryControllers.getAllInventoryTransactions
 );
 
 // Get inventory overview
 router.get(
   "/overview",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   InventoryControllers.getInventoryOverview
 );
 
 // Create inventory transaction
 router.post(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(
     InventoryValidation.createInventoryTransactionValidationSchema
   ),

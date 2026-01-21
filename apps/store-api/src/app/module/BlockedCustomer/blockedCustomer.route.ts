@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.post(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(
     BlockedCustomerValidation.createBlockedCustomerValidationSchema
   ),
@@ -17,7 +17,7 @@ router.post(
 
 router.get(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   BlockedCustomerControllers.getAllBlockedCustomers
 );
 
@@ -31,13 +31,13 @@ router.post(
 
 router.get(
   "/:id",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   BlockedCustomerControllers.getSingleBlockedCustomer
 );
 
 router.put(
   "/:id",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(
     BlockedCustomerValidation.updateBlockedCustomerValidationSchema
   ),
@@ -46,7 +46,7 @@ router.put(
 
 router.delete(
   "/:id",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   BlockedCustomerControllers.deleteBlockedCustomer
 );
 

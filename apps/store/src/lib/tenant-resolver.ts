@@ -7,7 +7,7 @@ import { headers } from "next/headers";
 
 /**
  * Resolve tenant from request context
- * Priority: x-merchant-id ONLY (set by proxy or middleware)
+ * Priority: x-tenant-id ONLY (set by proxy or middleware)
  */
 export async function resolveTenant(): Promise<{
     tenantId: string;
@@ -15,18 +15,18 @@ export async function resolveTenant(): Promise<{
 } | null> {
     const headersList = await headers();
 
-    // Priority 1: Direct merchant ID (from env or cache hit in proxy)
-    const merchantId = headersList.get("x-merchant-id");
-    if (merchantId) {
-        return { tenantId: merchantId };
+    // Priority 1: Direct tenant ID (from env or cache hit in proxy)
+    const tenantId = headersList.get("x-tenant-id");
+    if (tenantId) {
+        return { tenantId: tenantId };
     }
 
-    // In VPS setup, x-merchant-id should always be present via Nginx mapping
-    console.warn("[TenantResolver] Missing x-merchant-id header in request");
+    // In VPS setup, x-tenant-id should always be present via Nginx mapping
+    console.warn("[TenantResolver] Missing x-tenant-id header in request");
 
     // Fallback for local dev if needed, or return null
-    if (process.env.DEFAULT_MERCHANT_ID) {
-        return { tenantId: process.env.DEFAULT_MERCHANT_ID };
+    if (process.env.DEFAULT_TENANT_ID) {
+        return { tenantId: process.env.DEFAULT_TENANT_ID };
     }
 
     return null;

@@ -33,7 +33,7 @@ const getSSLCommerzConfig = async () => {
 };
 
 const initCheckout = async (payload: any) => {
-  if (!payload.planId || !payload.merchantName || !payload.amount) {
+  if (!payload.planId || !payload.tenantName || !payload.amount) {
     throw new Error("Missing required fields");
   }
 
@@ -55,8 +55,8 @@ const initCheckout = async (payload: any) => {
       customerEmail: payload.customerEmail,
       customerId: payload.customerId,
       metadata: {
-        merchantName: payload.merchantName,
-        merchantEmail: payload.merchantEmail,
+        tenantName: payload.tenantName,
+        tenantEmail: payload.tenantEmail,
         customerName: payload.customerName,
         ...payload
       }

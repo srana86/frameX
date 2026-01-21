@@ -39,9 +39,9 @@ ENCRYPTION_KEY=your_secure_random_key_here
 
 ```typescript
 // Test in API route or script
-import { createMerchantDatabase } from "@/lib/database-service";
+import { createTenantDatabase } from "@/lib/database-service";
 
-const db = await createMerchantDatabase("test_merchant_123");
+const db = await createTenantDatabase("test_tenant_123");
 console.log("Database created:", db.databaseName);
 ```
 
@@ -51,8 +51,8 @@ console.log("Database created:", db.databaseName);
 // Test deployment creation
 import { createVercelProject, deployToVercel } from "@/lib/vercel-service";
 
-const project = await createVercelProject("test_merchant", "Test Merchant");
-const deployment = await deployToVercel(project.id, "test_merchant", "db_name", "connection_string");
+const project = await createVercelProject("test_tenant", "Test Tenant");
+const deployment = await deployToVercel(project.id, "test_tenant", "db_name", "connection_string");
 console.log("Deployed to:", deployment.url);
 ```
 
@@ -71,17 +71,17 @@ curl -X POST http://localhost:3000/api/subscriptions/create-with-deployment \
 ## ✅ What Happens Automatically
 
 1. **Subscription Created** → Record in database
-2. **MongoDB Database Created** → `merchant_123_db`
+2. **MongoDB Database Created** → `tenant_123_db`
 3. **Collections Initialized** → Products, orders, etc.
-4. **Vercel Project Created** → `merchant-123`
+4. **Vercel Project Created** → `tenant-123`
 5. **Deployment Triggered** → Builds and deploys
-6. **Environment Variables Set** → Merchant-specific config
-7. **Subdomain Generated** → `merchant-123.vercel.app`
+6. **Environment Variables Set** → Tenant-specific config
+7. **Subdomain Generated** → `tenant-123.vercel.app`
 
 ## 🌐 Domain Configuration
 
-### Merchant Side:
-1. Go to `/merchant/domain`
+### Tenant Side:
+1. Go to `/tenant/domain`
 2. Enter domain: `shop.example.com`
 3. Click "Configure"
 4. Get DNS instructions
@@ -99,12 +99,12 @@ curl -X POST http://localhost:3000/api/subscriptions/create-with-deployment \
 ## 📊 Database Structure
 
 ### Main Database (`shoestore_main`)
-- Manages all merchants
+- Manages all tenants
 - Stores deployment configs
 - Tracks subscriptions
 
-### Merchant Databases (`merchant_123_db`)
-- Isolated data per merchant
+### Tenant Databases (`tenant_123_db`)
+- Isolated data per tenant
 - Products, orders, configs
 - Complete separation
 
@@ -131,7 +131,7 @@ curl -X POST http://localhost:3000/api/subscriptions/create-with-deployment \
 2. ✅ Test database creation
 3. ✅ Test Vercel deployment
 4. ✅ Test complete flow
-5. ✅ Build merchant UI
+5. ✅ Build tenant UI
 6. ✅ Build admin panel
 
 ## 📚 Key Files
@@ -143,7 +143,7 @@ curl -X POST http://localhost:3000/api/subscriptions/create-with-deployment \
 
 ## 💡 Tips
 
-1. **Start with test merchant** before production
+1. **Start with test tenant** before production
 2. **Monitor Vercel deployments** in dashboard
 3. **Check MongoDB** for database creation
 4. **Test domain configuration** with test domain

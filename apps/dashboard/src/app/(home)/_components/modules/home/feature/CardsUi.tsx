@@ -12,12 +12,12 @@ const stats: StatCard[] = [
   {
     value: 10000,
     suffix: "+",
-    label: "Active Merchants",
+    label: "Active Tenants",
   },
   {
     value: 830000000,
     suffix: "+",
-    label: "Total Revenue (All Merchants)",
+    label: "Total Revenue (All Tenants)",
   },
   {
     value: 13500,

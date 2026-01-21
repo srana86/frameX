@@ -2,7 +2,7 @@
 
 ## 🎯 What You Asked For
 
-> "How can I customize plan, and based on the single source dynamic plan merchants will get feature"
+> "How can I customize plan, and based on the single source dynamic plan tenants will get feature"
 
 ## ✅ What's Been Built
 
@@ -25,8 +25,8 @@
 - ✅ Easy to add new features
 - ✅ Type-safe feature checking
 
-### 4. **Merchant Feature Access**
-- ✅ Merchants automatically get features from their plan
+### 4. **Tenant Feature Access**
+- ✅ Tenants automatically get features from their plan
 - ✅ Features read from database in real-time
 - ✅ Helper functions for easy feature checking
 - ✅ Usage tracking for metered features
@@ -48,16 +48,16 @@
 4. Saves plan → Stored in database
 ```
 
-### Merchant Flow:
+### Tenant Flow:
 ```
-1. Merchant subscribes to a plan
-2. Plan ID stored in merchant_subscriptions
-3. When merchant uses feature:
+1. Tenant subscribes to a plan
+2. Plan ID stored in tenant_subscriptions
+3. When tenant uses feature:
    → System gets subscription
    → Gets plan from database
    → Reads feature value from plan.features
    → Returns access/limit
-4. Merchant gets feature based on plan
+4. Tenant gets feature based on plan
 ```
 
 ## 🔧 Feature Types Supported
@@ -84,14 +84,14 @@
 ```typescript
 import { checkFeatureAccess } from "@/lib/subscription-helpers";
 
-const hasAccess = await checkFeatureAccess(merchantId, "custom_domain");
+const hasAccess = await checkFeatureAccess(tenantId, "custom_domain");
 ```
 
 ### Get Feature Limit:
 ```typescript
 import { getFeatureLimit } from "@/lib/subscription-helpers";
 
-const limit = await getFeatureLimit(merchantId, "max_products");
+const limit = await getFeatureLimit(tenantId, "max_products");
 // Returns: 50, 500, "unlimited", or null
 ```
 
@@ -99,14 +99,14 @@ const limit = await getFeatureLimit(merchantId, "max_products");
 ```typescript
 import { canUseFeature } from "@/lib/subscription-helpers";
 
-const canCreate = await canUseFeature(merchantId, "max_products", 1);
+const canCreate = await canUseFeature(tenantId, "max_products", 1);
 ```
 
 ### Get Feature Value:
 ```typescript
-import { getMerchantFeature } from "@/lib/feature-helpers";
+import { getTenantFeature } from "@/lib/feature-helpers";
 
-const value = await getMerchantFeature(merchantId, "ads_tracking_platforms");
+const value = await getTenantFeature(tenantId, "ads_tracking_platforms");
 // Returns: ["meta", "tiktok", "gtm"] or null
 ```
 
@@ -124,9 +124,9 @@ const value = await getMerchantFeature(merchantId, "ads_tracking_platforms");
 
 4. **API Endpoints:**
    - `app/api/admin/subscription-plans/route.ts` - Plan CRUD (already existed, enhanced)
-   - `app/api/merchant/features/check/route.ts` - Check feature access
-   - `app/api/merchant/features/limit/route.ts` - Get feature limit
-   - `app/api/merchant/features/usage/route.ts` - Get feature usage
+   - `app/api/tenant/features/check/route.ts` - Check feature access
+   - `app/api/tenant/features/limit/route.ts` - Get feature limit
+   - `app/api/tenant/features/usage/route.ts` - Get feature usage
 
 5. **Documentation:**
    - `docs/DYNAMIC_PLAN_MANAGEMENT.md` - Complete guide
@@ -170,15 +170,15 @@ Admin → /admin/subscription-plans
   → Plan updated in database
 ```
 
-### 2. Merchant Gets Feature:
+### 2. Tenant Gets Feature:
 ```
-Merchant → Creates product
-  → API checks: canUseFeature(merchantId, "max_products", 1)
+Tenant → Creates product
+  → API checks: canUseFeature(tenantId, "max_products", 1)
   → System reads plan from database
   → Gets max_products: 100 (updated value)
   → Checks if can create (usage < 100)
   → Allows creation
-  → Merchant gets new limit immediately
+  → Tenant gets new limit immediately
 ```
 
 ## ✅ Key Benefits
@@ -197,7 +197,7 @@ Merchant → Creates product
 2. Click "Edit" on any plan
 3. Configure features in tabs
 4. Save changes
-5. Merchants get updated features automatically
+5. Tenants get updated features automatically
 
 ### For Developers:
 1. Use helper functions to check features
@@ -240,7 +240,7 @@ Merchant → Creates product
 
 ✅ **Single Source of Truth**: Plans in database
 ✅ **Dynamic Customization**: Admin UI to edit plans
-✅ **Automatic Feature Access**: Merchants get features from plan
+✅ **Automatic Feature Access**: Tenants get features from plan
 ✅ **Real-time Updates**: Changes take effect immediately
 ✅ **Flexible System**: Easy to add new features
 

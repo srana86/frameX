@@ -59,8 +59,8 @@ const getAllInvoices = async (
       id: p.id,
       invoiceNumber: `PAY-${p.sessionId || p.id}`, // using sessionId or id
       tenantId: p.tenantId,
-      merchantName: metadata.merchantName,
-      merchantEmail: p.customerEmail, // or metadata.merchantEmail
+      tenantName: metadata.tenantName,
+      tenantEmail: p.customerEmail, // or metadata.tenantEmail
       subscriptionId: p.tenantId,
       planId: metadata.planId,
       planName: planName,
@@ -119,18 +119,18 @@ const getInvoiceById = async (id: string) => {
 };
 
 const createInvoice = async (payload: any) => {
-  if (!payload.merchantId || !payload.amount) {
+  if (!payload.tenantId || !payload.amount) {
     throw new Error("Missing required fields");
   }
 
   const invoiceData = {
     invoiceNumber: generateInvoiceNumber(),
-    tenantId: payload.tenantId || payload.merchantId,
-    // merchantName/Email not in Prisma Invoice model, likely needing join or ignore? 
-    // Schema: tenantId, merchantId, subscriptionId, invoiceNumber, amount, currency, status, dueDate, paidAt, paymentMethodId, items
-    // No merchantName/Email. We'll store relevant details in `items` or just ignore if not needed solely for display.
-    // Or maybe I should've checked schema closer. Model `Invoice` line 924 doesn't have merchantName.
-    // I can assume it fetches merchant info via merchantId from Merchant model if needed, 
+    tenantId: payload.tenantId,
+    // tenantName/Email not in Prisma Invoice model, likely needing join or ignore? 
+    // Schema: tenantId, tenantId, subscriptionId, invoiceNumber, amount, currency, status, dueDate, paidAt, paymentMethodId, items
+    // No tenantName/Email. We'll store relevant details in `items` or just ignore if not needed solely for display.
+    // Or maybe I should've checked schema closer. Model `Invoice` line 924 doesn't have tenantName.
+    // I can assume it fetches tenant info via tenantId from Tenant model if needed, 
     // but the service function returned it.
     // I will proceed with available fields.
     subscriptionId: payload.subscriptionId,

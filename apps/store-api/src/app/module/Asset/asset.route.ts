@@ -8,7 +8,7 @@ const router = express.Router();
 
 // All routes require authentication
 router.use(tenantMiddleware);
-router.use(auth("merchant", "admin"));
+router.use(auth("tenant", "admin"));
 
 // Get all assets for tenant
 router.get("/", AssetControllers.getAssets);

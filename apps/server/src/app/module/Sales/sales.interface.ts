@@ -3,9 +3,9 @@ export type SaleType = "new" | "renewal" | "upgrade" | "downgrade";
 
 export interface ISale {
   id: string;
-  merchantId: string;
-  merchantName?: string;
-  merchantEmail?: string;
+  tenantId: string;
+  tenantName?: string;
+  tenantEmail?: string;
   subscriptionId?: string;
   planId: string;
   planName: string;

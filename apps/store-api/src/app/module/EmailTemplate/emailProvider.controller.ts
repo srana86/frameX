@@ -6,9 +6,9 @@ import { EmailProviderServices } from "./emailProvider.service";
 
 // Get email provider settings
 const getEmailSettings = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = (req as any).tenantId;
+  const tenantId = (req as any).tenantId;
   const result =
-    await EmailProviderServices.getEmailProviderSettingsFromDB(merchantId);
+    await EmailProviderServices.getEmailProviderSettingsFromDB(tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -20,9 +20,9 @@ const getEmailSettings = catchAsync(async (req: Request, res: Response) => {
 
 // Update email provider settings
 const updateEmailSettings = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = (req as any).tenantId;
+  const tenantId = (req as any).tenantId;
   const result = await EmailProviderServices.updateEmailProviderSettingsFromDB(
-    merchantId,
+    tenantId,
     req.body
   );
 

@@ -26,10 +26,10 @@ export interface CheckoutFormData {
   planPrice: number;
   billingCycle: "monthly" | "yearly";
   
-  // Merchant Info (for simulator)
-  merchantName: string;
-  merchantEmail: string;
-  merchantPhone: string;
+  // Tenant Info (for simulator)
+  tenantName: string;
+  tenantEmail: string;
+  tenantPhone: string;
   
   // Customer Info (for SSLCommerz)
   customerName: string;

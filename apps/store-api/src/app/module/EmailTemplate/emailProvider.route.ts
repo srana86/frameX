@@ -9,14 +9,14 @@ const router = express.Router();
 // Get email provider settings
 router.get(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   EmailProviderControllers.getEmailSettings
 );
 
 // Update email provider settings
 router.put(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(EmailProviderValidation.updateEmailSettingsValidationSchema),
   EmailProviderControllers.updateEmailSettings
 );
@@ -24,7 +24,7 @@ router.put(
 // Test email provider settings
 router.post(
   "/test",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(EmailProviderValidation.testEmailSettingsValidationSchema),
   EmailProviderControllers.testEmailSettings
 );

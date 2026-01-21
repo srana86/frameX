@@ -15,10 +15,10 @@ router.get("/current", auth(), SubscriptionControllers.getCurrentSubscription);
 // Get subscription status (protected)
 router.get("/status", auth(), SubscriptionControllers.getSubscriptionStatus);
 
-// Create subscription (protected - merchant only)
+// Create subscription (protected - tenant only)
 router.post(
   "/create",
-  auth("merchant"),
+  auth("tenant"),
   validateRequest(SubscriptionValidation.createSubscriptionValidationSchema),
   SubscriptionControllers.createSubscription
 );

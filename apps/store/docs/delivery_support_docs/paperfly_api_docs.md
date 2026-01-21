@@ -60,12 +60,12 @@ PAPERFLY_KEY=""
 use Codeboxr\PaperflyCourier\Facade\PaperflyCourier;
 
 return PaperflyCourier::order()->create([
-  "merOrderRef"          => "", // merchant invoice id
-  "pickMerchantName"     => "" // Pickup store name,
-  "pickMerchantAddress"  => "" // Pickup address,
-  "pickMerchantThana"    => "" // Pickup thana name,
-  "pickMerchantDistrict" => "" // Pickup district name,
-  "pickupMerchantPhone"  => "" // Pickup contact person name,
+  "merOrderRef"          => "", // tenant invoice id
+  "pickTenantName"     => "" // Pickup store name,
+  "pickTenantAddress"  => "" // Pickup address,
+  "pickTenantThana"    => "" // Pickup thana name,
+  "pickTenantDistrict" => "" // Pickup district name,
+  "pickupTenantPhone"  => "" // Pickup contact person name,
   "productSizeWeight"    => "standard",
   "productBrief"         => "" // Parcel product details,
   "packagePrice"         => "" //parcel price,

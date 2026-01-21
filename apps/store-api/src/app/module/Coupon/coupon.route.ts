@@ -32,53 +32,53 @@ router.post(
 // tenantMiddleware MUST come before auth
 // =====================
 
-// Get all coupons with pagination, filter, and search (admin/merchant)
+// Get all coupons with pagination, filter, and search (admin/tenant)
 router.get(
   "/",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   CouponControllers.getAllCoupons
 );
 
-// Get coupon usage records (admin/merchant)
+// Get coupon usage records (admin/tenant)
 router.get(
   "/record-usage",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   CouponControllers.getCouponUsageRecords
 );
 
-// Get single coupon by ID or code (admin/merchant)
+// Get single coupon by ID or code (admin/tenant)
 router.get(
   "/:id",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   CouponControllers.getSingleCoupon
 );
 
-// Create coupon (admin/merchant only)
+// Create coupon (admin/tenant only)
 router.post(
   "/",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(CouponValidation.createCouponValidationSchema),
   CouponControllers.createCoupon
 );
 
-// Update coupon (admin/merchant only)
+// Update coupon (admin/tenant only)
 router.put(
   "/:id",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(CouponValidation.updateCouponValidationSchema),
   CouponControllers.updateCoupon
 );
 
-// Delete coupon (admin/merchant only)
+// Delete coupon (admin/tenant only)
 router.delete(
   "/:id",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   CouponControllers.deleteCoupon
 );
 

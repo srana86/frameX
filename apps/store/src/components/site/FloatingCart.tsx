@@ -50,14 +50,14 @@ export function FloatingCart() {
     return () => observer.disconnect();
   }, [isVisible]);
 
-  // Hide on cart, checkout, and admin/merchant dashboard pages
+  // Hide on cart, checkout, and admin/tenant dashboard pages
   // Also check for mobile viewport
   useEffect(() => {
     const shouldHide =
       pathname === "/cart" ||
       pathname === "/checkout" ||
       pathname.startsWith("/checkout/") ||
-      pathname.startsWith("/merchant") ||
+      pathname.startsWith("/tenant") ||
       pathname.startsWith("/admin");
     
     // Check if mobile (hide floating cart on mobile since we have bottom nav)

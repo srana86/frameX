@@ -17,7 +17,7 @@ interface AdminAwareFooterProps {
 
 export default function AdminAwareFooter({ brandConfig, enabledPages }: AdminAwareFooterProps) {
   const pathname = usePathname();
-  const isAdmin = pathname?.startsWith("/merchant") || pathname?.startsWith("/admin");
+  const isAdmin = pathname?.startsWith("/tenant") || pathname?.startsWith("/admin");
   if (isAdmin) return null;
   return <Footer brandConfig={brandConfig} enabledPages={enabledPages} />;
 }

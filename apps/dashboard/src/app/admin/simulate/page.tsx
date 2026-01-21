@@ -133,13 +133,12 @@ function StepConnector({
   return (
     <div className="relative h-8 w-0.5 mx-auto overflow-hidden">
       <div
-        className={`absolute inset-0 transition-all duration-500 ${
-          isCompleted
+        className={`absolute inset-0 transition-all duration-500 ${isCompleted
             ? "bg-green-500"
             : isActive
-            ? "bg-primary"
-            : "bg-muted-foreground/20"
-        }`}
+              ? "bg-primary"
+              : "bg-muted-foreground/20"
+          }`}
       />
       {isActive && (
         <div className="absolute inset-0 bg-primary animate-pulse" />
@@ -183,13 +182,12 @@ function PhaseHeader({
 
   return (
     <div
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 ${
-        isCompleted
+      className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 ${isCompleted
           ? "bg-green-500/10 text-green-600"
           : isActive
-          ? `bg-linear-to-r ${config.color} text-white shadow-lg`
-          : "bg-muted text-muted-foreground"
-      }`}
+            ? `bg-linear-to-r ${config.color} text-white shadow-lg`
+            : "bg-muted text-muted-foreground"
+        }`}
     >
       {config.icon}
       {config.label}
@@ -202,9 +200,9 @@ export default function SimulatePage() {
   const { formatAmount } = useCurrency();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string>("");
-  const [merchantName, setMerchantName] = useState<string>("Test Merchant");
-  const [merchantEmail, setMerchantEmail] = useState<string>(
-    "merchant@example.com"
+  const [tenantName, setTenantName] = useState<string>("Test Tenant");
+  const [tenantEmail, setTenantEmail] = useState<string>(
+    "tenant@example.com"
   );
   const [customSubdomain, setCustomSubdomain] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -230,8 +228,8 @@ export default function SimulatePage() {
     },
     {
       id: "2",
-      name: "Create Merchant",
-      description: "Register merchant account",
+      name: "Create Tenant",
+      description: "Register tenant account",
       icon: <Building2 className="h-5 w-5" />,
       status: "pending",
       color: "bg-cyan-500",
@@ -449,19 +447,19 @@ export default function SimulatePage() {
         )}/month)`
       );
 
-      // Step 2: Create Merchant
-      updateStep("2", "running", "Creating merchant record...");
-      const merchantId = `merchant_${Date.now()}`;
-      const createdMerchant = await api.post("merchants", {
-        id: merchantId,
-        name: merchantName,
-        email: merchantEmail,
+      // Step 2: Create Tenant
+      updateStep("2", "running", "Creating tenant record...");
+      const tenantId = `tenant_${Date.now()}`;
+      const createdTenant = await api.post("tenants", {
+        id: tenantId,
+        name: tenantName,
+        email: tenantEmail,
         status: "trial",
-        settings: { brandName: merchantName, currency: "USD", timezone: "UTC" },
+        settings: { brandName: tenantName, currency: "USD", timezone: "UTC" },
       });
-      updateStep("2", "completed", `Merchant created: ${merchantName}`, {
-        merchantId,
-        merchant: createdMerchant,
+      updateStep("2", "completed", `Tenant created: ${tenantName}`, {
+        tenantId,
+        tenant: createdTenant,
       });
 
       // Step 3: Create Subscription
@@ -469,7 +467,7 @@ export default function SimulatePage() {
       const subscriptionId = `sub_${Date.now()}`;
       const createdSubscription = await api.post("subscriptions", {
         id: subscriptionId,
-        merchantId,
+        tenantId,
         planId: selectedPlanId,
         status: "active",
         currentPeriodStart: new Date().toISOString(),
@@ -488,7 +486,7 @@ export default function SimulatePage() {
       let dbData: any;
       try {
         dbData = await api.post<any>("simulate/create-database", {
-          merchantId,
+          tenantId,
         });
         updateStep(
           "4",
@@ -528,9 +526,9 @@ export default function SimulatePage() {
       setIsDeploying(true);
       setDeploymentStatus("QUEUED");
       const deployData = await api.post<any>("simulate/create-deployment", {
-        merchantId,
-        merchantName,
-        merchantEmail,
+        tenantId,
+        tenantName,
+        tenantEmail,
         databaseName: dbData.databaseName,
         customSubdomain: customSubdomain.trim() || undefined,
       });
@@ -556,18 +554,17 @@ export default function SimulatePage() {
           deployData.deployment.status?.toUpperCase() || "QUEUED"
         );
       }
-      if (deployData.merchantUser || deployData.deployment.dnsInstructions) {
+      if (deployData.tenantUser || deployData.deployment.dnsInstructions) {
         setSimulationResult((prev: any) => ({
           ...prev,
-          merchantUser: deployData.merchantUser,
+          tenantUser: deployData.tenantUser,
           dnsInstructions: deployData.deployment.dnsInstructions,
         }));
       }
       updateStep(
         "7",
         "running",
-        `Deployment created. Status: ${
-          deployData.deployment.status?.toUpperCase() || "QUEUED"
+        `Deployment created. Status: ${deployData.deployment.status?.toUpperCase() || "QUEUED"
         }...`,
         {
           deploymentId: deploymentIdFromResponse,
@@ -604,7 +601,7 @@ export default function SimulatePage() {
       }
 
       setSimulationResult({
-        merchantId,
+        tenantId,
         subscriptionId,
         databaseName: dbData.databaseName,
         deploymentUrl:
@@ -617,7 +614,7 @@ export default function SimulatePage() {
         deploymentId: deploymentIdFromResponse,
         status: deployData.deployment.status || "deploying",
         plan: selectedPlan,
-        merchantUser: deployData.merchantUser || null,
+        tenantUser: deployData.tenantUser || null,
         subdomain: deployData.deployment.subdomain,
         subdomainConfigured: deployData.deployment.subdomainConfigured,
         dnsInstructions: deployData.deployment.dnsInstructions,
@@ -687,7 +684,7 @@ export default function SimulatePage() {
               Flow Simulation
             </h1>
             <p className="text-muted-foreground">
-              End-to-end merchant onboarding pipeline
+              End-to-end tenant onboarding pipeline
             </p>
           </div>
         </div>
@@ -798,22 +795,22 @@ export default function SimulatePage() {
               <Separator />
 
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Merchant Name</Label>
+                <Label className="text-sm font-medium">Tenant Name</Label>
                 <Input
-                  value={merchantName}
-                  onChange={(e) => setMerchantName(e.target.value)}
-                  placeholder="Test Merchant"
+                  value={tenantName}
+                  onChange={(e) => setTenantName(e.target.value)}
+                  placeholder="Test Tenant"
                   className="h-12 border-2 transition-colors focus:border-primary"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Merchant Email</Label>
+                <Label className="text-sm font-medium">Tenant Email</Label>
                 <Input
                   type="email"
-                  value={merchantEmail}
-                  onChange={(e) => setMerchantEmail(e.target.value)}
-                  placeholder="merchant@example.com"
+                  value={tenantEmail}
+                  onChange={(e) => setTenantEmail(e.target.value)}
+                  placeholder="tenant@example.com"
                   className="h-12 border-2 transition-colors focus:border-primary"
                 />
               </div>
@@ -868,7 +865,7 @@ export default function SimulatePage() {
                   <ul className="text-xs text-muted-foreground space-y-1.5">
                     <li className="flex items-center gap-2">
                       <Shield className="h-3 w-3 text-green-500" /> Creates a
-                      real merchant account
+                      real tenant account
                     </li>
                     <li className="flex items-center gap-2">
                       <Database className="h-3 w-3 text-violet-500" />{" "}
@@ -880,7 +877,7 @@ export default function SimulatePage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <User className="h-3 w-3 text-blue-500" /> Generates
-                      merchant login credentials
+                      tenant login credentials
                     </li>
                   </ul>
                 </div>
@@ -950,9 +947,8 @@ export default function SimulatePage() {
                         </div>
                       )}
                       <div
-                        className={`flex items-start gap-4 transition-all duration-300 ${
-                          step.status === "running" ? "scale-[1.02]" : ""
-                        }`}
+                        className={`flex items-start gap-4 transition-all duration-300 ${step.status === "running" ? "scale-[1.02]" : ""
+                          }`}
                       >
                         <div className="flex flex-col items-center">
                           <StepIcon step={step} index={index} />
@@ -967,21 +963,19 @@ export default function SimulatePage() {
                           )}
                         </div>
                         <div
-                          className={`flex-1 pb-4 transition-all duration-300 ${
-                            step.status === "running" ? "translate-x-1" : ""
-                          }`}
+                          className={`flex-1 pb-4 transition-all duration-300 ${step.status === "running" ? "translate-x-1" : ""
+                            }`}
                         >
                           <div className="flex items-center justify-between">
                             <h4
-                              className={`font-semibold transition-colors ${
-                                step.status === "completed"
+                              className={`font-semibold transition-colors ${step.status === "completed"
                                   ? "text-green-600"
                                   : step.status === "running"
-                                  ? "text-primary"
-                                  : step.status === "error"
-                                  ? "text-red-600"
-                                  : "text-muted-foreground"
-                              }`}
+                                    ? "text-primary"
+                                    : step.status === "error"
+                                      ? "text-red-600"
+                                      : "text-muted-foreground"
+                                }`}
                             >
                               {step.name}
                             </h4>
@@ -991,25 +985,23 @@ export default function SimulatePage() {
                                   step.status === "completed"
                                     ? "default"
                                     : step.status === "running"
-                                    ? "secondary"
-                                    : "destructive"
+                                      ? "secondary"
+                                      : "destructive"
                                 }
-                                className={`text-xs ${
-                                  step.status === "completed"
+                                className={`text-xs ${step.status === "completed"
                                     ? "bg-green-500"
                                     : ""
-                                }`}
+                                  }`}
                               >
                                 {step.status}
                               </Badge>
                             )}
                           </div>
                           <p
-                            className={`text-sm mt-0.5 transition-colors ${
-                              step.status === "running"
+                            className={`text-sm mt-0.5 transition-colors ${step.status === "running"
                                 ? "text-primary/80"
                                 : "text-muted-foreground"
-                            }`}
+                              }`}
                           >
                             {step.message || step.description}
                           </p>
@@ -1039,20 +1031,18 @@ export default function SimulatePage() {
             <>
               {/* Deployment Status */}
               <Card
-                className={`overflow-hidden ${
-                  simulationResult.status === "active"
+                className={`overflow-hidden ${simulationResult.status === "active"
                     ? "border-green-500/50 bg-linear-to-br from-green-500/5 to-emerald-500/10"
                     : "border-yellow-500/50 bg-linear-to-br from-yellow-500/5 to-orange-500/10"
-                }`}
+                  }`}
               >
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`relative flex h-14 w-14 items-center justify-center rounded-2xl ${
-                        simulationResult.status === "active"
+                      className={`relative flex h-14 w-14 items-center justify-center rounded-2xl ${simulationResult.status === "active"
                           ? "bg-green-500"
                           : "bg-yellow-500"
-                      } shadow-lg`}
+                        } shadow-lg`}
                     >
                       {simulationResult.status === "active" ? (
                         <CheckCircle2 className="h-7 w-7 text-white" />
@@ -1062,11 +1052,10 @@ export default function SimulatePage() {
                     </div>
                     <div className="flex-1">
                       <p
-                        className={`text-xl font-bold ${
-                          simulationResult.status === "active"
+                        className={`text-xl font-bold ${simulationResult.status === "active"
                             ? "text-green-600"
                             : "text-yellow-600"
-                        }`}
+                          }`}
                       >
                         {simulationResult.status === "active"
                           ? "Deployment Ready!"
@@ -1074,7 +1063,7 @@ export default function SimulatePage() {
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {simulationResult.status === "active"
-                          ? "Your merchant store is live"
+                          ? "Your tenant store is live"
                           : `Status: ${deploymentStatus || "QUEUED"}`}
                       </p>
                     </div>
@@ -1108,13 +1097,13 @@ export default function SimulatePage() {
                   </Card>
                 )}
 
-              {/* Merchant Credentials */}
-              {simulationResult.merchantUser && (
+              {/* Tenant Credentials */}
+              {simulationResult.tenantUser && (
                 <Card className="overflow-hidden">
                   <CardHeader className="pb-3 bg-linear-to-br from-muted/50 to-transparent">
                     <CardTitle className="flex items-center gap-2 text-base">
                       <User className="h-4 w-4 text-primary" />
-                      Merchant Login
+                      Tenant Login
                     </CardTitle>
                     <CardDescription>
                       Use these credentials to access the dashboard
@@ -1127,7 +1116,7 @@ export default function SimulatePage() {
                       </Label>
                       <div className="flex items-center gap-2">
                         <code className="flex-1 rounded-lg border bg-muted/50 px-4 py-3 text-sm font-mono">
-                          {simulationResult.merchantUser.email}
+                          {simulationResult.tenantUser.email}
                         </code>
                         <Button
                           variant="outline"
@@ -1135,7 +1124,7 @@ export default function SimulatePage() {
                           className="h-11 w-11"
                           onClick={() =>
                             copyToClipboard(
-                              simulationResult.merchantUser.email,
+                              simulationResult.tenantUser.email,
                               "email"
                             )
                           }
@@ -1154,7 +1143,7 @@ export default function SimulatePage() {
                       </Label>
                       <div className="flex items-center gap-2">
                         <code className="flex-1 rounded-lg border bg-muted/50 px-4 py-3 text-sm font-mono">
-                          {simulationResult.merchantUser.password}
+                          {simulationResult.tenantUser.password}
                         </code>
                         <Button
                           variant="outline"
@@ -1162,7 +1151,7 @@ export default function SimulatePage() {
                           className="h-11 w-11"
                           onClick={() =>
                             copyToClipboard(
-                              simulationResult.merchantUser.password,
+                              simulationResult.tenantUser.password,
                               "password"
                             )
                           }
@@ -1202,10 +1191,10 @@ export default function SimulatePage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-xl border bg-muted/30 p-3">
                       <p className="text-xs text-muted-foreground mb-1">
-                        Merchant ID
+                        Tenant ID
                       </p>
                       <p className="font-mono text-xs truncate">
-                        {simulationResult.merchantId}
+                        {simulationResult.tenantId}
                       </p>
                     </div>
                     <div className="rounded-xl border bg-muted/30 p-3">

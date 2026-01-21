@@ -5,10 +5,10 @@ import { FeatureRequestServices } from "./featureRequest.service";
 
 const getAllFeatureRequests = catchAsync(async (req, res) => {
   const status = req.query.status as string;
-  const merchantId = req.query.merchantId as string;
+  const tenantId = req.query.tenantId as string;
   const result = await FeatureRequestServices.getAllFeatureRequests(
     status,
-    merchantId
+    tenantId
   );
   sendResponse(res, {
     statusCode: httpStatus.OK,

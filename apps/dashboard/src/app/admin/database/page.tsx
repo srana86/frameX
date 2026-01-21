@@ -62,7 +62,7 @@ interface DatabaseInfo {
   name: string;
   sizeOnDisk: number;
   empty: boolean;
-  merchantId: string | null;
+  tenantId: string | null;
   createdAt: string | null;
   connectionString: string | null;
 }
@@ -152,7 +152,7 @@ function StorageUsageBar({
 
 export default function DatabasePage() {
   const [databases, setDatabases] = useState<DatabaseInfo[]>([]);
-  const [merchants, setMerchants] = useState<any[]>([]);
+  const [tenants, setTenants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showViewDialog, setShowViewDialog] = useState(false);
@@ -163,13 +163,13 @@ export default function DatabasePage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [dbData, merchantsData] = await Promise.all([
+      const [dbData, tenantsData] = await Promise.all([
         api.get<any[]>("databases"),
-        api.get<any[]>("merchants").catch(() => []),
+        api.get<any[]>("tenants").catch(() => []),
       ]);
 
       setDatabases(dbData);
-      setMerchants(merchantsData);
+      setTenants(tenantsData);
     } catch (error: any) {
       console.error("Failed to load data:", error);
       toast.error(error?.message || "Failed to load databases");
@@ -190,35 +190,35 @@ export default function DatabasePage() {
     return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
   };
 
-  // Get merchant name by ID
-  const getMerchantName = (merchantId: string | null) => {
-    if (!merchantId) return null;
-    const merchant = merchants.find((m) => m.id === merchantId);
-    return merchant?.name || merchantId;
+  // Get tenant name by ID
+  const getTenantName = (tenantId: string | null) => {
+    if (!tenantId) return null;
+    const tenant = tenants.find((m) => m.id === tenantId);
+    return tenant?.name || tenantId;
   };
 
   // Stats
   const stats = useMemo(() => {
-    const merchantDatabases = databases.filter((db) => db.merchantId);
-    const systemDatabases = databases.filter((db) => !db.merchantId);
+    const tenantDatabases = databases.filter((db) => db.tenantId);
+    const systemDatabases = databases.filter((db) => !db.tenantId);
     const totalSize = databases.reduce((sum, db) => sum + db.sizeOnDisk, 0);
-    const merchantSize = merchantDatabases.reduce(
+    const tenantSize = tenantDatabases.reduce(
       (sum, db) => sum + db.sizeOnDisk,
       0
     );
     const activeDatabases = databases.filter((db) => !db.empty).length;
     const emptyDatabases = databases.filter((db) => db.empty).length;
     const avgSize =
-      merchantDatabases.length > 0
-        ? merchantSize / merchantDatabases.length
+      tenantDatabases.length > 0
+        ? tenantSize / tenantDatabases.length
         : 0;
 
     return {
       total: databases.length,
-      merchantCount: merchantDatabases.length,
+      tenantCount: tenantDatabases.length,
       systemCount: systemDatabases.length,
       totalSize,
-      merchantSize,
+      tenantSize,
       activeDatabases,
       emptyDatabases,
       avgSize,
@@ -227,41 +227,41 @@ export default function DatabasePage() {
 
   // Filtered databases
   const filteredDatabases = useMemo(() => {
-    const merchantDatabases = databases.filter((db) => db.merchantId);
-    if (searchQuery === "") return merchantDatabases;
+    const tenantDatabases = databases.filter((db) => db.tenantId);
+    if (searchQuery === "") return tenantDatabases;
 
-    return merchantDatabases.filter((db) => {
-      const merchantName = getMerchantName(db.merchantId);
+    return tenantDatabases.filter((db) => {
+      const tenantName = getTenantName(db.tenantId);
       return (
         db.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        db.merchantId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        merchantName?.toLowerCase().includes(searchQuery.toLowerCase())
+        db.tenantId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tenantName?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     });
-  }, [databases, searchQuery, merchants]);
+  }, [databases, searchQuery, tenants]);
 
   // System databases
   const systemDatabases = useMemo(() => {
-    return databases.filter((db) => !db.merchantId);
+    return databases.filter((db) => !db.tenantId);
   }, [databases]);
 
   // Top databases by size
   const topDatabasesBySize = useMemo(() => {
     return [...databases]
-      .filter((db) => db.merchantId)
+      .filter((db) => db.tenantId)
       .sort((a, b) => b.sizeOnDisk - a.sizeOnDisk)
       .slice(0, 5)
       .map((db) => ({
-        name: getMerchantName(db.merchantId) || db.name,
+        name: getTenantName(db.tenantId) || db.name,
         size: db.sizeOnDisk,
       }));
-  }, [databases, merchants]);
+  }, [databases, tenants]);
 
   // Status distribution
   const statusDistribution = useMemo(() => {
-    const active = databases.filter((db) => !db.empty && db.merchantId).length;
-    const empty = databases.filter((db) => db.empty && db.merchantId).length;
-    const system = databases.filter((db) => !db.merchantId).length;
+    const active = databases.filter((db) => !db.empty && db.tenantId).length;
+    const empty = databases.filter((db) => db.empty && db.tenantId).length;
+    const system = databases.filter((db) => !db.tenantId).length;
 
     return [
       { name: "Active", value: active },
@@ -277,11 +277,11 @@ export default function DatabasePage() {
 
   const exportDatabases = () => {
     const csvContent = [
-      ["Name", "Merchant", "Size", "Status", "Created At"].join(","),
+      ["Name", "Tenant", "Size", "Status", "Created At"].join(","),
       ...filteredDatabases.map((db) =>
         [
           db.name,
-          getMerchantName(db.merchantId) || db.merchantId || "",
+          getTenantName(db.tenantId) || db.tenantId || "",
           formatBytes(db.sizeOnDisk),
           db.empty ? "Empty" : "Active",
           db.createdAt || "",
@@ -332,14 +332,14 @@ export default function DatabasePage() {
           value={stats.total}
           icon={Database}
           color="bg-primary"
-          description={`${stats.merchantCount} merchant, ${stats.systemCount} system`}
+          description={`${stats.tenantCount} tenant, ${stats.systemCount} system`}
         />
         <StatCard
           title="Total Storage"
           value={formatBytes(stats.totalSize)}
           icon={HardDrive}
           color="bg-blue-500"
-          description={`${formatBytes(stats.merchantSize)} merchant data`}
+          description={`${formatBytes(stats.tenantSize)} tenant data`}
         />
         <StatCard
           title="Active Databases"
@@ -353,7 +353,7 @@ export default function DatabasePage() {
           value={formatBytes(stats.avgSize)}
           icon={Layers}
           color="bg-purple-500"
-          description="Per merchant database"
+          description="Per tenant database"
         />
       </div>
 
@@ -366,7 +366,7 @@ export default function DatabasePage() {
               <HardDrive className="h-5 w-5" />
               Top Databases by Size
             </CardTitle>
-            <CardDescription>Largest merchant databases</CardDescription>
+            <CardDescription>Largest tenant databases</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -477,12 +477,12 @@ export default function DatabasePage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <StorageUsageBar
-            used={stats.merchantSize}
+            used={stats.tenantSize}
             total={stats.totalSize}
-            label="Merchant Data"
+            label="Tenant Data"
           />
           <StorageUsageBar
-            used={stats.totalSize - stats.merchantSize}
+            used={stats.totalSize - stats.tenantSize}
             total={stats.totalSize}
             label="System Data"
           />
@@ -495,7 +495,7 @@ export default function DatabasePage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search by database name, merchant name, or ID..."
+              placeholder="Search by database name, tenant name, or ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -504,13 +504,13 @@ export default function DatabasePage() {
         </CardContent>
       </Card>
 
-      {/* Merchant Databases Table */}
+      {/* Tenant Databases Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Merchant Databases</CardTitle>
+          <CardTitle>Tenant Databases</CardTitle>
           <CardDescription>
             Showing {filteredDatabases.length} of{" "}
-            {databases.filter((db) => db.merchantId).length} merchant databases
+            {databases.filter((db) => db.tenantId).length} tenant databases
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -530,7 +530,7 @@ export default function DatabasePage() {
             <div className="py-12 text-center">
               <Database className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
               <p className="text-muted-foreground">
-                No merchant databases found
+                No tenant databases found
               </p>
             </div>
           ) : (
@@ -539,7 +539,7 @@ export default function DatabasePage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Database</TableHead>
-                    <TableHead>Merchant</TableHead>
+                    <TableHead>Tenant</TableHead>
                     <TableHead>Size</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
@@ -564,10 +564,10 @@ export default function DatabasePage() {
                       <TableCell>
                         <div>
                           <p className="font-medium">
-                            {getMerchantName(db.merchantId) || "Unknown"}
+                            {getTenantName(db.tenantId) || "Unknown"}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {db.merchantId?.slice(0, 12)}...
+                            {db.tenantId?.slice(0, 12)}...
                           </p>
                         </div>
                       </TableCell>
@@ -684,7 +684,7 @@ export default function DatabasePage() {
                     {viewingDatabase.name}
                   </h3>
                   <p className="text-muted-foreground">
-                    {getMerchantName(viewingDatabase.merchantId) ||
+                    {getTenantName(viewingDatabase.tenantId) ||
                       "System Database"}
                   </p>
                 </div>
@@ -703,13 +703,13 @@ export default function DatabasePage() {
                   </Label>
                   <p className="font-mono text-sm">{viewingDatabase.name}</p>
                 </div>
-                {viewingDatabase.merchantId && (
+                {viewingDatabase.tenantId && (
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">
-                      Merchant ID
+                      Tenant ID
                     </Label>
                     <p className="font-mono text-sm">
-                      {viewingDatabase.merchantId}
+                      {viewingDatabase.tenantId}
                     </p>
                   </div>
                 )}

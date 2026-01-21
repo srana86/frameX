@@ -49,7 +49,7 @@ import { useCurrency } from "@/contexts/SettingsContext";
 import { api } from "@/lib/api-client";
 
 // Types
-interface Merchant {
+interface Tenant {
   id: string;
   name: string;
   email: string;
@@ -59,7 +59,7 @@ interface Merchant {
 
 interface Subscription {
   id: string;
-  merchantId: string;
+  tenantId: string;
   planId: string;
   status: string;
   currentPeriodStart: string;
@@ -69,7 +69,7 @@ interface Subscription {
 
 interface Deployment {
   id: string;
-  merchantId: string;
+  tenantId: string;
   deploymentStatus: string;
   deploymentUrl?: string;
 }
@@ -82,11 +82,11 @@ interface Plan {
 }
 
 interface DashboardStats {
-  merchants: Merchant[];
+  tenants: Tenant[];
   subscriptions: Subscription[];
   deployments: Deployment[];
   plans: Plan[];
-  databases: { name: string; sizeOnDisk: number; merchantId?: string }[];
+  databases: { name: string; sizeOnDisk: number; tenantId?: string }[];
 }
 
 // Chart colors
@@ -208,7 +208,7 @@ function ActivityItem({
 export default function DashboardPage() {
   const { formatAmount, currencySymbol } = useCurrency();
   const [data, setData] = useState<DashboardStats>({
-    merchants: [],
+    tenants: [],
     subscriptions: [],
     deployments: [],
     plans: [],
@@ -219,20 +219,20 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [merchants, subscriptions, deployments, plans, databases] =
+        const [tenants, subscriptions, deployments, plans, databases] =
           await Promise.all([
-            api.get<Merchant[]>("merchants").catch(() => []),
+            api.get<Tenant[]>("tenants").catch(() => []),
             api.get<Subscription[]>("subscriptions").catch(() => []),
             api.get<Deployment[]>("deployments").catch(() => []),
             api.get<Plan[]>("plans").catch(() => []),
             api
-              .get<{ name: string; sizeOnDisk: number; merchantId?: string }[]>(
+              .get<{ name: string; sizeOnDisk: number; tenantId?: string }[]>(
                 "databases"
               )
               .catch(() => []),
           ]);
 
-        setData({ merchants, subscriptions, deployments, plans, databases });
+        setData({ tenants, subscriptions, deployments, plans, databases });
       } catch (error) {
         console.error("Failed to load dashboard data:", error);
       } finally {
@@ -245,7 +245,7 @@ export default function DashboardPage() {
 
   // Computed stats
   const stats = useMemo(() => {
-    const activeMerchants = data.merchants.filter(
+    const activeTenants = data.tenants.filter(
       (m) => m.status === "active"
     ).length;
     const activeSubscriptions = data.subscriptions.filter(
@@ -266,8 +266,8 @@ export default function DashboardPage() {
     );
 
     return {
-      totalMerchants: data.merchants.length,
-      activeMerchants,
+      totalTenants: data.tenants.length,
+      activeTenants,
       totalSubscriptions: data.subscriptions.length,
       activeSubscriptions,
       totalDeployments: data.deployments.length,
@@ -276,7 +276,7 @@ export default function DashboardPage() {
       activePlans,
       monthlyRevenue,
       totalStorage,
-      totalDatabases: data.databases.filter((db) => db.merchantId).length,
+      totalDatabases: data.databases.filter((db) => db.tenantId).length,
     };
   }, [data]);
 
@@ -292,17 +292,17 @@ export default function DashboardPage() {
     }));
   }, [data.subscriptions]);
 
-  // Merchant status distribution
-  const merchantStatusData = useMemo(() => {
+  // Tenant status distribution
+  const tenantStatusData = useMemo(() => {
     const statusCounts: Record<string, number> = {};
-    data.merchants.forEach((m) => {
+    data.tenants.forEach((m) => {
       statusCounts[m.status] = (statusCounts[m.status] || 0) + 1;
     });
     return Object.entries(statusCounts).map(([name, value]) => ({
       name,
       value,
     }));
-  }, [data.merchants]);
+  }, [data.tenants]);
 
   // Plan revenue distribution
   const planRevenueData = useMemo(() => {
@@ -343,11 +343,11 @@ export default function DashboardPage() {
       status: "success" | "warning" | "error" | "info";
     }[] = [];
 
-    // Add recent merchants
-    data.merchants.slice(0, 2).forEach((m) => {
+    // Add recent tenants
+    data.tenants.slice(0, 2).forEach((m) => {
       activities.push({
         icon: Users,
-        title: "New merchant registered",
+        title: "New tenant registered",
         description: m.name,
         time: "Recently",
         status: "success",
@@ -427,11 +427,11 @@ export default function DashboardPage() {
       {/* Key Metrics */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Total Merchants"
-          value={stats.totalMerchants}
-          description={`${stats.activeMerchants} active`}
+          title="Total Tenants"
+          value={stats.totalTenants}
+          description={`${stats.activeTenants} active`}
           icon={Users}
-          href="/admin/merchants"
+          href="/admin/tenants"
           trend="up"
           trendValue="+12%"
           loading={loading}
@@ -505,7 +505,7 @@ export default function DashboardPage() {
               {loading ? "..." : formatBytes(stats.totalStorage)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {stats.totalDatabases} merchant databases
+              {stats.totalDatabases} tenant databases
             </p>
             <Link
               href="/admin/database"
@@ -715,10 +715,10 @@ export default function DashboardPage() {
             <CardDescription>Common administrative tasks</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Link href="/admin/merchants" className="block">
+            <Link href="/admin/tenants" className="block">
               <Button variant="outline" className="w-full justify-start gap-2">
                 <Users className="h-4 w-4" />
-                Manage Merchants
+                Manage Tenants
               </Button>
             </Link>
             <Link href="/admin/plans/new" className="block">
@@ -759,12 +759,12 @@ export default function DashboardPage() {
 
       {/* Status Overview */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Merchant Status */}
+        {/* Tenant Status */}
         <Card>
           <CardHeader>
-            <CardTitle>Merchant Status Overview</CardTitle>
+            <CardTitle>Tenant Status Overview</CardTitle>
             <CardDescription>
-              Distribution of merchant account statuses
+              Distribution of tenant account statuses
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -777,9 +777,9 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-            ) : merchantStatusData.length > 0 ? (
+            ) : tenantStatusData.length > 0 ? (
               <div className="space-y-3">
-                {merchantStatusData.map((item, index) => (
+                {tenantStatusData.map((item, index) => (
                   <div
                     key={item.name}
                     className="flex items-center justify-between"
@@ -799,7 +799,7 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">{item.value}</Badge>
                       <span className="text-xs text-muted-foreground">
-                        {((item.value / data.merchants.length) * 100).toFixed(
+                        {((item.value / data.tenants.length) * 100).toFixed(
                           0
                         )}
                         %
@@ -810,7 +810,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <p className="text-center text-muted-foreground">
-                No merchant data
+                No tenant data
               </p>
             )}
           </CardContent>

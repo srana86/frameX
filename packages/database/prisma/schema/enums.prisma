@@ -71,7 +71,7 @@ enum UserRole {
   ADMIN
   STAFF
   CUSTOMER
-  MERCHANT
+  TENANT
 }
 
 enum UserStatus {

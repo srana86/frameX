@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { X, AlertTriangle, Clock, CreditCard, FileText, CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { SubscriptionStatusDetails, SubscriptionInvoice, MerchantSubscription, SubscriptionPlan } from "@/lib/subscription-types";
+import type { SubscriptionStatusDetails, SubscriptionInvoice, TenantSubscription, SubscriptionPlan } from "@/lib/subscription-types";
 import { apiRequest } from "@/lib/api-client";
 
 interface SubscriptionBannerProps {
@@ -11,12 +11,12 @@ interface SubscriptionBannerProps {
 }
 
 interface SubscriptionData {
-  subscription: MerchantSubscription | null;
+  subscription: TenantSubscription | null;
   plan: SubscriptionPlan | null;
   status: SubscriptionStatusDetails;
   pendingInvoice: SubscriptionInvoice | null;
   debug?: {
-    merchantId: string | null;
+    tenantId: string | null;
     hasSubscription: boolean;
     hasPlan: boolean;
   };
@@ -133,7 +133,7 @@ export function SubscriptionBanner({ className }: SubscriptionBannerProps) {
     if (status.requiresPayment) {
       setShowPaymentModal(true);
     } else {
-      window.location.href = "/merchant/billing";
+      window.location.href = "/tenant/billing";
     }
   };
 
@@ -191,7 +191,7 @@ export function SubscriptionBanner({ className }: SubscriptionBannerProps) {
 
 // Payment Modal Component
 interface PaymentModalProps {
-  subscription: MerchantSubscription | null;
+  subscription: TenantSubscription | null;
   plan: SubscriptionPlan | null;
   invoice: SubscriptionInvoice | null;
   onClose: () => void;

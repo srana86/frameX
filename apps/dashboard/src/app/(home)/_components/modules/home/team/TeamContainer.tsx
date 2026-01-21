@@ -28,7 +28,7 @@ const teamMembers: TeamMember[] = [
   {
     id: "1",
     name: "Aiden Clarke",
-    description: "Helps merchants grow their business",
+    description: "Helps tenants grow their business",
     role: "Founder & CEO",
     // Add professional photo at: /public/team/aiden-clarke.jpg or team-member-1.jpg
     image:
@@ -103,7 +103,7 @@ export default function TeamContainer() {
         <div ref={headerRef} className='max-w-7xl mx-auto px-3 mb-12 sm:mb-16 md:mb-20'>
           <SectionHeader
             title='Our Team Dedicated to Your Success'
-            subtitle='Meet the passionate team helping thousands of merchants start and grow their e-commerce businesses every day.'
+            subtitle='Meet the passionate team helping thousands of tenants start and grow their e-commerce businesses every day.'
           />
         </div>
 

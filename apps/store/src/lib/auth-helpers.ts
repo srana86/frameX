@@ -1,7 +1,7 @@
 import { getCurrentUser, type CurrentUser } from "./auth";
 import { redirect } from "next/navigation";
 
-export type UserRole = "customer" | "staff" | "merchant" | "admin" | "super_admin";
+export type UserRole = "customer" | "staff" | "tenant" | "admin" | "super_admin";
 
 /**
  * Check if user has required role
@@ -15,7 +15,7 @@ export function hasRole(
   const roleHierarchy: Record<UserRole, number> = {
     customer: 1,
     staff: 2,
-    merchant: 3,
+    tenant: 3,
     admin: 4,
     super_admin: 5,
   };
@@ -49,8 +49,8 @@ export async function requireAuth(
     const userRole = user.role.toLowerCase();
     if (userRole === "customer") {
       redirect("/account");
-    } else if (userRole === "merchant") {
-      redirect("/merchant");
+    } else if (userRole === "tenant") {
+      redirect("/tenant");
     } else if (userRole === "admin") {
       redirect("/admin");
     }
@@ -67,8 +67,8 @@ export function getRoleRedirectUrl(role: UserRole): string {
   switch (role) {
     case "customer":
       return "/account";
-    case "merchant":
-      return "/merchant";
+    case "tenant":
+      return "/tenant";
     case "admin":
       return "/admin";
     default:

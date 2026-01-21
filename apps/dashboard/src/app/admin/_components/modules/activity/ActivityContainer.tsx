@@ -53,7 +53,7 @@ import { api, apiRequestWithMeta } from "@/lib/api-client";
 interface ActivityLog {
   id: string;
   type:
-    | "merchant"
+    | "tenant"
     | "subscription"
     | "plan"
     | "deployment"
@@ -77,7 +77,7 @@ interface PaginationInfo {
 }
 
 const TYPE_OPTIONS = [
-  { value: "merchant", label: "Merchant", icon: Building2 },
+  { value: "tenant", label: "Tenant", icon: Building2 },
   { value: "subscription", label: "Subscription", icon: CreditCard },
   { value: "plan", label: "Plan", icon: Layers },
   { value: "deployment", label: "Deployment", icon: Rocket },
@@ -321,10 +321,10 @@ export default function ActivityContainer() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">
-                  Merchant Actions
+                  Tenant Actions
                 </p>
                 <p className="text-2xl font-bold">
-                  {stats.byType.merchant || 0}
+                  {stats.byType.tenant || 0}
                 </p>
               </div>
               <Building2 className="h-8 w-8 text-muted-foreground" />

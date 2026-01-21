@@ -1,8 +1,8 @@
-# ✅ All API Routes - Merchant Data Integration Complete
+# ✅ All API Routes - Tenant Data Integration Complete
 
 ## 🎯 Overview
 
-**ALL API routes** in the application have been updated to use merchant-specific data loading. Every route now automatically detects and uses the correct merchant's data.
+**ALL API routes** in the application have been updated to use tenant-specific data loading. Every route now automatically detects and uses the correct tenant's data.
 
 ## 📋 Complete List of Updated Routes
 
@@ -51,27 +51,27 @@
 All routes now follow this consistent pattern:
 
 ```typescript
-import { getMerchantCollectionForAPI, buildMerchantQuery, getMerchantIdForAPI, isUsingSharedDatabase } from "@/lib/api-helpers";
+import { getTenantCollectionForAPI, buildTenantQuery, getTenantIdForAPI, isUsingSharedDatabase } from "@/lib/api-helpers";
 
 export async function GET() {
-  const col = await getMerchantCollectionForAPI("collection_name");
-  const query = await buildMerchantQuery();
+  const col = await getTenantCollectionForAPI("collection_name");
+  const query = await buildTenantQuery();
   const docs = await col.find(query).toArray();
   // ...
 }
 
 export async function POST(request: Request) {
-  const col = await getMerchantCollectionForAPI("collection_name");
-  const baseQuery = await buildMerchantQuery();
-  const merchantId = await getMerchantIdForAPI();
+  const col = await getTenantCollectionForAPI("collection_name");
+  const baseQuery = await buildTenantQuery();
+  const tenantId = await getTenantIdForAPI();
   
   const newDoc: any = { ...body };
   
-  // Add merchantId if using shared database
-  if (merchantId) {
+  // Add tenantId if using shared database
+  if (tenantId) {
     const useShared = await isUsingSharedDatabase();
     if (useShared) {
-      newDoc.merchantId = merchantId;
+      newDoc.tenantId = tenantId;
     }
   }
   
@@ -82,32 +82,32 @@ export async function POST(request: Request) {
 
 ## ✨ Key Features
 
-1. **Automatic Merchant Detection** - No manual merchant ID passing needed
-2. **Database Routing** - Automatically uses merchant's database or filters by merchantId
-3. **Data Isolation** - Each merchant only sees their own data
+1. **Automatic Tenant Detection** - No manual tenant ID passing needed
+2. **Database Routing** - Automatically uses tenant's database or filters by tenantId
+3. **Data Isolation** - Each tenant only sees their own data
 4. **Consistent Pattern** - Same implementation across all routes
 5. **Type-Safe** - Full TypeScript support
 
 ## 🎯 Benefits
 
-- ✅ **Complete Isolation** - Merchants cannot access other merchants' data
+- ✅ **Complete Isolation** - Tenants cannot access other tenants' data
 - ✅ **Zero Configuration** - Works automatically based on request context
 - ✅ **Flexible Architecture** - Supports both shared and separate databases
 - ✅ **Production Ready** - All routes tested and verified
 
 ## 📝 Routes That Don't Need Updates
 
-These routes are system-level and don't need merchant scoping:
-- `app/api/auth/*` - Authentication routes (user-level, not merchant-level)
+These routes are system-level and don't need tenant scoping:
+- `app/api/auth/*` - Authentication routes (user-level, not tenant-level)
 - `app/api/admin/*` - Super admin routes (system-wide)
 - `app/api/super-admin/*` - Super admin routes (system-wide)
 - `app/api/subscriptions/*` - Subscription management (system-wide)
-- `app/api/merchant/*` - Merchant management (system-wide)
-- `app/api/upload/route.ts` - File upload (merchant context handled by folder structure)
+- `app/api/tenant/*` - Tenant management (system-wide)
+- `app/api/upload/route.ts` - File upload (tenant context handled by folder structure)
 
 ## 🚀 Status
 
-**100% Complete** - All merchant-scoped API routes now use merchant data loading!
+**100% Complete** - All tenant-scoped API routes now use tenant data loading!
 
-The entire application is now fully multi-tenant ready. Every data operation is automatically scoped to the correct merchant.
+The entire application is now fully multi-tenant ready. Every data operation is automatically scoped to the correct tenant.
 

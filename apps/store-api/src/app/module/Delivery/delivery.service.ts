@@ -199,7 +199,7 @@ const sendOrderToCourierFromDB = async (
     throw new AppError(StatusCodes.BAD_REQUEST, "Courier service not enabled or not found");
   }
 
-  const merchantTrackingId = `ORD${orderId.slice(-8).toUpperCase()}`;
+  const tenantTrackingId = `ORD${orderId.slice(-8).toUpperCase()}`;
 
   // Map Prisma order to TOrder interface required by createCourierOrder
   // Note: TOrder expectation might differ slightly, but we map standard fields
@@ -215,7 +215,7 @@ const sendOrderToCourierFromDB = async (
   let createResult = await createCourierOrder(
     service as CourierService,
     orderData,
-    merchantTrackingId,
+    tenantTrackingId,
     deliveryDetails
   );
 

@@ -5,12 +5,12 @@ import { CustomerControllers } from "./customer.controller";
 
 const router = express.Router();
 
-// Get all customers with statistics (admin/merchant only)
+// Get all customers with statistics (admin/tenant only)
 // tenantMiddleware MUST come before auth
 router.get(
   "/",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   CustomerControllers.getAllCustomers
 );
 

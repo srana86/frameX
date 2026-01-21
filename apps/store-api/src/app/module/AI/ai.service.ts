@@ -389,9 +389,9 @@ const chatWithAI = async (payload: ChatRequest): Promise<{ response: string }> =
 
     let fullPrompt = systemPrompt + "\n\n---\n\n## CONVERSATION HISTORY\n\n";
     history.forEach(msg => {
-        fullPrompt += `**${msg.role === 'user' ? 'Merchant' : 'AI'}:** ${msg.content}\n\n`;
+        fullPrompt += `**${msg.role === 'user' ? 'Tenant' : 'AI'}:** ${msg.content}\n\n`;
     });
-    fullPrompt += `**Merchant:** ${message}\n\n**AI Advisor:**`;
+    fullPrompt += `**Tenant:** ${message}\n\n**AI Advisor:**`;
 
     const result = await ai.models.generateContent({
         model: "gemini-1.5-flash",

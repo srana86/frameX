@@ -38,7 +38,7 @@ interface CustomUser {
   updatedAt: Date;
   // Custom fields for multi-tenant e-commerce
   tenantId?: string;
-  role?: string; // customer, merchant, admin
+  role?: string; // customer, tenant, admin
   phone?: string;
   fullName?: string;
 }

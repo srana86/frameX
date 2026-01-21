@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const createMerchantValidationSchema = z.object({
+const createTenantValidationSchema = z.object({
   body: z.object({
     name: z.string().min(1, "Name is required"),
     email: z.string().email("Valid email is required"),
@@ -8,9 +8,9 @@ const createMerchantValidationSchema = z.object({
   }),
 });
 
-const updateMerchantValidationSchema = z.object({
+const updateTenantValidationSchema = z.object({
   body: z.object({
-    id: z.string().min(1, "Merchant ID is required"),
+    id: z.string().min(1, "Tenant ID is required"),
     name: z.string().optional(),
     email: z.string().email().optional(),
     status: z.enum(["in-progress", "blocked"]).optional(),
@@ -18,6 +18,6 @@ const updateMerchantValidationSchema = z.object({
 });
 
 export const SuperAdminValidation = {
-  createMerchantValidationSchema,
-  updateMerchantValidationSchema,
+  createTenantValidationSchema,
+  updateTenantValidationSchema,
 };

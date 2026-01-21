@@ -26,7 +26,7 @@ export function MobileBottomNav() {
   const shouldHide =
     pathname === "/checkout" ||
     pathname.startsWith("/checkout/") ||
-    pathname.startsWith("/merchant") ||
+    pathname.startsWith("/tenant") ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/register");

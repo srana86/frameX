@@ -45,7 +45,7 @@ export default function LoginPage() {
 
   return (
     <AuthShell
-      title='Welcome back to your merchant workspace'
+      title='Welcome back to your tenant workspace'
       description='Manage all your stores from one place, with unified product, order, and payment visibility.'
       benefits={[
         "View performance across all stores in one dashboard.",
@@ -53,8 +53,8 @@ export default function LoginPage() {
         "Track orders, fulfillment, and customer updates.",
         "Manage billing and store subscriptions securely.",
       ]}
-      formTitle='Merchant login'
-      formDescription='Enter your merchant account details to continue.'
+      formTitle='Tenant login'
+      formDescription='Enter your tenant account details to continue.'
       autoScrollToFormOnMobile
       footer={
         <span>
@@ -75,7 +75,7 @@ export default function LoginPage() {
             id='email'
             type='email'
             autoComplete='email'
-            placeholder='merchant@yourstore.com'
+            placeholder='tenant@yourstore.com'
             required
             className='h-11 rounded-xl border-slate-200 bg-white/90 text-base shadow-sm'
             value={email}
@@ -117,7 +117,7 @@ export default function LoginPage() {
           )}
         </Button>
         <p className='text-xs text-slate-500'>
-          By continuing, you agree to FrameX Tech terms and the merchant access policy.
+          By continuing, you agree to FrameX Tech terms and the tenant access policy.
         </p>
       </form>
     </AuthShell>

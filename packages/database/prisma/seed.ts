@@ -104,15 +104,15 @@ async function main() {
   });
   console.log("✅ Brand config created");
 
-  // Create tenant admin (merchant user)
+  // Create tenant admin (tenant user)
   const tenantAdmin = await prisma.user.upsert({
     where: { email: "demo@framex.com" },
-    update: { role: UserRole.MERCHANT },
+    update: { role: UserRole.TENANT },
     create: {
       tenantId: demoTenant.id,
       email: "demo@framex.com",
-      name: "Demo Merchant",
-      role: UserRole.MERCHANT,
+      name: "Demo Tenant",
+      role: UserRole.TENANT,
       emailVerified: true,
       createdAt: now,
       updatedAt: now,
@@ -192,7 +192,7 @@ async function main() {
   console.log("");
   console.log("📝 Demo Credentials:");
   console.log("   Super Admin: admin@framex.com / admin123");
-  console.log("   Merchant: demo@framex.com / admin123");
+  console.log("   Tenant: demo@framex.com / admin123");
 }
 
 main()

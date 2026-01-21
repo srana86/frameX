@@ -1,14 +1,14 @@
 // Shared types for super admin
 
-export type MerchantStatus = "active" | "suspended" | "trial" | "inactive";
+export type TenantStatus = "active" | "suspended" | "trial" | "inactive";
 export type DeploymentStatus = "pending" | "active" | "failed" | "inactive";
 
-export interface Merchant {
+export interface Tenant {
   id: string;
   name: string;
   email: string;
   phone?: string;
-  status: MerchantStatus;
+  status: TenantStatus;
   customDomain?: string;
   deploymentUrl?: string;
   subscriptionId?: string;
@@ -25,9 +25,9 @@ export interface Merchant {
   updatedAt?: string;
 }
 
-export interface MerchantDeployment {
+export interface TenantDeployment {
   id: string;
-  merchantId: string;
+  tenantId: string;
   deploymentType: "subdomain" | "custom_domain";
   deploymentStatus: DeploymentStatus;
   deploymentUrl: string;

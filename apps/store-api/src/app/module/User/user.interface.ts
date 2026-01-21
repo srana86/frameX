@@ -8,7 +8,7 @@ export interface TUser {
   phone?: string;
   password?: string;
   googleId?: string;
-  role: "customer" | "merchant" | "admin";
+  role: "customer" | "tenant" | "admin";
   status?: "in-progress" | "blocked";
   needsPasswordChange?: boolean;
   passwordChangedAt?: Date;

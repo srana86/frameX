@@ -27,8 +27,8 @@ const getSingleOrder = catchAsync(async (req: Request, res: Response) => {
 
   const result = await OrderServices.getSingleOrderFromDB(req.tenantId, id);
 
-  // If not admin/merchant, check if the order belongs to the user (by email/phone)
-  if (user?.role !== "admin" && user?.role !== "merchant") {
+  // If not admin/tenant, check if the order belongs to the user (by email/phone)
+  if (user?.role !== "admin" && user?.role !== "tenant") {
     const userDoc = await UserServices.getSingleUserFromDB(req.tenantId, user?.userId);
 
     const emailMatch = userDoc?.email && result.customer?.email === userDoc.email;

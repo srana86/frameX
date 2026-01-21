@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Star, StarHalf, Truck, Shield, RotateCcw } from "lucide-react";
 
-import { loadMerchantDocument, loadMerchantCollectionData } from "@/lib/merchant-data-loader";
+import { loadTenantDocument, loadTenantCollectionData } from "@/lib/tenant-data-loader";
 import type { Product } from "@/lib/types";
 import { AddToCart } from "@/components/site/AddToCart";
 import { ProductGallery } from "@/components/site/ProductGallery";
@@ -48,28 +48,28 @@ async function getProductBySlug(slug: string): Promise<Product | null> {
     const decodedSlug = decodeURIComponent(slug);
 
     // Try exact match first (as stored in DB)
-    let d = await loadMerchantDocument<any>("products", { slug: decodedSlug });
+    let d = await loadTenantDocument<any>("products", { slug: decodedSlug });
 
     // If not found, try with normalized slug (spaces to hyphens, lowercase)
     if (!d) {
       const normalizedSlug = normalizeSlug(decodedSlug);
-      d = await loadMerchantDocument<any>("products", { slug: normalizedSlug });
+      d = await loadTenantDocument<any>("products", { slug: normalizedSlug });
     }
 
     // If still not found, try with original slug (in case it wasn't encoded)
     if (!d) {
-      d = await loadMerchantDocument<any>("products", { slug: slug });
+      d = await loadTenantDocument<any>("products", { slug: slug });
     }
 
     // If still not found, try normalized version of original slug
     if (!d) {
       const normalizedOriginal = normalizeSlug(slug);
-      d = await loadMerchantDocument<any>("products", { slug: normalizedOriginal });
+      d = await loadTenantDocument<any>("products", { slug: normalizedOriginal });
     }
 
     // Last resort: case-insensitive search across all products
     if (!d) {
-      const allProducts = await loadMerchantCollectionData<any>("products", {});
+      const allProducts = await loadTenantCollectionData<any>("products", {});
       d = allProducts.find(
         (p: any) =>
           p.slug?.toLowerCase() === decodedSlug.toLowerCase() ||
@@ -111,7 +111,7 @@ async function getProductBySlug(slug: string): Promise<Product | null> {
 
 async function getBrandConfig(): Promise<BrandConfig> {
   try {
-    const doc = await loadMerchantDocument<any>("brand_config", { id: "brand_config_v1" });
+    const doc = await loadTenantDocument<any>("brand_config", { id: "brand_config_v1" });
     if (doc) {
       const { _id, ...config } = doc;
       return config as BrandConfig;
@@ -124,7 +124,7 @@ async function getBrandConfig(): Promise<BrandConfig> {
 
 async function getProductReviews(slug: string): Promise<Review[]> {
   try {
-    const reviews = await loadMerchantCollectionData<any>("reviews", { productSlug: slug }, { sort: { createdAt: -1 } });
+    const reviews = await loadTenantCollectionData<any>("reviews", { productSlug: slug }, { sort: { createdAt: -1 } });
 
     return reviews.map((r) => ({
       id: String(r._id),
@@ -154,7 +154,7 @@ async function getProductReviews(slug: string): Promise<Review[]> {
 
 async function getRelatedProducts(product: Product): Promise<Product[]> {
   try {
-    const related = await loadMerchantCollectionData<any>("products", product.category ? { category: product.category } : {}, {
+    const related = await loadTenantCollectionData<any>("products", product.category ? { category: product.category } : {}, {
       limit: 12,
     });
 

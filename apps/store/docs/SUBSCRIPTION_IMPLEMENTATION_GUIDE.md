@@ -10,10 +10,10 @@
 
 ### 2. Helper Functions (`lib/subscription-helpers.ts`)
 
-- `getMerchantSubscription()` - Get active subscription
+- `getTenantSubscription()` - Get active subscription
 - `getSubscriptionPlan()` - Get plan details
-- `checkFeatureAccess()` - Check if merchant has feature access
-- `getFeatureLimit()` - Get feature limit for merchant
+- `checkFeatureAccess()` - Check if tenant has feature access
+- `getFeatureLimit()` - Get feature limit for tenant
 - `getFeatureUsage()` - Get current usage
 - `canUseFeature()` - Check if can use feature within limits
 - `incrementFeatureUsage()` - Track usage
@@ -23,7 +23,7 @@
 
 - **Admin Routes:**
   - `GET/POST/PUT/DELETE /api/admin/subscription-plans` - Manage plans
-- **Merchant Routes:**
+- **Tenant Routes:**
   - `GET /api/subscriptions/plans` - View available plans
   - `GET /api/subscriptions/current` - Get current subscription
   - `POST /api/subscriptions/create` - Create new subscription
@@ -40,11 +40,11 @@ Create admin pages for:
   - Configure features for each plan
   - Set pricing
 
-### 5. Merchant Subscription UI
+### 5. Tenant Subscription UI
 
-Create merchant pages for:
+Create tenant pages for:
 
-- **Subscription Dashboard** (`/merchant/subscription`)
+- **Subscription Dashboard** (`/tenant/subscription`)
   - View current plan
   - See usage vs limits
   - Upgrade/Downgrade options
@@ -79,7 +79,7 @@ Add feature checks throughout the app:
 - Track product count
 - Track storage usage
 - Track API calls
-- Display usage in merchant dashboard
+- Display usage in tenant dashboard
 
 ## 🔧 How to Use Feature Gating
 
@@ -89,13 +89,13 @@ Add feature checks throughout the app:
 import { canUseFeature, incrementFeatureUsage } from "@/lib/subscription-helpers";
 
 // Before creating product
-const canCreate = await canUseFeature(merchantId, "max_products", 1);
+const canCreate = await canUseFeature(tenantId, "max_products", 1);
 if (!canCreate) {
   return NextResponse.json({ error: "Product limit reached. Please upgrade your plan." }, { status: 403 });
 }
 
 // After creating product
-await incrementFeatureUsage(merchantId, "max_products", 1);
+await incrementFeatureUsage(tenantId, "max_products", 1);
 ```
 
 ### Example: Check Feature Access
@@ -103,8 +103,8 @@ await incrementFeatureUsage(merchantId, "max_products", 1);
 ```typescript
 import { checkFeatureAccess } from "@/lib/subscription-helpers";
 
-// Check if merchant can use custom domain
-const canUseCustomDomain = await checkFeatureAccess(merchantId, "custom_domain");
+// Check if tenant can use custom domain
+const canUseCustomDomain = await checkFeatureAccess(tenantId, "custom_domain");
 if (!canUseCustomDomain) {
   // Show upgrade prompt
 }
@@ -113,7 +113,7 @@ if (!canUseCustomDomain) {
 ## 📊 Database Collections Needed
 
 1. **subscription_plans** - Plan definitions
-2. **merchant_subscriptions** - Active subscriptions
+2. **tenant_subscriptions** - Active subscriptions
 3. **subscription_usage** - Usage tracking
 4. **subscription_invoices** - Billing history
 5. **subscription_payments** - Payment records
@@ -167,7 +167,7 @@ Based on the plan features, gate these areas:
 1. ✅ Core types and helpers (DONE)
 2. ✅ API routes (DONE)
 3. Admin panel for plans management
-4. Merchant subscription UI
+4. Tenant subscription UI
 5. Feature gating in product creation
 6. Payment integration
 7. Renewal system
@@ -176,7 +176,7 @@ Based on the plan features, gate these areas:
 
 ## 🔐 Security Considerations
 
-- Always verify merchant ID from authenticated session
+- Always verify tenant ID from authenticated session
 - Validate subscription status before allowing actions
 - Check limits before incrementing usage
 - Handle subscription expiration gracefully

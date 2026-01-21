@@ -7,19 +7,19 @@ import { UserValidation } from "./user.validation";
 
 const router = express.Router();
 
-// Get all users with pagination, filter, and search (admin/merchant only)
+// Get all users with pagination, filter, and search (admin/tenant only)
 router.get(
   "/",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   UserControllers.getAllUsers
 );
 
-// Get single user by ID (admin/merchant only)
+// Get single user by ID (admin/tenant only)
 router.get(
   "/:id",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   UserControllers.getSingleUser
 );
 
@@ -32,11 +32,11 @@ router.post(
   UserControllers.createUser
 );
 
-// Update user (admin/merchant only)
+// Update user (admin/tenant only)
 router.put(
   "/:id",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(UserValidation.updateUserValidationSchema),
   UserControllers.updateUser
 );
@@ -49,11 +49,11 @@ router.delete(
   UserControllers.deleteUser
 );
 
-// Change user status (admin/merchant only)
+// Change user status (admin/tenant only)
 router.patch(
   "/:id/status",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(UserValidation.changeStatusValidationSchema),
   UserControllers.changeStatus
 );

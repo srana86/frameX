@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma, FeatureRequestStatus } from "@framex/database";
 
-const getAllFeatureRequests = async (status?: string, merchantId?: string) => {
+const getAllFeatureRequests = async (status?: string, tenantId?: string) => {
   const where: any = {};
   if (status) where.status = status.toUpperCase() as FeatureRequestStatus;
-  if (merchantId) where.tenantId = merchantId;
+  if (tenantId) where.tenantId = tenantId;
 
   const requests = await prisma.featureRequest.findMany({
     where,
@@ -24,7 +24,7 @@ const getFeatureRequestById = async (id: string) => {
 };
 
 const createFeatureRequest = async (payload: any) => {
-  const { title, description, merchantId, status } = payload;
+  const { title, description, tenantId, status } = payload;
 
   let prismaStatus: FeatureRequestStatus = FeatureRequestStatus.PENDING;
   if (status === "in_review") prismaStatus = FeatureRequestStatus.IN_PROGRESS;
@@ -34,7 +34,7 @@ const createFeatureRequest = async (payload: any) => {
     data: {
       title,
       description,
-      tenantId: merchantId,
+      tenantId,
       status: prismaStatus,
     }
   });

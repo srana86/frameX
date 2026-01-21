@@ -177,10 +177,10 @@ export function Navbar({ brandConfig }: NavbarProps) {
                     <DropdownMenuSeparator />
                   </>
                 )}
-                {userRole === "merchant" && (
+                {userRole === "tenant" && (
                   <>
                     <DropdownMenuItem asChild>
-                      <Link href="/merchant" className="cursor-pointer">
+                      <Link href="/tenant" className="cursor-pointer">
                         <LayoutDashboard className="mr-2 h-4 w-4" />
                         Dashboard
                       </Link>
@@ -341,14 +341,14 @@ export function Navbar({ brandConfig }: NavbarProps) {
                 )}
 
                 <div className="px-4 py-3 space-y-1">
-                  {userRole === "merchant" && (
+                  {userRole === "tenant" && (
                     <Button
                       variant="ghost"
                       size="sm"
                       className="w-full justify-start gap-3 h-12 text-base font-medium rounded-lg hover:bg-primary/5 hover:text-primary transition-colors"
                       asChild
                     >
-                      <Link href="/merchant" onClick={handleMobileLinkClick}>
+                      <Link href="/tenant" onClick={handleMobileLinkClick}>
                         <LayoutDashboard className="w-5 h-5" />
                         <span>Dashboard</span>
                       </Link>

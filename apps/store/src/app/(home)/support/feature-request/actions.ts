@@ -1,6 +1,6 @@
 "use server";
 
-import { getMerchantId } from "@/lib/env-utils";
+import { getTenantId } from "@/lib/env-utils";
 
 type ActionState = {
   success: boolean;
@@ -14,11 +14,11 @@ export async function submitFeatureRequest(_: ActionState, formData: FormData): 
   const contactEmail = String(formData.get("contactEmail") || "").trim();
   const contactPhone = String(formData.get("contactPhone") || "").trim();
 
-  const merchantId = getMerchantId();
+  const tenantId = getTenantId();
   const apiBase = process.env.SUPER_ADMIN_URL || process.env.NEXT_PUBLIC_SUPERADMIN_API_URL;
 
-  if (!merchantId) {
-    return { success: false, message: "Missing merchant id (set MERCHANT_ID)." };
+  if (!tenantId) {
+    return { success: false, message: "Missing tenant id (set TENANT_ID)." };
   }
 
   if (!apiBase) {
@@ -39,7 +39,7 @@ export async function submitFeatureRequest(_: ActionState, formData: FormData): 
         priority,
         contactEmail: contactEmail || undefined,
         contactPhone: contactPhone || undefined,
-        merchantId,
+        tenantId,
       }),
       cache: "no-store",
     });

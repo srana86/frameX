@@ -1,6 +1,6 @@
 export interface BrandConfig {
-  // Merchant Identifier (for connecting to super-admin)
-  merchantId?: string;
+  // Tenant Identifier (for connecting to super-admin)
+  tenantId?: string;
 
   // Brand Identity
   brandName: string;

@@ -1,15 +1,15 @@
 // Feature helper functions for dynamic feature checking
 // These functions use the plan from database (single source of truth)
 
-import { getMerchantSubscription, getSubscriptionPlan } from "./subscription-helpers";
+import { getTenantSubscription, getSubscriptionPlan } from "./subscription-helpers";
 import type { PlanFeatures } from "./subscription-types";
 
 /**
- * Get all features for a merchant's current plan
+ * Get all features for a tenant's current plan
  * Returns the actual plan features from database
  */
-export async function getMerchantFeatures(merchantId: string): Promise<PlanFeatures | null> {
-  const subscription = await getMerchantSubscription(merchantId);
+export async function getTenantFeatures(tenantId: string): Promise<PlanFeatures | null> {
+  const subscription = await getTenantSubscription(tenantId);
   if (!subscription) return null;
 
   const plan = await getSubscriptionPlan(subscription.planId);
@@ -19,24 +19,24 @@ export async function getMerchantFeatures(merchantId: string): Promise<PlanFeatu
 }
 
 /**
- * Get a specific feature value for merchant
+ * Get a specific feature value for tenant
  * Returns the actual value from plan (could be boolean, number, string, array, or "unlimited")
  */
-export async function getMerchantFeature(
-  merchantId: string,
+export async function getTenantFeature(
+  tenantId: string,
   featureKey: string
 ): Promise<boolean | number | string | string[] | "unlimited" | null> {
-  const features = await getMerchantFeatures(merchantId);
+  const features = await getTenantFeatures(tenantId);
   if (!features) return null;
 
   return features[featureKey] !== undefined ? features[featureKey] : null;
 }
 
 /**
- * Check if merchant has a boolean feature enabled
+ * Check if tenant has a boolean feature enabled
  */
-export async function hasFeature(merchantId: string, featureKey: string): Promise<boolean> {
-  const featureValue = await getMerchantFeature(merchantId, featureKey);
+export async function hasFeature(tenantId: string, featureKey: string): Promise<boolean> {
+  const featureValue = await getTenantFeature(tenantId, featureKey);
   return featureValue === true;
 }
 
@@ -44,10 +44,10 @@ export async function hasFeature(merchantId: string, featureKey: string): Promis
  * Get feature value as number (for numeric features)
  */
 export async function getFeatureAsNumber(
-  merchantId: string,
+  tenantId: string,
   featureKey: string
 ): Promise<number | "unlimited" | null> {
-  const featureValue = await getMerchantFeature(merchantId, featureKey);
+  const featureValue = await getTenantFeature(tenantId, featureKey);
   
   if (featureValue === "unlimited") return "unlimited";
   if (typeof featureValue === "number") return featureValue;
@@ -58,25 +58,25 @@ export async function getFeatureAsNumber(
  * Get feature value as array (for array features like ads_tracking_platforms)
  */
 export async function getFeatureAsArray(
-  merchantId: string,
+  tenantId: string,
   featureKey: string
 ): Promise<string[] | null> {
-  const featureValue = await getMerchantFeature(merchantId, featureKey);
+  const featureValue = await getTenantFeature(tenantId, featureKey);
   
   if (Array.isArray(featureValue)) return featureValue;
   return null;
 }
 
 /**
- * Check if merchant has access to a specific value in an array feature
- * Example: Check if merchant has "tiktok" in ads_tracking_platforms
+ * Check if tenant has access to a specific value in an array feature
+ * Example: Check if tenant has "tiktok" in ads_tracking_platforms
  */
 export async function hasFeatureValue(
-  merchantId: string,
+  tenantId: string,
   featureKey: string,
   value: string
 ): Promise<boolean> {
-  const featureValue = await getMerchantFeature(merchantId, featureKey);
+  const featureValue = await getTenantFeature(tenantId, featureKey);
   
   if (Array.isArray(featureValue)) {
     return featureValue.includes(value);
@@ -93,10 +93,10 @@ export async function hasFeatureValue(
  * Get feature value as string (for string features like api_access, support_level)
  */
 export async function getFeatureAsString(
-  merchantId: string,
+  tenantId: string,
   featureKey: string
 ): Promise<string | null> {
-  const featureValue = await getMerchantFeature(merchantId, featureKey);
+  const featureValue = await getTenantFeature(tenantId, featureKey);
   
   if (typeof featureValue === "string") return featureValue;
   return null;

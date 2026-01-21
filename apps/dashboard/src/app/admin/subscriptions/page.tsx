@@ -76,7 +76,7 @@ import { api } from "@/lib/api-client";
 
 interface Subscription {
   id: string;
-  merchantId: string;
+  tenantId: string;
   planId: string;
   status: string;
   currentPeriodStart: string;
@@ -90,7 +90,7 @@ interface Subscription {
     price: number;
     description?: string;
   } | null;
-  merchant: {
+  tenant: {
     name: string;
     email: string;
   } | null;
@@ -176,7 +176,7 @@ export default function SubscriptionsPage() {
   const { formatAmount, currencySymbol } = useCurrency();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [merchants, setMerchants] = useState<any[]>([]);
+  const [tenants, setTenants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -189,7 +189,7 @@ export default function SubscriptionsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [planFilter, setPlanFilter] = useState<string>("all");
   const [newSubscription, setNewSubscription] = useState({
-    merchantId: "",
+    tenantId: "",
     planId: "",
     status: "active",
     currentPeriodStart: new Date().toISOString().split("T")[0],
@@ -242,8 +242,8 @@ export default function SubscriptionsPage() {
     return subscriptions.filter((sub) => {
       const matchesSearch =
         searchQuery === "" ||
-        sub.merchant?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sub.merchant?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        sub.tenant?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        sub.tenant?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         sub.plan?.name.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesStatus =
@@ -288,15 +288,15 @@ export default function SubscriptionsPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [subsData, plansData, merchantsData] = await Promise.all([
+      const [subsData, plansData, tenantsData] = await Promise.all([
         api.get<Subscription[]>("subscriptions"),
         api.get<Plan[]>("plans"),
-        api.get<any[]>("merchants"),
+        api.get<any[]>("tenants"),
       ]);
 
       setSubscriptions(subsData);
       setPlans(plansData);
-      setMerchants(merchantsData);
+      setTenants(tenantsData);
     } catch (error: any) {
       console.error("Failed to load data:", error);
       toast.error(error?.message || "Failed to load subscriptions");
@@ -306,8 +306,8 @@ export default function SubscriptionsPage() {
   };
 
   const handleCreateSubscription = async () => {
-    if (!newSubscription.merchantId || !newSubscription.planId) {
-      toast.error("Merchant and plan are required");
+    if (!newSubscription.tenantId || !newSubscription.planId) {
+      toast.error("Tenant and plan are required");
       return;
     }
 
@@ -325,7 +325,7 @@ export default function SubscriptionsPage() {
       toast.success("Subscription created successfully!");
       setShowCreateDialog(false);
       setNewSubscription({
-        merchantId: "",
+        tenantId: "",
         planId: "",
         status: "active",
         currentPeriodStart: new Date().toISOString().split("T")[0],
@@ -408,7 +408,7 @@ export default function SubscriptionsPage() {
   const exportSubscriptions = () => {
     const csvContent = [
       [
-        "Merchant",
+        "Tenant",
         "Email",
         "Plan",
         "Price",
@@ -418,8 +418,8 @@ export default function SubscriptionsPage() {
       ].join(","),
       ...filteredSubscriptions.map((s) =>
         [
-          s.merchant?.name || s.merchantId,
-          s.merchant?.email || "",
+          s.tenant?.name || s.tenantId,
+          s.tenant?.email || "",
           s.plan?.name || s.planId,
           s.plan?.price || 0,
           s.status,
@@ -502,28 +502,28 @@ export default function SubscriptionsPage() {
               <DialogHeader>
                 <DialogTitle>Create New Subscription</DialogTitle>
                 <DialogDescription>
-                  Create a new subscription for a merchant
+                  Create a new subscription for a tenant
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="merchant">Merchant *</Label>
+                  <Label htmlFor="tenant">Tenant *</Label>
                   <Select
-                    value={newSubscription.merchantId}
+                    value={newSubscription.tenantId}
                     onValueChange={(value) =>
                       setNewSubscription({
                         ...newSubscription,
-                        merchantId: value,
+                        tenantId: value,
                       })
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select merchant" />
+                      <SelectValue placeholder="Select tenant" />
                     </SelectTrigger>
                     <SelectContent>
-                      {merchants.map((merchant) => (
-                        <SelectItem key={merchant.id} value={merchant.id}>
-                          {merchant.name} ({merchant.email})
+                      {tenants.map((tenant) => (
+                        <SelectItem key={tenant.id} value={tenant.id}>
+                          {tenant.name} ({tenant.email})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -764,7 +764,7 @@ export default function SubscriptionsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search by merchant, email, or plan..."
+                placeholder="Search by tenant, email, or plan..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -848,7 +848,7 @@ export default function SubscriptionsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Merchant</TableHead>
+                    <TableHead>Tenant</TableHead>
                     <TableHead>Plan</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Revenue</TableHead>
@@ -865,16 +865,16 @@ export default function SubscriptionsPage() {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
-                              {(sub.merchant?.name || "?")
+                              {(sub.tenant?.name || "?")
                                 .charAt(0)
                                 .toUpperCase()}
                             </div>
                             <div>
                               <p className="font-medium">
-                                {sub.merchant?.name || sub.merchantId}
+                                {sub.tenant?.name || sub.tenantId}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {sub.merchant?.email}
+                                {sub.tenant?.email}
                               </p>
                             </div>
                           </div>
@@ -1052,17 +1052,17 @@ export default function SubscriptionsPage() {
             <div className="space-y-6">
               <div className="flex items-center gap-4">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
-                  {(viewingSubscription.merchant?.name || "?")
+                  {(viewingSubscription.tenant?.name || "?")
                     .charAt(0)
                     .toUpperCase()}
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold">
-                    {viewingSubscription.merchant?.name ||
-                      viewingSubscription.merchantId}
+                    {viewingSubscription.tenant?.name ||
+                      viewingSubscription.tenantId}
                   </h3>
                   <p className="text-muted-foreground">
-                    {viewingSubscription.merchant?.email}
+                    {viewingSubscription.tenant?.email}
                   </p>
                 </div>
                 {getStatusBadge(viewingSubscription.status)}

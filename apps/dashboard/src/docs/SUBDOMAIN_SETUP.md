@@ -2,22 +2,22 @@
 
 ## Overview
 
-This guide explains how to set up subdomains for merchant deployments on Vercel.
+This guide explains how to set up subdomains for tenant deployments on Vercel.
 
 ## Types of Subdomains
 
 ### 1. **Vercel Default Subdomain** (Automatic)
 
-- Format: `merchant-{merchantId}.vercel.app`
+- Format: `tenant-{tenantId}.vercel.app`
 - Automatically created when a Vercel project is deployed
 - No configuration needed
-- Example: `merchant-1234567890.vercel.app`
+- Example: `tenant-1234567890.vercel.app`
 
 ### 2. **Custom Subdomain** (Manual Setup Required)
 
 - Format: `{subdomain}.framextech.com`
 - Requires domain ownership and DNS configuration
-- Example: `merchant1.framextech.com`
+- Example: `tenant1.framextech.com`
 
 ## Setting Up Custom Subdomains
 
@@ -33,7 +33,7 @@ When creating a deployment, you can optionally provide a custom subdomain:
 
 ```typescript
 // In the simulator UI, enter:
-// Custom Subdomain: merchant1.framextech.com
+// Custom Subdomain: tenant1.framextech.com
 ```
 
 Or via API:
@@ -41,10 +41,10 @@ Or via API:
 ```typescript
 POST /api/simulate/create-deployment
 {
-  "merchantId": "merchant_123",
-  "merchantName": "Test Merchant",
-  "databaseName": "merchant_123_db",
-  "customSubdomain": "merchant1.framextech.com" // Optional
+  "tenantId": "tenant_123",
+  "tenantName": "Test Tenant",
+  "databaseName": "tenant_123_db",
+  "customSubdomain": "tenant1.framextech.com" // Optional
 }
 ```
 
@@ -56,7 +56,7 @@ After adding the subdomain to Vercel, you'll need to configure DNS records:
 
 ```
 Type: CNAME
-Name: merchant1 (or your subdomain)
+Name: tenant1 (or your subdomain)
 Value: cname.vercel-dns.com
 TTL: 3600 (or default)
 ```
@@ -65,7 +65,7 @@ TTL: 3600 (or default)
 
 ```
 Type: A
-Name: merchant1 (or your subdomain)
+Name: tenant1 (or your subdomain)
 Value: 76.76.21.21 (Vercel's IP - check Vercel docs for current IP)
 TTL: 3600 (or default)
 ```
@@ -83,7 +83,7 @@ TTL: 3600 (or default)
 - DNS changes can take 5 minutes to 48 hours to propagate
 - Use tools like `dig` or online DNS checkers to verify:
   ```bash
-  dig merchant1.framextech.com
+  dig tenant1.framextech.com
   ```
 
 ## API Functions
@@ -93,7 +93,7 @@ TTL: 3600 (or default)
 ```typescript
 import { addVercelSubdomain } from "@/lib/vercel-service";
 
-const domain = await addVercelSubdomain("project-id", "merchant1.framextech.com");
+const domain = await addVercelSubdomain("project-id", "tenant1.framextech.com");
 
 console.log(`Domain: ${domain.name}, Verified: ${domain.verified}`);
 ```
@@ -162,9 +162,9 @@ domains.forEach((domain) => {
 ```typescript
 // 1. Create deployment with custom subdomain
 const deployment = await createDeployment({
-  merchantId: "merchant_123",
-  merchantName: "My Store",
-  databaseName: "merchant_123_db",
+  tenantId: "tenant_123",
+  tenantName: "My Store",
+  databaseName: "tenant_123_db",
   customSubdomain: "mystore.framextech.com",
 });
 

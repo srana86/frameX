@@ -6,7 +6,7 @@ import { CouponServices } from "./coupon.service";
 
 // Get all coupons
 const getAllCoupons = catchAsync(async (req: Request, res: Response) => {
-  const tenantId = req.user?.merchantId;
+  const tenantId = req.user?.tenantId;
   const result = await CouponServices.getAllCouponsFromDB(tenantId as string, req.query);
 
   sendResponse(res, {
@@ -23,7 +23,7 @@ const getAllCoupons = catchAsync(async (req: Request, res: Response) => {
 // Get single coupon
 const getSingleCoupon = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const tenantId = req.user?.merchantId;
+  const tenantId = req.user?.tenantId;
   const result = await CouponServices.getSingleCouponFromDB(tenantId as string, id);
 
   sendResponse(res, {
@@ -36,7 +36,7 @@ const getSingleCoupon = catchAsync(async (req: Request, res: Response) => {
 
 // Create coupon
 const createCoupon = catchAsync(async (req: Request, res: Response) => {
-  const tenantId = req.user?.merchantId;
+  const tenantId = req.user?.tenantId;
   const result = await CouponServices.createCouponIntoDB(tenantId as string, req.body);
 
   sendResponse(res, {
@@ -50,7 +50,7 @@ const createCoupon = catchAsync(async (req: Request, res: Response) => {
 // Update coupon
 const updateCoupon = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const tenantId = req.user?.merchantId;
+  const tenantId = req.user?.tenantId;
   const result = await CouponServices.updateCouponIntoDB(tenantId as string, id, req.body);
 
   sendResponse(res, {
@@ -64,7 +64,7 @@ const updateCoupon = catchAsync(async (req: Request, res: Response) => {
 // Delete coupon
 const deleteCoupon = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const tenantId = req.user?.merchantId;
+  const tenantId = req.user?.tenantId;
   const result = await CouponServices.deleteCouponFromDB(tenantId as string, id);
 
   sendResponse(res, {
@@ -77,7 +77,7 @@ const deleteCoupon = catchAsync(async (req: Request, res: Response) => {
 
 // Apply coupon
 const applyCoupon = catchAsync(async (req: Request, res: Response) => {
-  const tenantId = req.user?.merchantId;
+  const tenantId = req.user?.tenantId;
   const result = await CouponServices.applyCouponToCart(tenantId as string, req.body);
 
   sendResponse(res, {
@@ -90,7 +90,7 @@ const applyCoupon = catchAsync(async (req: Request, res: Response) => {
 
 // Record coupon usage
 const recordCouponUsage = catchAsync(async (req: Request, res: Response) => {
-  const tenantId = req.user?.merchantId;
+  const tenantId = req.user?.tenantId;
   const result = await CouponServices.recordCouponUsage(tenantId as string, req.body);
 
   sendResponse(res, {
@@ -104,7 +104,7 @@ const recordCouponUsage = catchAsync(async (req: Request, res: Response) => {
 // Get coupon usage records
 const getCouponUsageRecords = catchAsync(
   async (req: Request, res: Response) => {
-    const tenantId = req.user?.merchantId;
+    const tenantId = req.user?.tenantId;
     const result = await CouponServices.getCouponUsageRecords(tenantId as string, req.query);
 
     sendResponse(res, {

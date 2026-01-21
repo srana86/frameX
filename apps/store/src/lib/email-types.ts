@@ -33,7 +33,7 @@ export type EmailTemplateDesign = Record<string, any> | null;
 
 export type EmailTemplate = {
   id: string;
-  merchantId?: string;
+  tenantId?: string;
   event: EmailEvent;
   name: string;
   description?: string;
@@ -58,7 +58,7 @@ export type EmailProviderType = "smtp" | "ses" | "sendgrid" | "postmark";
 
 type EmailProviderBase = {
   id: string;
-  merchantId?: string;
+  tenantId?: string;
   provider: EmailProviderType;
   name: string;
   fromEmail?: string;
@@ -101,7 +101,7 @@ export type EmailProviderConfig = SmtpProviderConfig | SesProviderConfig | SendG
 
 export type EmailProviderSettings = {
   id: string;
-  merchantId?: string;
+  tenantId?: string;
   defaultProviderId?: string;
   fallbackProviderId?: string;
   providers: EmailProviderConfig[];
@@ -223,7 +223,7 @@ export const defaultEmailTemplates: Record<
   admin_new_order_alert: {
     name: "New Order Alert",
     subject: "New order placed: {{orderId}}",
-    description: "Internal alert to merchant team for new orders.",
+    description: "Internal alert to tenant team for new orders.",
     variables: ["orderId", "customerName", "orderTotal", "orderDate"],
   },
 };
@@ -309,7 +309,7 @@ const defaultEmailHtml: Record<EmailEvent, (brandName: string) => string> = {
     ),
 };
 
-export function buildDefaultTemplate(event: EmailEvent, merchantId?: string, brand?: BrandEmailMeta): EmailTemplate {
+export function buildDefaultTemplate(event: EmailEvent, tenantId?: string, brand?: BrandEmailMeta): EmailTemplate {
   const now = new Date().toISOString();
   const base = defaultEmailTemplates[event];
   const brandName = brand?.brandName || "Your Store";
@@ -317,7 +317,7 @@ export function buildDefaultTemplate(event: EmailEvent, merchantId?: string, bra
 
   return {
     id: `email_template_${event}`,
-    merchantId,
+    tenantId,
     event,
     name: base.name,
     description: base.description,

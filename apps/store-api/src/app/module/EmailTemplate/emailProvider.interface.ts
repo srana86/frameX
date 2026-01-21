@@ -2,7 +2,7 @@ export type EmailProviderType = "smtp" | "ses" | "sendgrid" | "postmark";
 
 export type EmailProviderBase = {
   id: string;
-  merchantId?: string;
+  tenantId?: string;
   provider: EmailProviderType;
   name: string;
   fromEmail?: string;
@@ -49,7 +49,7 @@ export type EmailProviderConfig =
 
 export interface EmailProviderSettings {
   id: string;
-  merchantId?: string;
+  tenantId?: string;
   defaultProviderId?: string;
   fallbackProviderId?: string;
   providers: EmailProviderConfig[];

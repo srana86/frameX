@@ -20,12 +20,12 @@ export function getMongoDbName(): string {
   return process.env.MONGODB_DB || "shoestore_main";
 }
 
-export function getMerchantDbName(): string | undefined {
-  return process.env.MERCHANT_DB_NAME;
+export function getTenantDbName(): string | undefined {
+  return process.env.TENANT_DB_NAME;
 }
 
-export function getMerchantId(): string | undefined {
-  return process.env.MERCHANT_ID;
+export function getTenantId(): string | undefined {
+  return process.env.TENANT_ID;
 }
 
 export function getEnvConfig() {
@@ -34,8 +34,8 @@ export function getEnvConfig() {
     GITHUB_REPO: process.env.GITHUB_REPO,
     GITHUB_TOKEN: process.env.GITHUB_TOKEN,
     MONGODB_DB: process.env.MONGODB_DB,
-    MERCHANT_DB_NAME: process.env.MERCHANT_DB_NAME,
-    MERCHANT_ID: process.env.MERCHANT_ID,
+    TENANT_DB_NAME: process.env.TENANT_DB_NAME,
+    TENANT_ID: process.env.TENANT_ID,
   };
 }
 

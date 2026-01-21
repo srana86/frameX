@@ -4,7 +4,7 @@ import auth from "../../middlewares/auth";
 
 const router = express.Router();
 
-router.get("/data", auth("admin", "merchant"), AIControllers.getAIData);
-router.post("/chat", auth("admin", "merchant"), AIControllers.chatWithAI);
+router.get("/data", auth("admin", "tenant"), AIControllers.getAIData);
+router.post("/chat", auth("admin", "tenant"), AIControllers.chatWithAI);
 
 export const AIRoutes = router;

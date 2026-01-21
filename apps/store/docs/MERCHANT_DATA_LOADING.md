@@ -1,10 +1,10 @@
-# Merchant Data Loading System
+# Tenant Data Loading System
 
 ## Overview
 
-The merchant data loading system automatically detects and loads merchant-specific data based on the request context. It supports:
+The tenant data loading system automatically detects and loads tenant-specific data based on the request context. It supports:
 
-- **Environment-based detection** (for deployed merchant instances)
+- **Environment-based detection** (for deployed tenant instances)
 - **Domain-based detection** (for custom domains)
 - **Header-based detection** (for API requests)
 - **Automatic database routing** (shared or separate databases)
@@ -13,27 +13,27 @@ The merchant data loading system automatically detects and loads merchant-specif
 
 ### Core Components
 
-1. **`lib/merchant-loader.ts`** - Core loader that detects and loads merchant data
-2. **`lib/merchant-context.ts`** - React cache-based context provider
-3. **`lib/merchant-data-loader.ts`** - Helper functions for loading merchant-specific collections
-4. **`middleware.ts`** - Next.js middleware to detect merchant from domain/headers
-5. **`app/api/merchant/context/route.ts`** - API endpoint to get merchant context
+1. **`lib/tenant-loader.ts`** - Core loader that detects and loads tenant data
+2. **`lib/tenant-context.ts`** - React cache-based context provider
+3. **`lib/tenant-data-loader.ts`** - Helper functions for loading tenant-specific collections
+4. **`middleware.ts`** - Next.js middleware to detect tenant from domain/headers
+5. **`app/api/tenant/context/route.ts`** - API endpoint to get tenant context
 
 ## How It Works
 
-### 1. Merchant Detection
+### 1. Tenant Detection
 
-The system detects merchant ID from multiple sources (in order):
+The system detects tenant ID from multiple sources (in order):
 
-1. **Environment Variable** (`MERCHANT_ID`) - For deployed merchant instances
-2. **Request Headers** (`x-merchant-id`) - For API requests
-3. **Domain/Subdomain** - Looks up merchant by custom domain
+1. **Environment Variable** (`MERCHANT_ID`) - For deployed tenant instances
+2. **Request Headers** (`x-tenant-id`) - For API requests
+3. **Domain/Subdomain** - Looks up tenant by custom domain
 
 ### 2. Data Loading
 
-Once merchant is detected, the system loads:
+Once tenant is detected, the system loads:
 
-- **Merchant Profile** - Basic merchant information
+- **Tenant Profile** - Basic tenant information
 - **Database Configuration** - Which database to use (shared or separate)
 - **Deployment Configuration** - Deployment URL and status
 - **Connection String** - Database connection (if separate DB)
@@ -42,94 +42,94 @@ Once merchant is detected, the system loads:
 
 The system automatically routes to the correct database:
 
-- **Separate Database**: Uses merchant's dedicated MongoDB database
-- **Shared Database**: Uses main database with `merchantId` filtering
+- **Separate Database**: Uses tenant's dedicated MongoDB database
+- **Shared Database**: Uses main database with `tenantId` filtering
 
 ## Usage
 
 ### In Server Components
 
 ```typescript
-import { getMerchantContext, getCurrentMerchant } from "@/lib/merchant-context";
+import { getTenantContext, getCurrentTenant } from "@/lib/tenant-context";
 
-// Get full merchant context
-const context = await getMerchantContext();
+// Get full tenant context
+const context = await getTenantContext();
 if (context) {
-  console.log("Merchant:", context.merchant.name);
+  console.log("Tenant:", context.tenant.name);
   console.log("Database:", context.dbName);
 }
 
-// Get just merchant
-const merchant = await getCurrentMerchant();
+// Get just tenant
+const tenant = await getCurrentTenant();
 ```
 
-### Loading Merchant-Specific Data
+### Loading Tenant-Specific Data
 
 ```typescript
-import { loadMerchantCollectionData, loadMerchantDocument } from "@/lib/merchant-data-loader";
+import { loadTenantCollectionData, loadTenantDocument } from "@/lib/tenant-data-loader";
 
-// Load all products for current merchant
-const products = await loadMerchantCollectionData("products", {}, { 
+// Load all products for current tenant
+const products = await loadTenantCollectionData("products", {}, { 
   sort: { createdAt: -1 },
   limit: 10 
 });
 
 // Load single document
-const product = await loadMerchantDocument("products", { slug: "my-product" });
+const product = await loadTenantDocument("products", { slug: "my-product" });
 
 // Count documents
-const count = await countMerchantDocuments("orders", { status: "pending" });
+const count = await countTenantDocuments("orders", { status: "pending" });
 ```
 
 ### In API Routes
 
 ```typescript
-import { loadMerchantData } from "@/lib/merchant-loader";
+import { loadTenantData } from "@/lib/tenant-loader";
 
 export async function GET(request: Request) {
-  // Get merchant ID from query params or auto-detect
+  // Get tenant ID from query params or auto-detect
   const { searchParams } = new URL(request.url);
-  const merchantId = searchParams.get("merchantId");
+  const tenantId = searchParams.get("tenantId");
   
-  // Load merchant data
-  const context = await loadMerchantData(merchantId || undefined);
+  // Load tenant data
+  const context = await loadTenantData(tenantId || undefined);
   
   if (!context) {
-    return NextResponse.json({ error: "Merchant not found" }, { status: 404 });
+    return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
   }
   
-  // Use context.merchant, context.database, etc.
+  // Use context.tenant, context.database, etc.
 }
 ```
 
-### Using Merchant Collection Helper
+### Using Tenant Collection Helper
 
 ```typescript
-import { getMerchantCollection } from "@/lib/merchant-data-loader";
+import { getTenantCollection } from "@/lib/tenant-data-loader";
 
-// Get collection for current merchant
-const productsCol = await getMerchantCollection("products");
+// Get collection for current tenant
+const productsCol = await getTenantCollection("products");
 
-// Use normally - automatically uses merchant's database
+// Use normally - automatically uses tenant's database
 const products = await productsCol.find({}).toArray();
 ```
 
 ## API Endpoints
 
-### GET /api/merchant/context
+### GET /api/tenant/context
 
-Get current merchant context data.
+Get current tenant context data.
 
 **Query Parameters:**
-- `merchantId` (optional) - Specific merchant ID
+- `tenantId` (optional) - Specific tenant ID
 
 **Response:**
 ```json
 {
   "success": true,
   "data": {
-    "merchant": {
-      "id": "merchant_123",
+    "tenant": {
+      "id": "tenant_123",
       "name": "My Store",
       "email": "store@example.com",
       "status": "active",
@@ -137,16 +137,16 @@ Get current merchant context data.
     },
     "database": {
       "id": "db_123",
-      "databaseName": "merchant_123_db",
+      "databaseName": "tenant_123_db",
       "useSharedDatabase": false,
       "status": "active"
     },
     "deployment": {
       "id": "deploy_123",
-      "deploymentUrl": "merchant-123.vercel.app",
+      "deploymentUrl": "tenant-123.vercel.app",
       "deploymentStatus": "active"
     },
-    "dbName": "merchant_123_db",
+    "dbName": "tenant_123_db",
     "hasConnectionString": true
   }
 }
@@ -154,20 +154,20 @@ Get current merchant context data.
 
 ## Environment Variables
 
-For deployed merchant instances, set:
+For deployed tenant instances, set:
 
 ```env
-MERCHANT_ID=merchant_123
-MERCHANT_DB_NAME=merchant_123_db
-MONGODB_URI=mongodb://.../merchant_123_db
-NEXT_PUBLIC_MERCHANT_ID=merchant_123
+MERCHANT_ID=tenant_123
+MERCHANT_DB_NAME=tenant_123_db
+MONGODB_URI=mongodb://.../tenant_123_db
+NEXT_PUBLIC_MERCHANT_ID=tenant_123
 ```
 
 ## Middleware
 
 The middleware automatically:
-- Detects merchant from domain/subdomain
-- Adds `x-merchant-id` header to requests
+- Detects tenant from domain/subdomain
+- Adds `x-tenant-id` header to requests
 - Adds `x-domain` header for domain-based detection
 
 ## Examples
@@ -175,14 +175,14 @@ The middleware automatically:
 ### Dashboard Page
 
 ```typescript
-// app/(home)/merchant/page.tsx
-import { loadMerchantCollectionData } from "@/lib/merchant-data-loader";
+// app/(home)/tenant/page.tsx
+import { loadTenantCollectionData } from "@/lib/tenant-data-loader";
 
 async function getDashboardData() {
   const [products, orders, categories] = await Promise.all([
-    loadMerchantCollectionData("products"),
-    loadMerchantCollectionData("orders", {}, { sort: { _id: -1 } }),
-    loadMerchantCollectionData("product_categories"),
+    loadTenantCollectionData("products"),
+    loadTenantCollectionData("orders", {}, { sort: { _id: -1 } }),
+    loadTenantCollectionData("product_categories"),
   ]);
   
   return { products, orders, categories };
@@ -193,19 +193,19 @@ async function getDashboardData() {
 
 ```typescript
 // app/api/products/route.ts
-import { loadMerchantCollectionData } from "@/lib/merchant-data-loader";
+import { loadTenantCollectionData } from "@/lib/tenant-data-loader";
 
 export async function GET() {
-  const products = await loadMerchantCollectionData("products");
+  const products = await loadTenantCollectionData("products");
   return NextResponse.json({ products });
 }
 ```
 
 ## Benefits
 
-1. **Automatic Detection** - No need to manually pass merchant ID
+1. **Automatic Detection** - No need to manually pass tenant ID
 2. **Database Routing** - Automatically uses correct database
-3. **Data Isolation** - Ensures merchants only see their data
+3. **Data Isolation** - Ensures tenants only see their data
 4. **Caching** - React cache ensures same data across request
 5. **Flexible** - Works with shared or separate databases
 
@@ -220,12 +220,12 @@ const products = await getCollection("products").find({}).toArray();
 ### After
 
 ```typescript
-const products = await loadMerchantCollectionData("products");
+const products = await loadTenantCollectionData("products");
 ```
 
 The new system automatically:
-- Detects merchant
+- Detects tenant
 - Routes to correct database
-- Filters by merchantId if needed
+- Filters by tenantId if needed
 - Handles both shared and separate databases
 

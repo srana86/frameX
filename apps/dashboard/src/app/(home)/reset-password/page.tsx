@@ -8,7 +8,7 @@ export default function ResetPasswordPage() {
   return (
     <AuthShell
       title='Set a new password'
-      description='Choose a strong password to secure your merchant account and keep all store data protected.'
+      description='Choose a strong password to secure your tenant account and keep all store data protected.'
       benefits={[
         "Use at least 8 characters with numbers.",
         "Keep each store workspace protected.",

@@ -53,8 +53,8 @@ export const registerUserEvents = (io: Server, socket: AuthenticatedSocket) => {
     socketMetrics.incrementEventsReceived();
   });
 
-  // Join merchant room
-  socket.on("user:join-merchant", async (tenantId: string) => {
+  // Join tenant room
+  socket.on("user:join-tenant", async (tenantId: string) => {
     const startTime = Date.now();
     try {
       if (!tenantId) {
@@ -62,16 +62,16 @@ export const registerUserEvents = (io: Server, socket: AuthenticatedSocket) => {
         return;
       }
 
-      const room = `merchant:${tenantId}`;
+      const room = `tenant:${tenantId}`;
       await socket.join(room);
-      console.log(`Socket ${socket.id} joined merchant:${tenantId}`);
+      console.log(`Socket ${socket.id} joined tenant:${tenantId}`);
 
       const duration = Date.now() - startTime;
-      socketLogger.logEvent("user:join-merchant", socket, duration);
+      socketLogger.logEvent("user:join-tenant", socket, duration);
       socketMetrics.incrementEventsReceived();
     } catch (error: any) {
       const duration = Date.now() - startTime;
-      socketLogger.logEvent("user:join-merchant", socket, duration, error.message);
+      socketLogger.logEvent("user:join-tenant", socket, duration, error.message);
       socketMetrics.incrementErrors();
       socket.emit("error", { message: error.message });
     }

@@ -73,7 +73,7 @@ export interface Coupon {
   // Metadata
   createdAt: string;
   updatedAt: string;
-  createdBy?: string; // Admin/merchant who created it
+  createdBy?: string; // Admin/tenant who created it
 
   // Analytics
   totalRevenue?: number; // Revenue generated with this coupon

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import ProductDetailsClient from "./ProductDetailsClient";
-import { loadMerchantDocument } from "@/lib/merchant-data-loader";
+import { loadTenantDocument } from "@/lib/tenant-data-loader";
 import { defaultBrandConfig, type BrandConfig } from "@/lib/brand-config";
 import { formatPriceFromConfig } from "@/lib/currency";
 
@@ -23,20 +23,20 @@ function normalizeSlug(input: string): string {
 async function getProductBySlug(slug: string) {
   try {
     const decodedSlug = decodeURIComponent(slug);
-    let d = await loadMerchantDocument<any>("products", { slug: decodedSlug });
+    let d = await loadTenantDocument<any>("products", { slug: decodedSlug });
 
     if (!d) {
       const normalizedSlug = normalizeSlug(decodedSlug);
-      d = await loadMerchantDocument<any>("products", { slug: normalizedSlug });
+      d = await loadTenantDocument<any>("products", { slug: normalizedSlug });
     }
 
     if (!d) {
-      d = await loadMerchantDocument<any>("products", { slug: slug });
+      d = await loadTenantDocument<any>("products", { slug: slug });
     }
 
     if (!d) {
       const normalizedOriginal = normalizeSlug(slug);
-      d = await loadMerchantDocument<any>("products", { slug: normalizedOriginal });
+      d = await loadTenantDocument<any>("products", { slug: normalizedOriginal });
     }
 
     return d;
@@ -48,7 +48,7 @@ async function getProductBySlug(slug: string) {
 
 async function getBrandConfig(): Promise<BrandConfig> {
   try {
-    const doc = await loadMerchantDocument<any>("brand_config", { id: "brand_config_v1" });
+    const doc = await loadTenantDocument<any>("brand_config", { id: "brand_config_v1" });
     if (doc) {
       const { _id, ...config } = doc;
       return config as BrandConfig;

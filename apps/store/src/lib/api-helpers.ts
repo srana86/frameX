@@ -87,7 +87,7 @@ class CursorShim<T> {
           cache: "no-store",
           headers: {
             "X-Domain": domain,
-            "X-Merchant-ID": (await getMerchantIdForAPI()) || "",
+            "X-Tenant-ID": (await getTenantIdForAPI()) || "",
           },
         }
       );
@@ -144,7 +144,7 @@ class CollectionShim<T> {
         headers: {
           "Content-Type": "application/json",
           "X-Domain": domain,
-          "X-Merchant-ID": (await getMerchantIdForAPI()) || "",
+          "X-Tenant-ID": (await getTenantIdForAPI()) || "",
         },
         body: JSON.stringify(doc),
       });
@@ -187,41 +187,41 @@ class CollectionShim<T> {
 }
 
 /**
- * Get collection for current merchant (shimmed)
+ * Get collection for current tenant (shimmed)
  */
-export async function getMerchantCollectionForAPI<T = any>(
+export async function getTenantCollectionForAPI<T = any>(
   collectionName: string
 ) {
   return new CollectionShim<T>(collectionName);
 }
 
-// Simple in-memory cache for merchant ID
-let cachedMerchantId: string | null | undefined = undefined;
+// Simple in-memory cache for tenant ID
+let cachedTenantId: string | null | undefined = undefined;
 
 /**
- * Get merchant ID from context (shimmed to headers)
+ * Get tenant ID from context (shimmed to headers)
  */
-export async function getMerchantIdForAPI(): Promise<string | null> {
-  if (cachedMerchantId) return cachedMerchantId;
+export async function getTenantIdForAPI(): Promise<string | null> {
+  if (cachedTenantId) return cachedTenantId;
 
   try {
     const headersList = await headers();
-    cachedMerchantId = headersList.get("x-merchant-id");
-    return cachedMerchantId || null;
+    cachedTenantId = headersList.get("x-tenant-id") || headersList.get("x-tenant-id");
+    return cachedTenantId || null;
   } catch (e) {
     return null;
   }
 }
 
-export function clearMerchantIdCache(): void {
-  cachedMerchantId = undefined;
+export function clearTenantIdCache(): void {
+  cachedTenantId = undefined;
 }
 
 export async function isUsingSharedDatabase(): Promise<boolean> {
   return false;
 }
 
-export async function buildMerchantQuery(baseQuery: any = {}): Promise<any> {
+export async function buildTenantQuery(baseQuery: any = {}): Promise<any> {
   return baseQuery;
 }
 

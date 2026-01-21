@@ -10,7 +10,7 @@ const quickActions = [
   {
     title: "New Order",
     description: "Create manual order",
-    href: "/merchant/orders/new",
+    href: "/tenant/orders/new",
     icon: ShoppingBag,
     color: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
     hoverColor: "hover:bg-blue-500/20",
@@ -18,7 +18,7 @@ const quickActions = [
   {
     title: "Add Product",
     description: "Create new product",
-    href: "/merchant/products/new",
+    href: "/tenant/products/new",
     icon: Package,
     color: "bg-green-500/10 text-green-600 dark:text-green-400",
     hoverColor: "hover:bg-green-500/20",
@@ -26,7 +26,7 @@ const quickActions = [
   {
     title: "Create Coupon",
     description: "Add discount code",
-    href: "/merchant/coupons/new",
+    href: "/tenant/coupons/new",
     icon: Tag,
     color: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
     hoverColor: "hover:bg-purple-500/20",
@@ -34,7 +34,7 @@ const quickActions = [
   {
     title: "View Analytics",
     description: "See statistics",
-    href: "/merchant/statistics",
+    href: "/tenant/statistics",
     icon: TrendingUp,
     color: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
     hoverColor: "hover:bg-orange-500/20",
@@ -42,7 +42,7 @@ const quickActions = [
   {
     title: "Customers",
     description: "Manage customers",
-    href: "/merchant/customers",
+    href: "/tenant/customers",
     icon: Users,
     color: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
     hoverColor: "hover:bg-indigo-500/20",

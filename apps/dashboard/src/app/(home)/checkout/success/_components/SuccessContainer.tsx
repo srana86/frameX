@@ -44,9 +44,9 @@ interface CheckoutSession {
   planPrice: number;
   billingCycle: string;
   billingCycleMonths?: number;
-  merchantName: string;
-  merchantEmail: string;
-  merchantPhone: string;
+  tenantName: string;
+  tenantEmail: string;
+  tenantPhone: string;
   customSubdomain: string;
   status: string;
 }
@@ -126,7 +126,7 @@ function SuccessContainerInner() {
 
   const initializeSteps = (): SimulationStep[] => [
     { id: "1", name: "Verify Payment", description: "Confirming transaction", status: "pending", color: "bg-blue-500", phase: "setup" },
-    { id: "2", name: "Create Merchant", description: "Register merchant account", status: "pending", color: "bg-cyan-500", phase: "setup" },
+    { id: "2", name: "Create Tenant", description: "Register tenant account", status: "pending", color: "bg-cyan-500", phase: "setup" },
     { id: "3", name: "Create Subscription", description: "Activate billing", status: "pending", color: "bg-teal-500", phase: "setup" },
     {
       id: "4",
@@ -240,26 +240,26 @@ function SuccessContainerInner() {
       await new Promise((resolve) => setTimeout(resolve, 800));
       updateStep("1", "completed", `Payment verified: ${session.planName} Plan`);
 
-      // Step 2: Create Merchant
-      updateStep("2", "running", "Creating merchant record...");
-      const merchantId = `merchant_${Date.now()}`;
-      const merchantResponse = await fetch("/api/merchants", {
+      // Step 2: Create Tenant
+      updateStep("2", "running", "Creating tenant record...");
+      const tenantId = `tenant_${Date.now()}`;
+      const tenantResponse = await fetch("/api/tenants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: merchantId,
-          name: session.merchantName,
-          email: session.merchantEmail,
-          phone: session.merchantPhone,
+          id: tenantId,
+          name: session.tenantName,
+          email: session.tenantEmail,
+          phone: session.tenantPhone,
           status: "trial",
-          settings: { brandName: session.merchantName, currency: "USD", timezone: "UTC" },
+          settings: { brandName: session.tenantName, currency: "USD", timezone: "UTC" },
         }),
       });
-      if (!merchantResponse.ok) {
-        const error = await merchantResponse.json();
-        throw new Error(error.error || "Failed to create merchant");
+      if (!tenantResponse.ok) {
+        const error = await tenantResponse.json();
+        throw new Error(error.error || "Failed to create tenant");
       }
-      updateStep("2", "completed", `Merchant: ${session.merchantName}`, { merchantId });
+      updateStep("2", "completed", `Tenant: ${session.tenantName}`, { tenantId });
 
       // Step 3: Create Subscription
       updateStep("3", "running", "Activating subscription...");
@@ -286,7 +286,7 @@ function SuccessContainerInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: subscriptionId,
-          merchantId,
+          tenantId,
           planId: selectedPlan?.id || session.planId,
           planName: selectedPlan?.name || session.planName,
           status: "active",
@@ -325,9 +325,9 @@ function SuccessContainerInner() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            merchantId,
-            merchantName: session.merchantName,
-            merchantEmail: session.merchantEmail,
+            tenantId,
+            tenantName: session.tenantName,
+            tenantEmail: session.tenantEmail,
             subscriptionId: actualSubscriptionId,
             planId: selectedPlan?.id || session.planId,
             planName: selectedPlan?.name || session.planName,
@@ -351,7 +351,7 @@ function SuccessContainerInner() {
             },
           }),
         });
-        console.log(`[checkout] Sale recorded for ${merchantId}`);
+        console.log(`[checkout] Sale recorded for ${tenantId}`);
       } catch (saleError) {
         console.error("[checkout] Failed to record sale:", saleError);
         // Don't fail the whole process for sale tracking error
@@ -372,7 +372,7 @@ function SuccessContainerInner() {
       const dbResponse = await fetch("/api/simulate/create-database", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ merchantId }),
+        body: JSON.stringify({ tenantId }),
       });
       if (!dbResponse.ok) {
         const errorData = await dbResponse.json();
@@ -397,9 +397,9 @@ function SuccessContainerInner() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          merchantId,
-          merchantName: session.merchantName,
-          merchantEmail: session.merchantEmail,
+          tenantId,
+          tenantName: session.tenantName,
+          tenantEmail: session.tenantEmail,
           databaseName: dbData.databaseName,
           customSubdomain: session.customSubdomain || undefined,
         }),
@@ -423,11 +423,11 @@ function SuccessContainerInner() {
 
       // Set final result
       setSimulationResult({
-        merchantId,
+        tenantId,
         subscriptionId,
         databaseName: dbData.databaseName,
         deploymentUrl: deployData.deployment?.url || deployData.deployment?.vercelUrl || "localhost:3000",
-        merchantUser: deployData.merchantUser,
+        tenantUser: deployData.tenantUser,
         plan: { name: session.planName, price: session.planPrice },
         status: "active",
       });
@@ -510,8 +510,8 @@ function SuccessContainerInner() {
                     <Building2 className='w-5 h-5 text-white' />
                   </div>
                   <div className='text-left'>
-                    <p className='font-semibold text-gray-900'>{session.merchantName}</p>
-                    <p className='text-sm text-gray-500'>{session.merchantEmail}</p>
+                    <p className='font-semibold text-gray-900'>{session.tenantName}</p>
+                    <p className='text-sm text-gray-500'>{session.tenantEmail}</p>
                   </div>
                 </div>
               </div>
@@ -658,7 +658,7 @@ function SuccessContainerInner() {
                   )}
 
                   {/* Credentials */}
-                  {simulationResult.merchantUser && (
+                  {simulationResult.tenantUser && (
                     <div className='bg-white rounded-2xl p-6 shadow-lg border border-gray-100'>
                       <div className='flex items-center gap-3 mb-4'>
                         <User className='w-5 h-5 text-violet-500' />
@@ -669,10 +669,10 @@ function SuccessContainerInner() {
                           <p className='text-xs text-gray-500 mb-1'>Email</p>
                           <div className='flex items-center gap-2'>
                             <code className='flex-1 px-4 py-2.5 rounded-lg bg-gray-50 border text-sm font-mono'>
-                              {simulationResult.merchantUser.email}
+                              {simulationResult.tenantUser.email}
                             </code>
                             <button
-                              onClick={() => copyToClipboard(simulationResult.merchantUser.email, "email")}
+                              onClick={() => copyToClipboard(simulationResult.tenantUser.email, "email")}
                               className='p-2.5 rounded-lg border hover:bg-gray-50 transition-colors'
                             >
                               {copiedField === "email" ? (
@@ -687,10 +687,10 @@ function SuccessContainerInner() {
                           <p className='text-xs text-gray-500 mb-1'>Password</p>
                           <div className='flex items-center gap-2'>
                             <code className='flex-1 px-4 py-2.5 rounded-lg bg-gray-50 border text-sm font-mono'>
-                              {simulationResult.merchantUser.password}
+                              {simulationResult.tenantUser.password}
                             </code>
                             <button
-                              onClick={() => copyToClipboard(simulationResult.merchantUser.password, "password")}
+                              onClick={() => copyToClipboard(simulationResult.tenantUser.password, "password")}
                               className='p-2.5 rounded-lg border hover:bg-gray-50 transition-colors'
                             >
                               {copiedField === "password" ? (
@@ -723,8 +723,8 @@ function SuccessContainerInner() {
                     </div>
                     <div className='grid grid-cols-2 gap-3'>
                       <div className='p-3 rounded-xl bg-gray-50'>
-                        <p className='text-xs text-gray-500 mb-1'>Merchant ID</p>
-                        <p className='font-mono text-xs truncate'>{simulationResult.merchantId}</p>
+                        <p className='text-xs text-gray-500 mb-1'>Tenant ID</p>
+                        <p className='font-mono text-xs truncate'>{simulationResult.tenantId}</p>
                       </div>
                       <div className='p-3 rounded-xl bg-gray-50'>
                         <p className='text-xs text-gray-500 mb-1'>Database</p>

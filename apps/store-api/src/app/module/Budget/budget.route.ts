@@ -7,12 +7,12 @@ import { BudgetValidation } from "./budget.validation";
 const router = express.Router();
 
 // Get all budgets
-router.get("/", auth("admin", "merchant"), BudgetControllers.getAllBudgets);
+router.get("/", auth("admin", "tenant"), BudgetControllers.getAllBudgets);
 
 // Create budget
 router.post(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(BudgetValidation.createBudgetValidationSchema),
   BudgetControllers.createBudget
 );
@@ -20,7 +20,7 @@ router.post(
 // Update budget
 router.put(
   "/:id",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(BudgetValidation.updateBudgetValidationSchema),
   BudgetControllers.updateBudget
 );
@@ -28,7 +28,7 @@ router.put(
 // Delete budget
 router.delete(
   "/:id",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   BudgetControllers.deleteBudget
 );
 

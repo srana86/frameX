@@ -33,7 +33,7 @@ import { AffiliateRoutes } from "../module/Affiliate/affiliate.route";
 import { BlockedCustomerRoutes } from "../module/BlockedCustomer/blockedCustomer.route";
 import { BudgetRoutes } from "../module/Budget/budget.route";
 import { InvestmentRoutes } from "../module/Investment/investment.route";
-import { MerchantRoutes } from "../module/Merchant/merchant.route";
+import { TenantRoutes } from "../module/Tenant/tenant.route";
 import { StorefrontRoutes } from "../module/Storefront/storefront.route";
 import { ReviewRoutes } from "../module/Review/review.route";
 import { EmailTemplateRoutes } from "../module/EmailTemplate/emailTemplate.route";
@@ -182,8 +182,8 @@ const moduleRoutes = [
     route: InvestmentRoutes,
   },
   {
-    path: "/merchant",
-    route: MerchantRoutes,
+    path: "/tenant",
+    route: TenantRoutes,
   },
   {
     path: "/storefront",

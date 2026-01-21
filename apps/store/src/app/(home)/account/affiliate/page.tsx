@@ -73,7 +73,7 @@ export default function AffiliatePage() {
       // Step 1782 line 11: `AffiliateServices.getMyAffiliateFromDB(user.id)`.
       // I should check `affiliate.service.ts` to see what it returns.
       // If backend doesn't return `enabled`, I might need to fetch `/affiliate/settings` separately?
-      // Only admin/merchant can fetch settings?
+      // Only admin/tenant can fetch settings?
       // User role 'customer' might not have access to settings.
       // I'll need to check this.
 
@@ -108,7 +108,7 @@ export default function AffiliatePage() {
             // Use safe fetch for now or skip until verify.
             // Let's use apiRequest but wrap catch.
             // Coupon routes: need to verify public access or owned access.
-            // Only admins/merchants usually read coupons? Affiliate needs to read THEIR coupon.
+            // Only admins/tenants usually read coupons? Affiliate needs to read THEIR coupon.
             const couponData = await apiRequest<Coupon>("GET", `/coupon/${affiliateData.assignedCouponId}`);
             setAssignedCoupon(couponData);
           } catch (error) {

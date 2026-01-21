@@ -27,7 +27,7 @@ function extractSubdomain(host: string): string | null {
 
   // For local development
   if (domain === "localhost") {
-    return null; // Will use MERCHANT_ID env var
+    return null; // Will use TENANT_ID env var
   }
 
   return null;
@@ -83,7 +83,7 @@ export async function proxy(request: NextRequest) {
   const domain = host.split(":")[0].toLowerCase();
 
   // Priority 1: Check environment variable (for local dev / single tenant)
-  let tenantId = process.env.MERCHANT_ID;
+  let tenantId = process.env.TENANT_ID;
 
   // Priority 2: Check in-memory cache
   if (!tenantId) {
@@ -97,7 +97,7 @@ export async function proxy(request: NextRequest) {
   const response = NextResponse.next();
 
   if (tenantId) {
-    response.headers.set("x-merchant-id", tenantId);
+    response.headers.set("x-tenant-id", tenantId);
     response.headers.set("x-tenant-resolved", "cache");
   } else if (subdomain) {
     // For subdomain, we'll resolve via API call in server components

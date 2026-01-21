@@ -468,7 +468,7 @@ export default function AdminNavbar({ brandConfig }: AdminNavbarProps) {
                       size='sm'
                       className='w-full text-[10px] sm:text-xs text-muted-foreground hover:text-foreground justify-center h-7 sm:h-8'
                       onClick={() => {
-                        router.push("/merchant/notifications");
+                        router.push("/tenant/notifications");
                         setDropdownOpen(false);
                       }}
                     >

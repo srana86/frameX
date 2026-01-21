@@ -1,6 +1,6 @@
 import type { CourierService } from "@/types/delivery-config-types";
 import type { Order } from "@/lib/types";
-import { getCurrentMerchant } from "@/lib/merchant-context";
+import { getCurrentTenant } from "@/lib/tenant-context";
 
 export interface CourierStatusResult {
   consignmentId: string;
@@ -67,18 +67,18 @@ export async function getCourierOrderStatus(service: CourierService, consignment
 export async function createCourierOrder(
   service: CourierService,
   order: Order,
-  merchantTrackingId?: string,
+  tenantTrackingId?: string,
   deliveryDetails?: DeliveryDetails
 ): Promise<CourierStatusResult> {
   switch (service.id) {
     case "pathao":
-      return createPathaoOrder(service, order, merchantTrackingId, deliveryDetails);
+      return createPathaoOrder(service, order, tenantTrackingId, deliveryDetails);
     case "redx":
-      return createRedxOrder(service, order, merchantTrackingId, deliveryDetails);
+      return createRedxOrder(service, order, tenantTrackingId, deliveryDetails);
     case "steadfast":
-      return createSteadfastOrder(service, order, merchantTrackingId, deliveryDetails);
+      return createSteadfastOrder(service, order, tenantTrackingId, deliveryDetails);
     case "paperfly":
-      return createPaperflyOrder(service, order, merchantTrackingId, deliveryDetails);
+      return createPaperflyOrder(service, order, tenantTrackingId, deliveryDetails);
     default:
       throw new Error(`Unsupported courier service for order creation: ${service.id}`);
   }
@@ -200,7 +200,7 @@ async function getPathaoOrderStatus(service: CourierService, consignmentId: stri
 async function createPathaoOrder(
   service: CourierService,
   order: Order,
-  merchantTrackingId?: string,
+  tenantTrackingId?: string,
   deliveryDetails?: DeliveryDetails
 ): Promise<CourierStatusResult> {
   const creds = service.credentials || {};
@@ -245,7 +245,7 @@ async function createPathaoOrder(
 
   const body = {
     store_id: Number(storeId) || storeId,
-    merchant_order_id: merchantTrackingId || order.id,
+    tenant_order_id: tenantTrackingId || order.id,
     recipient_name: recipientName,
     recipient_phone: recipientPhone, // Now guaranteed to be exactly 11 digits
     recipient_address: recipientAddress,
@@ -320,7 +320,7 @@ async function getRedxOrderStatus(service: CourierService, consignmentId: string
 async function createRedxOrder(
   service: CourierService,
   order: Order,
-  merchantTrackingId?: string,
+  tenantTrackingId?: string,
   deliveryDetails?: DeliveryDetails
 ): Promise<CourierStatusResult> {
   const creds = service.credentials || {};
@@ -356,7 +356,7 @@ async function createRedxOrder(
     delivery_area: deliveryArea, // Resolved value from RedX areas API or config
     delivery_area_id: deliveryAreaId, // Integer ID required by RedX API
     customer_address: recipientAddress,
-    merchant_invoice_id: merchantTrackingId || order.id,
+    tenant_invoice_id: tenantTrackingId || order.id,
     // If payment is completed, do not collect any amount from customer.
     cash_collection_amount: String(amountToCollect),
     parcel_weight: parcelWeight,
@@ -584,7 +584,7 @@ async function getSteadfastOrderStatus(service: CourierService, consignmentId: s
 async function createSteadfastOrder(
   service: CourierService,
   order: Order,
-  merchantTrackingId?: string,
+  tenantTrackingId?: string,
   deliveryDetails?: DeliveryDetails
 ): Promise<CourierStatusResult> {
   const creds = service.credentials || {};
@@ -612,7 +612,7 @@ async function createSteadfastOrder(
   const totalLot = order.items.reduce((sum, item) => sum + (item.quantity || 1), 0) || 1;
 
   const body = {
-    invoice: merchantTrackingId || order.id,
+    invoice: tenantTrackingId || order.id,
     recipient_name: recipientName,
     recipient_phone: recipientPhone,
     recipient_address: recipientAddress,
@@ -661,7 +661,7 @@ async function createSteadfastOrder(
 async function createPaperflyOrder(
   service: CourierService,
   order: Order,
-  merchantTrackingId?: string,
+  tenantTrackingId?: string,
   deliveryDetails?: DeliveryDetails
 ): Promise<CourierStatusResult> {
   const creds = service.credentials || {};
@@ -676,12 +676,12 @@ async function createPaperflyOrder(
     throw new Error("Delivery details are required for Paperfly");
   }
 
-  // Try to enrich with merchant information (brand name, phone) if available
-  const merchant = await getCurrentMerchant().catch(() => null as any);
-  const merchantBrandName = (merchant as any)?.settings?.brandName || (merchant as any)?.name || "Merchant";
-  const merchantPhone = (merchant as any)?.phone || order.customer.phone;
+  // Try to enrich with tenant information (brand name, phone) if available
+  const tenant = await getCurrentTenant().catch(() => null as any);
+  const tenantBrandName = (tenant as any)?.settings?.brandName || (tenant as any)?.name || "Tenant";
+  const tenantPhone = (tenant as any)?.phone || order.customer.phone;
 
-  const baseUrl = "https://api.paperfly.com.bd/merchant/api/service/new_order.php";
+  const baseUrl = "https://api.paperfly.com.bd/tenant/api/service/new_order.php";
 
   // Normalize thana name for Paperfly (remove common suffixes and clean up)
   const normalizeThana = (thana: string): string => {
@@ -711,13 +711,13 @@ async function createPaperflyOrder(
   // Try each thana variation until one works
   for (const customerThana of thanaVariations) {
     const body = {
-      merOrderRef: merchantTrackingId || order.id,
-      // Use whatever merchant data we have for pickup side
-      pickMerchantName: merchantBrandName,
-      pickMerchantAddress: "", // Address is not yet modelled in merchant profile
-      pickMerchantThana: "", // Not available in current merchant schema
-      pickMerchantDistrict: "", // Not available in current merchant schema
-      pickupMerchantPhone: merchantPhone,
+      merOrderRef: tenantTrackingId || order.id,
+      // Use whatever tenant data we have for pickup side
+      pickTenantName: tenantBrandName,
+      pickTenantAddress: "", // Address is not yet modelled in tenant profile
+      pickTenantThana: "", // Not available in current tenant schema
+      pickTenantDistrict: "", // Not available in current tenant schema
+      pickupTenantPhone: tenantPhone,
       productSizeWeight: "standard",
       productBrief: `Order ${order.id} - ${order.items.length} items`,
       packagePrice: String(Math.round(order.total)),
@@ -760,7 +760,7 @@ async function createPaperflyOrder(
         data?.data?.orderId ||
         data?.tracking_id ||
         data?.trackingId ||
-        merchantTrackingId ||
+        tenantTrackingId ||
         order.id;
 
       // Extract status from various possible fields

@@ -313,7 +313,7 @@ export default function BlogContainer() {
             <div>
               <h2 className='text-3xl md:text-4xl font-bold mb-4'>Stay ahead of the curve</h2>
               <p className='text-white/80 text-lg mb-8 max-w-md'>
-                Join 25,000+ merchants receiving the latest e-commerce insights, trends, and tips directly to their inbox.
+                Join 25,000+ tenants receiving the latest e-commerce insights, trends, and tips directly to their inbox.
               </p>
 
               <div className='flex flex-col sm:flex-row gap-3 max-w-md md:rounded-xl border-white/20 md:border'>

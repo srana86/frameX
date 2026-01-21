@@ -13,7 +13,7 @@ Complete documentation of all API endpoints in the FrameX-Store application.
 7. [Customer APIs](#customer-apis)
 8. [Inventory APIs](#inventory-apis)
 9. [Subscription APIs](#subscription-apis)
-10. [Merchant APIs](#merchant-apis)
+10. [Tenant APIs](#tenant-apis)
 11. [Configuration APIs](#configuration-apis)
 12. [Content Management APIs](#content-management-apis)
 13. [Statistics & Analytics APIs](#statistics--analytics-apis)
@@ -208,9 +208,9 @@ interface SubscriptionPlan {
   sortOrder?: number;
 }
 
-interface MerchantSubscription {
+interface TenantSubscription {
   id: string;
-  merchantId: string;
+  tenantId: string;
   planId: string;
   planName?: string;
   status: SubscriptionStatus;
@@ -259,7 +259,7 @@ Authenticate user and return JWT token.
     fullName: string;
     email?: string;
     phone?: string;
-    role: "customer" | "merchant" | "admin";
+    role: "customer" | "tenant" | "admin";
     createdAt: string;
   };
 }
@@ -281,7 +281,7 @@ Register a new user.
   email?: string;
   phone?: string;
   password: string;
-  role?: "customer" | "merchant" | "admin";
+  role?: "customer" | "tenant" | "admin";
 }
 ```
 
@@ -328,7 +328,7 @@ Get current authenticated user information.
   fullName: string;
   email?: string;
   phone?: string;
-  role: "customer" | "merchant" | "admin";
+  role: "customer" | "tenant" | "admin";
   createdAt: string;
 }
 ```
@@ -1666,13 +1666,13 @@ Get available subscription plans.
 
 ### GET /api/subscription/status
 
-Get current merchant subscription status.
+Get current tenant subscription status.
 
 **Response:**
 
 ```typescript
 {
-  subscription: MerchantSubscription | null;
+  subscription: TenantSubscription | null;
   statusDetails: SubscriptionStatusDetails;
 }
 ```
@@ -1765,7 +1765,7 @@ Get all subscription plans (alternative endpoint).
 
 Get current subscription.
 
-**Response:** `MerchantSubscription | null`
+**Response:** `TenantSubscription | null`
 
 ---
 
@@ -1785,15 +1785,15 @@ Create new subscription.
 
 ---
 
-## Merchant APIs
+## Tenant APIs
 
-### GET /api/merchant/context
+### GET /api/tenant/context
 
-Get merchant context data.
+Get tenant context data.
 
 **Query Parameters:**
 
-- `merchantId` (optional): Merchant ID
+- `tenantId` (optional): Tenant ID
 
 **Response:**
 
@@ -1801,7 +1801,7 @@ Get merchant context data.
 {
   success: true;
   data: {
-    merchant: {
+    tenant: {
       id: string;
       name: string;
       email: string;
@@ -1828,15 +1828,15 @@ Get merchant context data.
 
 ---
 
-### GET /api/merchant/data-from-brand-config
+### GET /api/tenant/data-from-brand-config
 
-Get merchant data from brand config.
+Get tenant data from brand config.
 
 **Response:**
 
 ```typescript
 {
-  merchant: {
+  tenant: {
     name: string;
     logo?: string;
     // ... other brand config fields
@@ -1846,15 +1846,15 @@ Get merchant data from brand config.
 
 ---
 
-### GET /api/merchant/plan-subscription
+### GET /api/tenant/plan-subscription
 
-Get merchant subscription information.
+Get tenant subscription information.
 
-**Response:** `MerchantSubscription | null`
+**Response:** `TenantSubscription | null`
 
 ---
 
-### POST /api/merchant/features/check
+### POST /api/tenant/features/check
 
 Check multiple features.
 
@@ -1882,7 +1882,7 @@ Check multiple features.
 
 ---
 
-### GET /api/merchant/features/limit
+### GET /api/tenant/features/limit
 
 Get feature limits.
 
@@ -1898,7 +1898,7 @@ Get feature limits.
 
 ---
 
-### GET /api/merchant/features/usage
+### GET /api/tenant/features/usage
 
 Get feature usage statistics.
 
@@ -1918,7 +1918,7 @@ Get feature usage statistics.
 
 ---
 
-### GET /api/merchant/fraud-check
+### GET /api/tenant/fraud-check
 
 Get fraud check data for phone number.
 
@@ -1938,7 +1938,7 @@ Get fraud check data for phone number.
 
 ---
 
-### POST /api/merchant/fraud-check
+### POST /api/tenant/fraud-check
 
 Check fraud risk for phone number.
 
@@ -1961,7 +1961,7 @@ Check fraud risk for phone number.
 
 ---
 
-### POST /api/merchant/domain/configure
+### POST /api/tenant/domain/configure
 
 Configure custom domain.
 
@@ -1975,7 +1975,7 @@ Configure custom domain.
 
 ---
 
-### GET /api/merchant/domain/configure
+### GET /api/tenant/domain/configure
 
 Get domain configuration.
 
@@ -1995,7 +1995,7 @@ Get domain configuration.
 
 ---
 
-### POST /api/merchant/domain/verify
+### POST /api/tenant/domain/verify
 
 Verify domain DNS records.
 
@@ -2023,21 +2023,21 @@ Verify domain DNS records.
 
 ---
 
-### DELETE /api/merchant/domain/remove
+### DELETE /api/tenant/domain/remove
 
 Remove custom domain.
 
 ---
 
-### GET /api/merchant/super-admin-data
+### GET /api/tenant/super-admin-data
 
-Get merchant data from super admin.
+Get tenant data from super admin.
 
 **Response:**
 
 ```typescript
 {
-  merchant: any;
+  tenant: any;
   database: any;
   deployment: any;
 }
@@ -2045,7 +2045,7 @@ Get merchant data from super admin.
 
 ---
 
-### GET /api/merchant/email-settings
+### GET /api/tenant/email-settings
 
 Get email settings.
 
@@ -2061,7 +2061,7 @@ Get email settings.
 
 ---
 
-### PUT /api/merchant/email-settings
+### PUT /api/tenant/email-settings
 
 Update email settings.
 
@@ -2077,7 +2077,7 @@ Update email settings.
 
 ---
 
-### POST /api/merchant/email-settings
+### POST /api/tenant/email-settings
 
 Test email settings.
 
@@ -2093,7 +2093,7 @@ Test email settings.
 
 ---
 
-### GET /api/merchant/email-templates
+### GET /api/tenant/email-templates
 
 Get email templates.
 
@@ -2113,7 +2113,7 @@ Get email templates.
 
 ---
 
-### PUT /api/merchant/email-templates
+### PUT /api/tenant/email-templates
 
 Update email templates (bulk).
 
@@ -2132,7 +2132,7 @@ Update email templates (bulk).
 
 ---
 
-### POST /api/merchant/email-templates
+### POST /api/tenant/email-templates
 
 Create email template.
 
@@ -3048,15 +3048,15 @@ Track Meta Pixel event.
 
 ## Super Admin APIs
 
-### GET /api/super-admin/merchants
+### GET /api/super-admin/tenants
 
-Get all merchants.
+Get all tenants.
 
 **Response:**
 
 ```typescript
 {
-  merchants: Array<{
+  tenants: Array<{
     id: string;
     name: string;
     email: string;
@@ -3068,9 +3068,9 @@ Get all merchants.
 
 ---
 
-### POST /api/super-admin/merchants
+### POST /api/super-admin/tenants
 
-Create new merchant.
+Create new tenant.
 
 **Request Body:**
 
@@ -3084,9 +3084,9 @@ Create new merchant.
 
 ---
 
-### PUT /api/super-admin/merchants
+### PUT /api/super-admin/tenants
 
-Update merchant.
+Update tenant.
 
 **Request Body:**
 
@@ -3101,15 +3101,15 @@ Update merchant.
 
 ---
 
-### GET /api/super-admin/merchants/[id]/full
+### GET /api/super-admin/tenants/[id]/full
 
-Get full merchant data.
+Get full tenant data.
 
 **Response:**
 
 ```typescript
 {
-  merchant: any;
+  tenant: any;
   database: any;
   deployment: any;
   subscription: any;
@@ -3118,9 +3118,9 @@ Get full merchant data.
 
 ---
 
-### GET /api/super-admin/merchants/[id]/database
+### GET /api/super-admin/tenants/[id]/database
 
-Get merchant database information.
+Get tenant database information.
 
 **Response:**
 
@@ -3138,9 +3138,9 @@ Get merchant database information.
 
 ---
 
-### GET /api/super-admin/merchants/[id]/deployment
+### GET /api/super-admin/tenants/[id]/deployment
 
-Get merchant deployment information.
+Get tenant deployment information.
 
 **Response:**
 
@@ -3157,11 +3157,11 @@ Get merchant deployment information.
 
 ---
 
-### GET /api/super-admin/merchants/[id]/subscription
+### GET /api/super-admin/tenants/[id]/subscription
 
-Get merchant subscription information from super-admin.
+Get tenant subscription information from super-admin.
 
-**Response:** `MerchantSubscription`
+**Response:** `TenantSubscription`
 
 ---
 
@@ -3466,7 +3466,7 @@ Remove a viewer when they leave the product page.
 
 ### POST /api/orders/sync-courier-status
 
-Sync delivery status for all orders with courier info (for current merchant).
+Sync delivery status for all orders with courier info (for current tenant).
 
 **Response:**
 
@@ -3492,9 +3492,9 @@ Sync delivery status for all orders with courier info (for current merchant).
 
 ### GET /api/cron/sync-delivery-status
 
-Cron job to sync delivery status for all orders across all merchants.
+Cron job to sync delivery status for all orders across all tenants.
 
-**Note:** This is a system cron endpoint that runs every 5 minutes to update courier delivery statuses across all active merchants.
+**Note:** This is a system cron endpoint that runs every 5 minutes to update courier delivery statuses across all active tenants.
 
 **Response:**
 
@@ -3503,7 +3503,7 @@ Cron job to sync delivery status for all orders across all merchants.
   success: true;
   message: "Delivery status sync completed";
   results: {
-    totalMerchants: number;
+    totalTenants: number;
     totalOrders: number;
     updated: number;
     failed: number;
@@ -3515,6 +3515,6 @@ Cron job to sync delivery status for all orders across all merchants.
 }
 ```
 
-**Note:** This endpoint processes all active merchants and syncs their courier order statuses. Used by automated cron jobs.
+**Note:** This endpoint processes all active tenants and syncs their courier order statuses. Used by automated cron jobs.
 
 ---

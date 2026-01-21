@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { loadMerchantDocument, loadMerchantCollectionData } from "@/lib/merchant-data-loader";
+import { loadTenantDocument, loadTenantCollectionData } from "@/lib/tenant-data-loader";
 import type { Product } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { ReviewForm } from "@/components/site/ReviewForm";
@@ -28,28 +28,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const decodedSlug = decodeURIComponent(slug);
 
     // Try exact match first
-    let d = await loadMerchantDocument<any>("products", { slug: decodedSlug });
+    let d = await loadTenantDocument<any>("products", { slug: decodedSlug });
 
     // Try normalized slug
     if (!d) {
       const normalizedSlug = normalizeSlug(decodedSlug);
-      d = await loadMerchantDocument<any>("products", { slug: normalizedSlug });
+      d = await loadTenantDocument<any>("products", { slug: normalizedSlug });
     }
 
     // Try original slug
     if (!d) {
-      d = await loadMerchantDocument<any>("products", { slug: slug });
+      d = await loadTenantDocument<any>("products", { slug: slug });
     }
 
     // Try normalized original
     if (!d) {
       const normalizedOriginal = normalizeSlug(slug);
-      d = await loadMerchantDocument<any>("products", { slug: normalizedOriginal });
+      d = await loadTenantDocument<any>("products", { slug: normalizedOriginal });
     }
 
     // Last resort: case-insensitive search
     if (!d) {
-      const allProducts = await loadMerchantCollectionData<any>("products", {});
+      const allProducts = await loadTenantCollectionData<any>("products", {});
       d = allProducts.find(
         (p: any) =>
           p.slug?.toLowerCase() === decodedSlug.toLowerCase() ||
@@ -90,28 +90,28 @@ export default async function ReviewsPage({ params }: Props) {
     const decodedSlug = decodeURIComponent(slug);
 
     // Try exact match first
-    let d = await loadMerchantDocument<any>("products", { slug: decodedSlug });
+    let d = await loadTenantDocument<any>("products", { slug: decodedSlug });
 
     // Try normalized slug
     if (!d) {
       const normalizedSlug = normalizeSlug(decodedSlug);
-      d = await loadMerchantDocument<any>("products", { slug: normalizedSlug });
+      d = await loadTenantDocument<any>("products", { slug: normalizedSlug });
     }
 
     // Try original slug
     if (!d) {
-      d = await loadMerchantDocument<any>("products", { slug: slug });
+      d = await loadTenantDocument<any>("products", { slug: slug });
     }
 
     // Try normalized original
     if (!d) {
       const normalizedOriginal = normalizeSlug(slug);
-      d = await loadMerchantDocument<any>("products", { slug: normalizedOriginal });
+      d = await loadTenantDocument<any>("products", { slug: normalizedOriginal });
     }
 
     // Last resort: case-insensitive search
     if (!d) {
-      const allProducts = await loadMerchantCollectionData<any>("products", {});
+      const allProducts = await loadTenantCollectionData<any>("products", {});
       d = allProducts.find(
         (p: any) =>
           p.slug?.toLowerCase() === decodedSlug.toLowerCase() ||
@@ -153,7 +153,7 @@ export default async function ReviewsPage({ params }: Props) {
     images: string[];
   }> = [];
   try {
-    const reviews = await loadMerchantCollectionData<any>("reviews", { productSlug: product.slug }, { sort: { createdAt: -1 } });
+    const reviews = await loadTenantCollectionData<any>("reviews", { productSlug: product.slug }, { sort: { createdAt: -1 } });
 
     allReviews = reviews.map((r) => ({
       id: String(r._id),

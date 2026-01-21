@@ -6,7 +6,7 @@ import { getDomainConfigFromSuperAdmin } from "./super-admin-client";
 
 export interface DomainConfiguration {
   id: string;
-  merchantId: string;
+  tenantId: string;
   domain: string;
   domainType: "custom" | "subdomain";
   dnsRecords: DNSRecord[];
@@ -58,17 +58,17 @@ export function generateDNSRecords(domain: string): DNSRecord[] {
 }
 
 /**
- * Get domain configuration for merchant from super-admin
+ * Get domain configuration for tenant from super-admin
  */
-export async function getDomainConfiguration(merchantId: string): Promise<DomainConfiguration | null> {
+export async function getDomainConfiguration(tenantId: string): Promise<DomainConfiguration | null> {
   try {
-    console.log(`[domain-service] Fetching domain config for merchantId: ${merchantId}`);
-    const result = await getDomainConfigFromSuperAdmin(merchantId);
+    console.log(`[domain-service] Fetching domain config for tenantId: ${tenantId}`);
+    const result = await getDomainConfigFromSuperAdmin(tenantId);
 
     console.log(`[domain-service] Result from super-admin:`, result ? JSON.stringify(result).slice(0, 200) : "null");
 
     if (!result?.domain) {
-      console.log(`[domain-service] No domain found for merchantId: ${merchantId}`);
+      console.log(`[domain-service] No domain found for tenantId: ${tenantId}`);
       return null;
     }
 
@@ -87,7 +87,7 @@ export async function getDomainConfiguration(merchantId: string): Promise<Domain
 
     const domainConfig: DomainConfiguration = {
       id: superAdminDomain.id,
-      merchantId: superAdminDomain.merchantId,
+      tenantId: superAdminDomain.tenantId,
       domain: superAdminDomain.domain,
       domainType: "custom",
       dnsRecords,

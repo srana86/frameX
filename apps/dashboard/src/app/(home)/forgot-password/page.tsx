@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label";
 export default function ForgotPasswordPage() {
   return (
     <AuthShell
-      title='Reset your merchant password'
-      description='Enter the email linked to your merchant account. We will send a reset link to help you regain access.'
+      title='Reset your tenant password'
+      description='Enter the email linked to your tenant account. We will send a reset link to help you regain access.'
       benefits={[
         "Secure, time-limited reset links.",
         "Get back to managing all your stores quickly.",
@@ -37,7 +37,7 @@ export default function ForgotPasswordPage() {
             id='email'
             type='email'
             autoComplete='email'
-            placeholder='merchant@yourstore.com'
+            placeholder='tenant@yourstore.com'
             required
             className='h-11 rounded-xl border-slate-200 bg-white/90 text-sm sm:text-base shadow-sm'
           />

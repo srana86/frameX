@@ -7,7 +7,7 @@ Want to see the beautiful charts without setting up API keys? Use the Demo Mode!
 ## How to Use Demo Mode
 
 ### Option 1: Click the Button
-1. Navigate to `/merchant/fraud-check`
+1. Navigate to `/tenant/fraud-check`
 2. Look for the **"Load Demo Data"** button in the top-right corner
 3. Click it!
 4. Instantly see all charts populated with realistic sample data

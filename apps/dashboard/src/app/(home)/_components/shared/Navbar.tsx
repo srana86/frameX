@@ -20,8 +20,8 @@ const navLinks = [
 const mobileNavLinks = navLinks.filter((link) => ["features", "pricing", "about-us", "blog", "contact-us"].includes(link.sectionId));
 
 export default function Navbar() {
-  const merchantLoginUrl = "/login";
-  const merchantSignupUrl = "/register";
+  const tenantLoginUrl = "/login";
+  const tenantSignupUrl = "/register";
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [scrollActiveIndex, setScrollActiveIndex] = useState<number | null>(null);
@@ -293,7 +293,7 @@ export default function Navbar() {
             {/* Desktop CTA Button */}
             <div className='hidden lg:flex items-center gap-3'>
               <Link
-                href={merchantLoginUrl}
+                href={tenantLoginUrl}
                 className='flex items-center gap-2 rounded-full border border-[#0448FD]/30 px-4 py-2 text-sm font-semibold text-gray-800 transition-all duration-200 hover:border-[#0448FD] hover:text-[#0448FD]'
                 style={{
                   boxShadow:
@@ -306,7 +306,7 @@ export default function Navbar() {
               <StartBuildingButton
                 text='Sign Up'
                 icon={UserRound}
-                href={merchantSignupUrl}
+                href={tenantSignupUrl}
                 circleSize={26}
                 iconSize={14}
                 className='h-[40px] sm:h-[40px] md:h-[40px] lg:h-[40px] text-sm sm:text-sm font-semibold px-1.5'
@@ -548,14 +548,14 @@ export default function Navbar() {
               </div>
               <div className='mt-4 grid gap-3'>
                 <Link
-                  href={merchantLoginUrl}
+                  href={tenantLoginUrl}
                   onClick={closeMenu}
                   className='inline-flex h-14 w-full items-center justify-center rounded-2xl border border-[#0448FD]/30 bg-white px-4 text-base font-semibold text-gray-800 transition-all duration-200 hover:border-[#0448FD] hover:text-[#0448FD]'
                 >
                   Login
                 </Link>
                 <Link
-                  href={merchantSignupUrl}
+                  href={tenantSignupUrl}
                   onClick={closeMenu}
                   className='inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#0448FD] px-4 text-base font-semibold text-white shadow-lg shadow-[#0448FD]/20 transition-all duration-200 hover:bg-[#0548FD] hover:shadow-xl hover:shadow-[#0448FD]/30'
                 >
@@ -565,7 +565,7 @@ export default function Navbar() {
               </div>
             </div>
 
-            <p className='text-center text-xs text-gray-400 mt-4'>Join 10,000+ merchants growing with FrameX.</p>
+            <p className='text-center text-xs text-gray-400 mt-4'>Join 10,000+ tenants growing with FrameX.</p>
           </div>
         </div>
       </div>

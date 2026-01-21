@@ -6,7 +6,7 @@ import { SalesServices } from "./sales.service";
 const getAllSales = catchAsync(async (req, res) => {
   const status = req.query.status as string;
   const type = req.query.type as string;
-  const merchantId = req.query.merchantId as string;
+  const tenantId = req.query.tenantId as string;
   const startDate = req.query.startDate as string;
   const endDate = req.query.endDate as string;
   const limit = parseInt(req.query.limit as string) || 100;
@@ -14,7 +14,7 @@ const getAllSales = catchAsync(async (req, res) => {
   const result = await SalesServices.getAllSales(
     status,
     type,
-    merchantId,
+    tenantId,
     startDate,
     endDate,
     limit

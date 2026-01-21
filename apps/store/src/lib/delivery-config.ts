@@ -1,4 +1,4 @@
-import { getMerchantCollectionForAPI, buildMerchantQuery } from "./api-helpers";
+import { getTenantCollectionForAPI, buildTenantQuery } from "./api-helpers";
 import type { DeliveryServiceConfig, CourierServicesConfig } from "../types/delivery-config-types";
 import { defaultDeliveryServiceConfig, defaultCourierServicesConfig } from "../types/delivery-config-types";
 
@@ -7,8 +7,8 @@ const COURIER_SERVICES_CONFIG_ID = "courier_services_config_v1";
 
 export async function getDeliveryServiceConfig(): Promise<DeliveryServiceConfig> {
   try {
-    const col = await getMerchantCollectionForAPI("delivery_service_config");
-    const query = await buildMerchantQuery({ id: DELIVERY_SERVICE_CONFIG_ID });
+    const col = await getTenantCollectionForAPI("delivery_service_config");
+    const query = await buildTenantQuery({ id: DELIVERY_SERVICE_CONFIG_ID });
     const doc = await col.findOne(query);
     if (doc) {
       const { _id, ...config } = doc;
@@ -22,8 +22,8 @@ export async function getDeliveryServiceConfig(): Promise<DeliveryServiceConfig>
 
 export async function getCourierServicesConfig(): Promise<CourierServicesConfig> {
   try {
-    const col = await getMerchantCollectionForAPI("courier_services_config");
-    const query = await buildMerchantQuery({ id: COURIER_SERVICES_CONFIG_ID });
+    const col = await getTenantCollectionForAPI("courier_services_config");
+    const query = await buildTenantQuery({ id: COURIER_SERVICES_CONFIG_ID });
     const doc = await col.findOne(query);
     if (doc) {
       const { _id, ...config } = doc;

@@ -28,14 +28,14 @@ Edit `super-admin/.env` with your configuration.
 
 ## 🔧 Vercel Deployment Variables
 
-These are required if you want to deploy merchant apps to Vercel.
+These are required if you want to deploy tenant apps to Vercel.
 
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `VERCEL_TOKEN` | Vercel API token | `vercel_xxxxx` |
 | `VERCEL_TEAM_ID` | Vercel team ID (optional) | `team_xxxxx` |
-| `GITHUB_REPO` | GitHub repository (org/repo format) | `myorg/merchant-app` |
-| `BASE_DOMAIN` | Base domain for merchant subdomains | `framextech.com` |
+| `GITHUB_REPO` | GitHub repository (org/repo format) | `myorg/tenant-app` |
+| `BASE_DOMAIN` | Base domain for tenant subdomains | `framextech.com` |
 
 ---
 
@@ -46,13 +46,13 @@ These are required if you want to deploy merchant apps to Vercel.
 | `SUPER_ADMIN_URL` | Public URL of super-admin | `https://admin.framextech.com` |
 | `NEXT_PUBLIC_SUPER_ADMIN_URL` | Same as above (for client-side) | `https://admin.framextech.com` |
 
-> **Important**: This URL is passed to all merchant deployments so they can call central APIs (Cloudinary, etc.)
+> **Important**: This URL is passed to all tenant deployments so they can call central APIs (Cloudinary, etc.)
 
 ---
 
 ## 🖼️ Cloudinary (Central Image Service)
 
-Super-admin provides a central Cloudinary API for all merchant apps.
+Super-admin provides a central Cloudinary API for all tenant apps.
 
 | Variable | Description | Example |
 |----------|-------------|---------|
@@ -60,7 +60,7 @@ Super-admin provides a central Cloudinary API for all merchant apps.
 | `CLOUDINARY_API_KEY` | Cloudinary API key | `123456789012345` |
 | `CLOUDINARY_API_SECRET` | Cloudinary API secret | `your_secret` |
 
-### Cloudinary API Endpoints (for merchant apps)
+### Cloudinary API Endpoints (for tenant apps)
 
 - **Upload**: `POST /api/cloudinary/upload`
 - **Delete**: `POST /api/cloudinary/delete`
@@ -119,7 +119,7 @@ NEXT_PUBLIC_SUPER_ADMIN_URL=https://admin.framextech.com
 # ============================================
 VERCEL_TOKEN=vercel_xxxxx
 VERCEL_TEAM_ID=team_xxxxx
-GITHUB_REPO=myorg/merchant-app
+GITHUB_REPO=myorg/tenant-app
 BASE_DOMAIN=framextech.com
 
 # Set to "true" to skip Vercel deployment during simulation
@@ -157,17 +157,17 @@ STEADFAST_PASSWORD=your_steadfast_password
 
 ---
 
-## 🚀 Environment Variables Passed to Merchant Deployments
+## 🚀 Environment Variables Passed to Tenant Deployments
 
-When deploying a merchant app via simulation, these variables are automatically set:
+When deploying a tenant app via simulation, these variables are automatically set:
 
 | Variable | Source | Description |
 |----------|--------|-------------|
-| `MERCHANT_ID` | Generated | Unique merchant identifier |
-| `NEXT_PUBLIC_MERCHANT_ID` | Generated | Same, for client-side |
-| `MERCHANT_DB_NAME` | Generated | Merchant's database name |
-| `MONGODB_DB` | Generated | Same as MERCHANT_DB_NAME |
-| `MONGODB_URI` | Generated | Connection string to merchant DB |
+| `TENANT_ID` | Generated | Unique tenant identifier |
+| `NEXT_PUBLIC_TENANT_ID` | Generated | Same, for client-side |
+| `TENANT_DB_NAME` | Generated | Tenant's database name |
+| `MONGODB_DB` | Generated | Same as TENANT_DB_NAME |
+| `MONGODB_URI` | Generated | Connection string to tenant DB |
 | `SUPER_ADMIN_URL` | From super-admin | Central API URL |
 | `NEXT_PUBLIC_SUPER_ADMIN_URL` | From super-admin | Same, for client-side |
 | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | From super-admin | For image display |
@@ -188,53 +188,53 @@ When deploying a merchant app via simulation, these variables are automatically 
 
 ### Cloudinary (Image Uploads)
 
-Merchant apps don't need their own Cloudinary credentials. Instead:
+Tenant apps don't need their own Cloudinary credentials. Instead:
 
-1. Merchant app calls: `${SUPER_ADMIN_URL}/api/cloudinary/upload`
+1. Tenant app calls: `${SUPER_ADMIN_URL}/api/cloudinary/upload`
 2. Super-admin handles the upload with central credentials
 3. Response includes the Cloudinary URL
 
 This approach:
 - ✅ Centralizes credential management
-- ✅ Allows usage tracking per merchant
-- ✅ Simplifies merchant app setup
+- ✅ Allows usage tracking per tenant
+- ✅ Simplifies tenant app setup
 
-### How It Works in Merchant Apps
+### How It Works in Tenant Apps
 
-The merchant app's `/api/upload` route automatically:
+The tenant app's `/api/upload` route automatically:
 1. Checks if `SUPER_ADMIN_URL` is set
 2. If yes, proxies upload to super-admin's Cloudinary API
 3. If no, uses local Cloudinary credentials (fallback)
 
 ---
 
-## 📡 Public APIs for Merchant Apps
+## 📡 Public APIs for Tenant Apps
 
-### Get Merchant Subscription & Plan
+### Get Tenant Subscription & Plan
 
-**Endpoint:** `GET /api/merchant-subscription`
+**Endpoint:** `GET /api/tenant-subscription`
 
 **Usage:**
 ```bash
 # Via query parameter
-GET https://framextech.com/api/merchant-subscription?merchantId=merchant_xxxxx
+GET https://framextech.com/api/tenant-subscription?tenantId=tenant_xxxxx
 
 # Via header
-GET https://framextech.com/api/merchant-subscription
-X-Merchant-ID: merchant_xxxxx
+GET https://framextech.com/api/tenant-subscription
+X-Tenant-ID: tenant_xxxxx
 ```
 
 **Response:**
 ```json
 {
-  "merchant": {
-    "id": "merchant_xxxxx",
+  "tenant": {
+    "id": "tenant_xxxxx",
     "name": "Store Name",
     "email": "store@example.com",
     "status": "active"
   },
   "subscription": {
-    "merchantId": "merchant_xxxxx",
+    "tenantId": "tenant_xxxxx",
     "planId": "plan_pro",
     "status": "active",
     "startDate": "2025-01-01",

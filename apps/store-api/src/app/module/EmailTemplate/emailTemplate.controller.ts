@@ -7,9 +7,9 @@ import { EmailTemplateServices } from "./emailTemplate.service";
 // Get email templates
 const getEmailTemplates = catchAsync(async (req: Request, res: Response) => {
   const event = req.query.event as string | undefined;
-  const merchantId = req.tenantId;
+  const tenantId = req.tenantId;
   const result = await EmailTemplateServices.getEmailTemplatesFromDB(
-    merchantId,
+    tenantId,
     event as any
   );
 
@@ -34,11 +34,11 @@ const updateEmailTemplate = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
-  const merchantId = req.tenantId;
+  const tenantId = req.tenantId;
   const result = await EmailTemplateServices.updateEmailTemplateFromDB(
     event,
     templateData,
-    merchantId
+    tenantId
   );
 
   sendResponse(res, {
@@ -51,10 +51,10 @@ const updateEmailTemplate = catchAsync(async (req: Request, res: Response) => {
 
 // Create email template
 const createEmailTemplate = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = req.tenantId;
+  const tenantId = req.tenantId;
   const result = await EmailTemplateServices.createEmailTemplateFromDB(
     req.body,
-    merchantId
+    tenantId
   );
 
   sendResponse(res, {

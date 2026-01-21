@@ -35,7 +35,7 @@ const apiClient = axios.create({
  */
 export const serverSideApiClient = (
   token?: string,
-  merchantId?: string,
+  tenantId?: string,
   domain?: string
 ) => {
   // Always use internal URL for server-side calls
@@ -46,7 +46,7 @@ export const serverSideApiClient = (
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      "X-Merchant-ID": merchantId || process.env.NEXT_PUBLIC_MERCHANT_ID || "",
+      "X-Tenant-ID": tenantId || process.env.NEXT_PUBLIC_TENANT_ID || "",
       "X-Domain": domain || "",
     },
     withCredentials: true,
@@ -59,14 +59,14 @@ export const serverSideApiClient = (
  *
  * @param method - HTTP method
  * @param url - API endpoint URL
- * @param options - Optional: token, merchantId, domain, data, params
+ * @param options - Optional: token, tenantId, domain, data, params
  */
 export const serverApiRequest = async <T>(
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
   url: string,
   options?: {
     token?: string;
-    merchantId?: string;
+    tenantId?: string;
     domain?: string;
     data?: unknown;
     params?: Record<string, unknown>;
@@ -74,7 +74,7 @@ export const serverApiRequest = async <T>(
 ): Promise<T> => {
   const client = serverSideApiClient(
     options?.token,
-    options?.merchantId,
+    options?.tenantId,
     options?.domain
   );
 
@@ -103,10 +103,10 @@ apiClient.interceptors.request.use(
       config.headers["X-Domain"] = window.location.hostname;
     }
 
-    // Fallback to merchant ID from env
-    const merchantId = process.env.NEXT_PUBLIC_MERCHANT_ID;
-    if (merchantId) {
-      config.headers["X-Merchant-ID"] = merchantId;
+    // Fallback to tenant ID from env
+    const tenantId = process.env.NEXT_PUBLIC_TENANT_ID;
+    if (tenantId) {
+      config.headers["X-Tenant-ID"] = tenantId;
     }
 
     return config;

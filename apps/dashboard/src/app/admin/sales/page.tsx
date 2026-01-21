@@ -46,9 +46,9 @@ import { api } from "@/lib/api-client";
 
 interface Sale {
   id: string;
-  merchantId: string;
-  merchantName?: string;
-  merchantEmail?: string;
+  tenantId: string;
+  tenantName?: string;
+  tenantEmail?: string;
   subscriptionId?: string;
   planId: string;
   planName: string;
@@ -184,8 +184,8 @@ export default function SalesPage() {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         return (
-          sale.merchantName?.toLowerCase().includes(query) ||
-          sale.merchantEmail?.toLowerCase().includes(query) ||
+          sale.tenantName?.toLowerCase().includes(query) ||
+          sale.tenantEmail?.toLowerCase().includes(query) ||
           sale.planName?.toLowerCase().includes(query) ||
           sale.transactionId?.toLowerCase().includes(query) ||
           sale.id.toLowerCase().includes(query)
@@ -200,7 +200,7 @@ export default function SalesPage() {
   const exportToCSV = () => {
     const headers = [
       "Date",
-      "Merchant",
+      "Tenant",
       "Email",
       "Plan",
       "Amount",
@@ -210,8 +210,8 @@ export default function SalesPage() {
     ];
     const rows = filteredSales.map((sale) => [
       new Date(sale.createdAt).toLocaleString(),
-      sale.merchantName || sale.merchantId,
-      sale.merchantEmail || "",
+      sale.tenantName || sale.tenantId,
+      sale.tenantEmail || "",
       sale.planName,
       `${sale.currency} ${sale.amount}`,
       sale.type,
@@ -339,7 +339,7 @@ export default function SalesPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search by merchant, plan, or transaction..."
+                  placeholder="Search by tenant, plan, or transaction..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -397,7 +397,7 @@ export default function SalesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
-                  <TableHead>Merchant</TableHead>
+                  <TableHead>Tenant</TableHead>
                   <TableHead>Plan</TableHead>
                   <TableHead>Billing</TableHead>
                   <TableHead>Amount</TableHead>
@@ -425,11 +425,11 @@ export default function SalesPage() {
                     <TableCell>
                       <div>
                         <p className="font-medium">
-                          {sale.merchantName || sale.merchantId}
+                          {sale.tenantName || sale.tenantId}
                         </p>
-                        {sale.merchantEmail && (
+                        {sale.tenantEmail && (
                           <p className="text-xs text-muted-foreground">
-                            {sale.merchantEmail}
+                            {sale.tenantEmail}
                           </p>
                         )}
                       </div>

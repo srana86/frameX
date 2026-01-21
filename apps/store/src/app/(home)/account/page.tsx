@@ -166,9 +166,9 @@ export default function AccountPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Quick Actions */}
             <div className="grid gap-4 sm:grid-cols-2">
-              {userRole === "merchant" && (
+              {userRole === "tenant" && (
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-                  <Link href="/merchant">
+                  <Link href="/tenant">
                     <CardContent className="p-6">
                       <div className="flex items-center gap-4">
                         <div className="p-3 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
@@ -456,13 +456,13 @@ export default function AccountPage() {
                       View Orders
                     </Link>
                   </Button>
-                  {userRole === "merchant" && (
+                  {userRole === "tenant" && (
                     <Button
                       variant="outline"
                       className="w-full justify-start"
                       asChild
                     >
-                      <Link href="/merchant">
+                      <Link href="/tenant">
                         <LayoutDashboard className="w-4 h-4 mr-2" />
                         Go to Dashboard
                       </Link>

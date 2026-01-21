@@ -4,7 +4,7 @@ export type DeploymentProvider = "vercel" | "local" | "other";
 
 export interface IDeployment {
   id: string;
-  merchantId: string;
+  tenantId: string;
   deploymentType: DeploymentType;
   subdomain?: string;
   deploymentStatus: DeploymentStatus;

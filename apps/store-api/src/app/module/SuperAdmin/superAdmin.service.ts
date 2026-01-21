@@ -3,14 +3,14 @@ import { prisma } from "@framex/database";
 import AppError from "../../errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import {
-  CreateMerchantPayload,
-  UpdateMerchantPayload,
-  MerchantDatabase,
-  MerchantDeployment,
+  CreateTenantPayload,
+  UpdateTenantPayload,
+  TenantDatabase,
+  TenantDeployment,
 } from "./superAdmin.interface";
 
-// Get all tenants (was merchants) - keeping function names for backward compat
-const getAllMerchantsFromDB = async () => {
+// Get all tenants
+const getAllTenantsFromDB = async () => {
   const tenants = await prisma.tenant.findMany({
     where: {
       status: { not: "INACTIVE" },
@@ -27,8 +27,8 @@ const getAllMerchantsFromDB = async () => {
   }));
 };
 
-// Create new tenant (was merchant)
-const createMerchantFromDB = async (payload: CreateMerchantPayload) => {
+// Create new tenant
+const createTenantFromDB = async (payload: CreateTenantPayload) => {
   // Check if tenant already exists
   const existingTenant = await prisma.tenant.findUnique({
     where: {
@@ -60,8 +60,8 @@ const createMerchantFromDB = async (payload: CreateMerchantPayload) => {
   };
 };
 
-// Update tenant (was merchant)
-const updateMerchantFromDB = async (payload: UpdateMerchantPayload) => {
+// Update tenant
+const updateTenantFromDB = async (payload: UpdateTenantPayload) => {
   const tenant = await prisma.tenant.findUnique({
     where: {
       id: payload.id,
@@ -91,8 +91,8 @@ const updateMerchantFromDB = async (payload: UpdateMerchantPayload) => {
   };
 };
 
-// Get full tenant data (was merchant)
-const getFullMerchantDataFromDB = async (tenantId: string) => {
+// Get full tenant data
+const getFullTenantDataFromDB = async (tenantId: string) => {
   const tenant = await prisma.tenant.findUnique({
     where: {
       id: tenantId,
@@ -109,14 +109,14 @@ const getFullMerchantDataFromDB = async (tenantId: string) => {
   });
 
   // Placeholder for database and deployment info
-  const database: MerchantDatabase = {
+  const database: TenantDatabase = {
     id: `db-${tenantId}`,
     databaseName: `tenant_${tenantId}`,
     useSharedDatabase: true,
     status: "active",
   };
 
-  const deployment: MerchantDeployment = {
+  const deployment: TenantDeployment = {
     id: `deploy-${tenantId}`,
     deploymentUrl: tenant.deploymentUrl || `https://${tenantId}.example.com`,
     deploymentStatus: "active",
@@ -124,14 +124,13 @@ const getFullMerchantDataFromDB = async (tenantId: string) => {
   };
 
   return {
-    merchant: {
-      // Keep 'merchant' key for backward compat with frontend
+    tenant: {
       id: tenant.id,
       name: tenant.name,
       email: tenant.email,
       status: tenant.status,
       createdAt: tenant.createdAt,
-      role: "MERCHANT",
+      role: "TENANT_OWNER",
     },
     database,
     deployment,
@@ -140,7 +139,7 @@ const getFullMerchantDataFromDB = async (tenantId: string) => {
 };
 
 // Get tenant database information
-const getMerchantDatabaseFromDB = async (tenantId: string) => {
+const getTenantDatabaseFromDB = async (tenantId: string) => {
   const tenant = await prisma.tenant.findUnique({
     where: {
       id: tenantId,
@@ -151,7 +150,7 @@ const getMerchantDatabaseFromDB = async (tenantId: string) => {
     throw new AppError(StatusCodes.NOT_FOUND, "Tenant not found");
   }
 
-  const database: MerchantDatabase = {
+  const database: TenantDatabase = {
     id: `db-${tenantId}`,
     databaseName: `tenant_${tenantId}`,
     useSharedDatabase: true,
@@ -162,7 +161,7 @@ const getMerchantDatabaseFromDB = async (tenantId: string) => {
 };
 
 // Get tenant deployment information
-const getMerchantDeploymentFromDB = async (tenantId: string) => {
+const getTenantDeploymentFromDB = async (tenantId: string) => {
   const tenant = await prisma.tenant.findUnique({
     where: {
       id: tenantId,
@@ -173,7 +172,7 @@ const getMerchantDeploymentFromDB = async (tenantId: string) => {
     throw new AppError(StatusCodes.NOT_FOUND, "Tenant not found");
   }
 
-  const deployment: MerchantDeployment = {
+  const deployment: TenantDeployment = {
     id: `deploy-${tenantId}`,
     deploymentUrl: tenant.deploymentUrl || `https://${tenantId}.example.com`,
     deploymentStatus: "active",
@@ -184,7 +183,7 @@ const getMerchantDeploymentFromDB = async (tenantId: string) => {
 };
 
 // Get tenant subscription information
-const getMerchantSubscriptionFromDB = async (tenantId: string) => {
+const getTenantSubscriptionFromDB = async (tenantId: string) => {
   const tenant = await prisma.tenant.findUnique({
     where: {
       id: tenantId,
@@ -210,11 +209,11 @@ const getMerchantSubscriptionFromDB = async (tenantId: string) => {
 };
 
 export const SuperAdminServices = {
-  getAllMerchantsFromDB,
-  createMerchantFromDB,
-  updateMerchantFromDB,
-  getFullMerchantDataFromDB,
-  getMerchantDatabaseFromDB,
-  getMerchantDeploymentFromDB,
-  getMerchantSubscriptionFromDB,
+  getAllTenantsFromDB,
+  createTenantFromDB,
+  updateTenantFromDB,
+  getFullTenantDataFromDB,
+  getTenantDatabaseFromDB,
+  getTenantDeploymentFromDB,
+  getTenantSubscriptionFromDB,
 };

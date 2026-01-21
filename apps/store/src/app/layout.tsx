@@ -12,7 +12,7 @@ import { TrackingScripts } from "@/components/site/TrackingScripts";
 import { SourceTracker } from "@/components/site/SourceTracker";
 import { VisitTracker } from "@/components/site/VisitTracker";
 import { defaultBrandConfig, type BrandConfig } from "@/lib/brand-config";
-import { loadMerchantDocument } from "@/lib/merchant-data-loader";
+import { loadTenantDocument } from "@/lib/tenant-data-loader";
 import { getAdsConfig } from "@/lib/ads-config";
 import { hexToOklch } from "@/lib/utils";
 
@@ -30,8 +30,8 @@ const BRAND_CONFIG_ID = "brand_config_v1";
 
 async function getBrandConfig(): Promise<BrandConfig> {
   try {
-    // Use merchant-aware loader to get the correct brand config for the current merchant
-    const doc = await loadMerchantDocument<any>("brand_config", {
+    // Use tenant-aware loader to get the correct brand config for the current tenant
+    const doc = await loadTenantDocument<any>("brand_config", {
       id: BRAND_CONFIG_ID,
     });
     if (doc) {

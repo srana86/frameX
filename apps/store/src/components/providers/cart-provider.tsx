@@ -59,7 +59,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch { }
   }, [items]);
 
-  // Load shipping config from merchant delivery settings (managed in dashboard)
+  // Load shipping config from tenant delivery settings (managed in dashboard)
   useEffect(() => {
     const loadShippingConfig = async () => {
       try {

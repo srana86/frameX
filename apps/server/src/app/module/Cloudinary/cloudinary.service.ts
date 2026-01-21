@@ -4,7 +4,7 @@ import config from "../../../config/index";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Merchant-ID",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Tenant-ID",
 };
 
 function requireEnv(name: string) {
@@ -19,7 +19,7 @@ const uploadImage = async (
   folder: string,
   public_id: string | undefined,
   resource_type: string = "auto",
-  merchantId: string = "unknown"
+  tenantId: string = "unknown"
 ) => {
   if (!file && !url) {
     throw new Error("Provide 'file' (Blob) or 'url'");
@@ -73,7 +73,7 @@ const uploadImage = async (
 const deleteImage = async (
   public_id: string,
   resource_type: string = "image",
-  merchantId: string = "unknown"
+  tenantId: string = "unknown"
 ) => {
   if (!public_id) {
     throw new Error("public_id is required");

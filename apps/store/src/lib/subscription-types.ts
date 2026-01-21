@@ -115,11 +115,11 @@ export function getMonthlyEquivalent(totalPrice: number, cycleMonths: BillingCyc
 }
 
 /**
- * Merchant Subscription
+ * Tenant Subscription
  */
-export interface MerchantSubscription {
+export interface TenantSubscription {
   id: string;
-  merchantId: string;
+  tenantId: string;
   planId: string;
   planName?: string; // Cached for display
   status: SubscriptionStatus;
@@ -173,7 +173,7 @@ export function getDaysUntilExpiry(periodEnd: string | Date): number {
 /**
  * Check if subscription is in grace period
  */
-export function isInGracePeriod(subscription: MerchantSubscription): boolean {
+export function isInGracePeriod(subscription: TenantSubscription): boolean {
   if (!subscription.gracePeriodEndsAt) return false;
   const now = new Date();
   const graceEnd = new Date(subscription.gracePeriodEndsAt);
@@ -198,7 +198,7 @@ export interface SubscriptionStatusDetails {
   requiresPayment: boolean;
 }
 
-export function getSubscriptionStatusDetails(subscription: MerchantSubscription | null): SubscriptionStatusDetails {
+export function getSubscriptionStatusDetails(subscription: TenantSubscription | null): SubscriptionStatusDetails {
   if (!subscription) {
     return {
       isActive: false,
@@ -248,7 +248,7 @@ export function getSubscriptionStatusDetails(subscription: MerchantSubscription 
  */
 export interface SubscriptionUsage {
   id: string;
-  merchantId: string;
+  tenantId: string;
   featureKey: string;
   period: string; // YYYY-MM format
   currentUsage: number;
@@ -263,9 +263,9 @@ export interface SubscriptionUsage {
  */
 export interface SubscriptionInvoice {
   id: string;
-  merchantId: string;
-  merchantName?: string;
-  merchantEmail?: string;
+  tenantId: string;
+  tenantName?: string;
+  tenantEmail?: string;
   subscriptionId: string;
   planId: string;
   planName: string;
@@ -303,7 +303,7 @@ export interface InvoiceItem {
 /**
  * Generate invoice number
  */
-export function generateInvoiceNumber(merchantId: string): string {
+export function generateInvoiceNumber(tenantId: string): string {
   const date = new Date();
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -317,7 +317,7 @@ export function generateInvoiceNumber(merchantId: string): string {
 export interface SubscriptionPayment {
   id: string;
   invoiceId: string;
-  merchantId: string;
+  tenantId: string;
   amount: number;
   currency: string;
   paymentMethod: string; // "card", "bank_transfer", etc.

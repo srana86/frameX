@@ -39,10 +39,10 @@ import { apiRequest } from "@/lib/api-client";
 
 // Primary nav items (shown in bottom bar)
 const primaryNavItems = [
-  { title: "Home", href: "/merchant", icon: LayoutDashboard },
-  { title: "Orders", href: "/merchant/orders", icon: ShoppingBag },
-  { title: "Products", href: "/merchant/products", icon: Package },
-  { title: "Alerts", href: "/merchant/notifications", icon: Bell },
+  { title: "Home", href: "/tenant", icon: LayoutDashboard },
+  { title: "Orders", href: "/tenant/orders", icon: ShoppingBag },
+  { title: "Products", href: "/tenant/products", icon: Package },
+  { title: "Alerts", href: "/tenant/notifications", icon: Bell },
 ];
 
 // Secondary nav items (shown in "More" drawer)
@@ -50,35 +50,35 @@ const secondaryNavItems = [
   {
     category: "Sales & Analytics",
     items: [
-      { title: "Statistics", href: "/merchant/statistics", icon: BarChart3 },
-      { title: "Profit Analysis", href: "/merchant/profit-analysis", icon: DollarSign },
-      { title: "Investments", href: "/merchant/investments", icon: TrendingUp },
+      { title: "Statistics", href: "/tenant/statistics", icon: BarChart3 },
+      { title: "Profit Analysis", href: "/tenant/profit-analysis", icon: DollarSign },
+      { title: "Investments", href: "/tenant/investments", icon: TrendingUp },
     ],
   },
   {
     category: "Customers & Marketing",
     items: [
-      { title: "Customers", href: "/merchant/customers", icon: Users },
-      { title: "Coupons", href: "/merchant/coupons", icon: Percent },
-      { title: "Affiliates", href: "/merchant/affiliates", icon: Users },
+      { title: "Customers", href: "/tenant/customers", icon: Users },
+      { title: "Coupons", href: "/tenant/coupons", icon: Percent },
+      { title: "Affiliates", href: "/tenant/affiliates", icon: Users },
     ],
   },
   {
     category: "Operations",
     items: [
-      { title: "Inventory", href: "/merchant/inventory", icon: Boxes },
-      { title: "Delivery Support", href: "/merchant/delivery-support", icon: Truck },
-      { title: "Fraud Check", href: "/merchant/fraud-check", icon: Shield },
+      { title: "Inventory", href: "/tenant/inventory", icon: Boxes },
+      { title: "Delivery Support", href: "/tenant/delivery-support", icon: Truck },
+      { title: "Fraud Check", href: "/tenant/fraud-check", icon: Shield },
     ],
   },
   {
     category: "Store Settings",
     items: [
-      { title: "Brand & Theme", href: "/merchant/brand", icon: Palette },
-      { title: "Domain", href: "/merchant/domain", icon: Globe },
-      { title: "Payment Config", href: "/merchant/payment-config", icon: CreditCard },
-      { title: "Email Settings", href: "/merchant/email-settings", icon: Mail },
-      { title: "Pages", href: "/merchant/pages", icon: FileText },
+      { title: "Brand & Theme", href: "/tenant/brand", icon: Palette },
+      { title: "Domain", href: "/tenant/domain", icon: Globe },
+      { title: "Payment Config", href: "/tenant/payment-config", icon: CreditCard },
+      { title: "Email Settings", href: "/tenant/email-settings", icon: Mail },
+      { title: "Pages", href: "/tenant/pages", icon: FileText },
     ],
   },
 ];
@@ -93,7 +93,7 @@ export function MobileBottomNav() {
   const [lastScrollY, setLastScrollY] = useState(0);
 
   // Determine if we're on order details page
-  const isOrderDetailsPage = pathname.match(/\/merchant\/orders\/[^/]+$/);
+  const isOrderDetailsPage = pathname.match(/\/tenant\/orders\/[^/]+$/);
 
   // Fetch unread notifications count
   useEffect(() => {
@@ -150,8 +150,8 @@ export function MobileBottomNav() {
   }, [lastScrollY]);
 
   const isActive = (href: string) => {
-    if (href === "/merchant") {
-      return pathname === "/merchant";
+    if (href === "/tenant") {
+      return pathname === "/tenant";
     }
     return pathname.startsWith(href);
   };
@@ -180,7 +180,7 @@ export function MobileBottomNav() {
             <div className='flex items-stretch justify-around px-3 pt-2' style={{ paddingBottom: "env(safe-area-inset-bottom, 12px)" }}>
               {/* Back to Orders */}
               <Link
-                href='/merchant/orders'
+                href='/tenant/orders'
                 className='relative flex flex-1 flex-col items-center justify-center py-1 px-1 transition-all duration-200 ease-out active:scale-95'
               >
                 <div className='relative flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 transition-all duration-300'>
@@ -196,7 +196,7 @@ export function MobileBottomNav() {
 
               {/* Dashboard */}
               <Link
-                href='/merchant'
+                href='/tenant'
                 className='relative flex flex-1 flex-col items-center justify-center py-1 px-1 transition-all duration-200 ease-out active:scale-95'
               >
                 <div className='relative flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 transition-all duration-300'>
@@ -207,7 +207,7 @@ export function MobileBottomNav() {
 
               {/* Notifications */}
               <Link
-                href='/merchant/notifications'
+                href='/tenant/notifications'
                 className='relative flex flex-1 flex-col items-center justify-center py-1 px-1 transition-all duration-200 ease-out active:scale-95'
               >
                 <div className='relative flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 transition-all duration-300'>
@@ -331,9 +331,9 @@ export function MobileBottomNav() {
               const active = isActive(item.href);
               const Icon = item.icon;
               const showBadge =
-                (item.href === "/merchant/notifications" && unreadCount > 0) ||
-                (item.href === "/merchant/orders" && pendingOrdersCount > 0);
-              const badgeCount = item.href === "/merchant/notifications" ? unreadCount : pendingOrdersCount;
+                (item.href === "/tenant/notifications" && unreadCount > 0) ||
+                (item.href === "/tenant/orders" && pendingOrdersCount > 0);
+              const badgeCount = item.href === "/tenant/notifications" ? unreadCount : pendingOrdersCount;
 
               return (
                 <Link
@@ -493,13 +493,13 @@ export function MobileBottomNav() {
                 {/* Quick Actions Footer */}
                 <div className='p-4 border-t bg-slate-50/50 dark:bg-slate-900/50'>
                   <div className='grid grid-cols-2 gap-3'>
-                    <Button variant='outline' className='h-12 rounded-xl gap-2' onClick={() => handleNavClick("/merchant/subscription")}>
+                    <Button variant='outline' className='h-12 rounded-xl gap-2' onClick={() => handleNavClick("/tenant/subscription")}>
                       <div className='h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center'>
                         <CreditCard className='h-3.5 w-3.5 text-primary' />
                       </div>
                       <span className='text-xs'>Subscription</span>
                     </Button>
-                    <Button variant='outline' className='h-12 rounded-xl gap-2' onClick={() => handleNavClick("/merchant/ai-assistant")}>
+                    <Button variant='outline' className='h-12 rounded-xl gap-2' onClick={() => handleNavClick("/tenant/ai-assistant")}>
                       <div className='h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center'>
                         <Sparkles className='h-3.5 w-3.5 text-primary' />
                       </div>

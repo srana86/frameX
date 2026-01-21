@@ -6,9 +6,9 @@ const saleTypeEnum = z.enum(["new", "renewal", "upgrade", "downgrade"]);
 export const createSaleValidationSchema = z.object({
   body: z.object({
     id: z.string().optional(),
-    merchantId: z.string().min(1, "Merchant ID is required"),
-    merchantName: z.string().optional(),
-    merchantEmail: z.string().email().optional(),
+    tenantId: z.string().min(1, "Tenant ID is required"),
+    tenantName: z.string().optional(),
+    tenantEmail: z.string().email().optional(),
     subscriptionId: z.string().optional(),
     planId: z.string().min(1, "Plan ID is required"),
     planName: z.string().optional(),

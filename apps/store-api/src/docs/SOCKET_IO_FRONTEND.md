@@ -159,22 +159,22 @@ socket.on("disconnect", (reason) => {
 
 ## Order Events
 
-### Join Merchant Room (for order updates)
+### Join Tenant Room (for order updates)
 
-Join a merchant room to receive order updates for that specific merchant.
+Join a tenant room to receive order updates for that specific tenant.
 
 ```typescript
-// Join merchant room
-socket.emit("order:join-merchant", "merchant-id-123");
+// Join tenant room
+socket.emit("order:join-tenant", "tenant-id-123");
 
 // Confirmation
 socket.on("order:joined", (data) => {
   console.log("Joined room:", data);
-  // { merchantId: string, room: string }
+  // { tenantId: string, room: string }
 });
 
-// Leave merchant room
-socket.emit("order:leave-merchant", "merchant-id-123");
+// Leave tenant room
+socket.emit("order:leave-tenant", "tenant-id-123");
 ```
 
 ### Join User Room (for personal order updates)
@@ -446,8 +446,8 @@ export function useSocket(options: UseSocketOptions) {
     };
   }, [options.token]);
 
-  const joinMerchantRoom = useCallback((merchantId: string) => {
-    socket?.emit('order:join-merchant', merchantId);
+  const joinTenantRoom = useCallback((tenantId: string) => {
+    socket?.emit('order:join-tenant', tenantId);
   }, [socket]);
 
   const joinUserRoom = useCallback(() => {
@@ -458,14 +458,14 @@ export function useSocket(options: UseSocketOptions) {
     socket,
     connected,
     error,
-    joinMerchantRoom,
+    joinTenantRoom,
     joinUserRoom,
   };
 }
 
 // Usage
 function OrderDashboard() {
-  const { connected, joinMerchantRoom } = useSocket({
+  const { connected, joinTenantRoom } = useSocket({
     token: userToken,
     onOrderUpdate: (data) => {
       console.log('New order:', data);
@@ -479,9 +479,9 @@ function OrderDashboard() {
 
   useEffect(() => {
     if (connected) {
-      joinMerchantRoom('merchant-id-123');
+      joinTenantRoom('tenant-id-123');
     }
-  }, [connected, joinMerchantRoom]);
+  }, [connected, joinTenantRoom]);
 
   return <div>Order Dashboard</div>;
 }
@@ -523,8 +523,8 @@ export function useSocket(token: string) {
     });
   };
 
-  const joinMerchantRoom = (merchantId: string) => {
-    socket.value?.emit("order:join-merchant", merchantId);
+  const joinTenantRoom = (tenantId: string) => {
+    socket.value?.emit("order:join-tenant", tenantId);
   };
 
   const joinUserRoom = () => {
@@ -543,7 +543,7 @@ export function useSocket(token: string) {
     socket,
     connected,
     error,
-    joinMerchantRoom,
+    joinTenantRoom,
     joinUserRoom,
   };
 }
@@ -743,13 +743,13 @@ export function useRealtimeUpdates(token: string | null) {
     };
   }, [token]);
 
-  // Join merchant room
-  const joinMerchantRoom = useCallback(
-    (merchantId: string) => {
+  // Join tenant room
+  const joinTenantRoom = useCallback(
+    (tenantId: string) => {
       if (socket && connected) {
-        socket.emit("order:join-merchant", merchantId);
+        socket.emit("order:join-tenant", tenantId);
         socket.on("order:joined", (data) => {
-          console.log("✅ Joined merchant room:", data);
+          console.log("✅ Joined tenant room:", data);
         });
       }
     },
@@ -771,7 +771,7 @@ export function useRealtimeUpdates(token: string | null) {
     connected,
     orders,
     notifications,
-    joinMerchantRoom,
+    joinTenantRoom,
     joinUserRoom,
   };
 }

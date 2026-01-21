@@ -229,7 +229,7 @@ db.subscription_plans.insertOne({
 ## 🔧 After Creating Plans
 
 1. Plans will appear in the main app at `/admin/subscription-plans`
-2. Merchants can subscribe to these plans
+2. Tenants can subscribe to these plans
 3. Features are checked dynamically from the plan
 4. You can edit plans anytime from super admin or main app
 

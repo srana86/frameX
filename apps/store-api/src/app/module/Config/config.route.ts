@@ -7,7 +7,7 @@ const router = express.Router();
 
 // Brand Config - routes registered at /brand-config
 router.get("/", tenantMiddleware, ConfigControllers.getBrandConfig);
-router.put("/", auth("admin", "merchant"), ConfigControllers.updateBrandConfig);
+router.put("/", auth("admin", "tenant"), ConfigControllers.updateBrandConfig);
 
 export const BrandConfigRoutes = router;
 
@@ -16,7 +16,7 @@ const deliveryRouter = express.Router();
 deliveryRouter.get("/", tenantMiddleware, ConfigControllers.getDeliveryConfig);
 deliveryRouter.put(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   ConfigControllers.updateDeliveryConfig
 );
 export const DeliveryConfigRoutes = deliveryRouter;
@@ -25,12 +25,12 @@ export const DeliveryConfigRoutes = deliveryRouter;
 const sslcommerzRouter = express.Router();
 sslcommerzRouter.get(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   ConfigControllers.getSSLCommerzConfig
 );
 sslcommerzRouter.put(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   ConfigControllers.updateSSLCommerzConfig
 );
 export const SSLCommerzConfigRoutes = sslcommerzRouter;
@@ -40,7 +40,7 @@ const oauthRouter = express.Router();
 oauthRouter.get("/", tenantMiddleware, ConfigControllers.getOAuthConfig);
 oauthRouter.put(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   ConfigControllers.updateOAuthConfig
 );
 export const OAuthConfigRoutes = oauthRouter;
@@ -50,7 +50,7 @@ const adsRouter = express.Router();
 adsRouter.get("/", tenantMiddleware, ConfigControllers.getAdsConfig);
 adsRouter.put(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   ConfigControllers.updateAdsConfig
 );
 export const AdsConfigRoutes = adsRouter;

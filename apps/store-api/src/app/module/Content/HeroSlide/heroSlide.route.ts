@@ -13,21 +13,21 @@ router.get("/", HeroSlideControllers.getEnabledHeroSlides);
 // Get all hero slides (admin)
 router.get(
   "/all",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   HeroSlideControllers.getAllHeroSlides
 );
 
 // Get single hero slide
 router.get(
   "/:id",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   HeroSlideControllers.getSingleHeroSlide
 );
 
 // Create hero slide
 router.post(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   upload.fields([
     { name: "image", maxCount: 1 },
     { name: "mobileImage", maxCount: 1 },
@@ -39,7 +39,7 @@ router.post(
 // Update hero slide
 router.put(
   "/:id",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   upload.fields([
     { name: "image", maxCount: 1 },
     { name: "mobileImage", maxCount: 1 },
@@ -51,7 +51,7 @@ router.put(
 // Delete hero slide
 router.delete(
   "/:id",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   HeroSlideControllers.deleteHeroSlide
 );
 

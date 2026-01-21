@@ -9,14 +9,14 @@ const router = express.Router();
 // Get email templates (optionally filtered by event query param)
 router.get(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   EmailTemplateControllers.getEmailTemplates
 );
 
 // Update email template
 router.put(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(EmailTemplateValidation.updateEmailTemplateValidationSchema),
   EmailTemplateControllers.updateEmailTemplate
 );
@@ -24,7 +24,7 @@ router.put(
 // Create email template
 router.post(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(EmailTemplateValidation.createEmailTemplateValidationSchema),
   EmailTemplateControllers.createEmailTemplate
 );
@@ -32,7 +32,7 @@ router.post(
 // Test email template
 router.post(
   "/test",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(EmailTemplateValidation.testEmailTemplateValidationSchema),
   EmailTemplateControllers.testEmailTemplate
 );

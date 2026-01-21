@@ -1,4 +1,4 @@
-export interface Merchant {
+export interface Tenant {
   id: string;
   name: string;
   email: string;
@@ -7,7 +7,7 @@ export interface Merchant {
   [key: string]: any;
 }
 
-export interface MerchantDatabase {
+export interface TenantDatabase {
   id: string;
   databaseName: string;
   useSharedDatabase: boolean;
@@ -15,20 +15,20 @@ export interface MerchantDatabase {
   status: string;
 }
 
-export interface MerchantDeployment {
+export interface TenantDeployment {
   id: string;
   deploymentUrl: string;
   deploymentStatus: string;
   deploymentType: string;
 }
 
-export interface CreateMerchantPayload {
+export interface CreateTenantPayload {
   name: string;
   email: string;
-  password: string;
+  password?: string;
 }
 
-export interface UpdateMerchantPayload {
+export interface UpdateTenantPayload {
   id: string;
   name?: string;
   email?: string;

@@ -89,7 +89,7 @@ export function NavLinks({ brandConfig, isNavbarVisible = true, isScrolled = fal
   }, []);
 
   // Don't show on mobile or on certain pages
-  if (pathname?.startsWith("/merchant") || pathname?.startsWith("/account") || pathname?.startsWith("/checkout")) {
+  if (pathname?.startsWith("/tenant") || pathname?.startsWith("/account") || pathname?.startsWith("/checkout")) {
     return null;
   }
 

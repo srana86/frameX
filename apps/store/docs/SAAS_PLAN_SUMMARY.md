@@ -2,7 +2,7 @@
 
 ## 🎯 Overview
 
-Your e-commerce platform is now ready to become a multi-tenant SaaS! Merchants will pay monthly subscriptions with feature-based plans that you can control from the admin panel.
+Your e-commerce platform is now ready to become a multi-tenant SaaS! Tenants will pay monthly subscriptions with feature-based plans that you can control from the admin panel.
 
 ## ✅ What's Been Implemented
 
@@ -18,7 +18,7 @@ Your e-commerce platform is now ready to become a multi-tenant SaaS! Merchants w
 The system uses these MongoDB collections:
 
 - `subscription_plans` - Plan definitions with features
-- `merchant_subscriptions` - Active merchant subscriptions
+- `tenant_subscriptions` - Active tenant subscriptions
 - `subscription_usage` - Usage tracking per feature
 - `subscription_invoices` - Billing history
 - `subscription_payments` - Payment records
@@ -29,7 +29,7 @@ The system uses these MongoDB collections:
 
 - `GET/POST/PUT/DELETE /api/admin/subscription-plans` - Manage subscription plans
 
-**Merchant Endpoints:**
+**Tenant Endpoints:**
 
 - `GET /api/subscriptions/plans` - View available plans
 - `GET /api/subscriptions/current` - Get current subscription
@@ -77,7 +77,7 @@ The system uses these MongoDB collections:
 import { canUseFeature, incrementFeatureUsage } from "@/lib/subscription-helpers";
 
 // Before creating
-const canCreate = await canUseFeature(merchantId, "max_products", 1);
+const canCreate = await canUseFeature(tenantId, "max_products", 1);
 if (!canCreate) {
   return NextResponse.json(
     {
@@ -88,7 +88,7 @@ if (!canCreate) {
 }
 
 // After creating successfully
-await incrementFeatureUsage(merchantId, "max_products", 1);
+await incrementFeatureUsage(tenantId, "max_products", 1);
 ```
 
 ### Example: Checking Feature Access
@@ -96,8 +96,8 @@ await incrementFeatureUsage(merchantId, "max_products", 1);
 ```typescript
 import { checkFeatureAccess } from "@/lib/subscription-helpers";
 
-// Check if merchant can use custom domain
-const canUseCustomDomain = await checkFeatureAccess(merchantId, "custom_domain");
+// Check if tenant can use custom domain
+const canUseCustomDomain = await checkFeatureAccess(tenantId, "custom_domain");
 if (!canUseCustomDomain) {
   // Show upgrade prompt or disable feature
 }
@@ -115,9 +115,9 @@ Create `/admin/subscription-plans` page where admins can:
 - Delete/deactivate plans
 - Set which plan is "popular"
 
-### 2. **Merchant Subscription Dashboard** (Priority: High)
+### 2. **Tenant Subscription Dashboard** (Priority: High)
 
-Create `/merchant/subscription` page where merchants can:
+Create `/tenant/subscription` page where tenants can:
 
 - View current plan and status
 - See usage vs limits (products, storage, etc.)
@@ -174,7 +174,7 @@ Create a cron job or scheduled task:
 - [ ] Feature configuration UI
 - [ ] Plan activation/deactivation
 
-### Phase 3: Merchant UI (Next)
+### Phase 3: Tenant UI (Next)
 
 - [ ] Subscription dashboard
 - [ ] Plan comparison page
@@ -206,7 +206,7 @@ Create a cron job or scheduled task:
 - Toggle for active/popular status
 - Pricing input fields
 
-### Merchant Subscription
+### Tenant Subscription
 
 - Current plan card with usage bars
 - "Upgrade" CTA button
@@ -216,7 +216,7 @@ Create a cron job or scheduled task:
 
 ## 🔐 Security Best Practices
 
-1. **Always verify merchant ID** from authenticated session
+1. **Always verify tenant ID** from authenticated session
 2. **Validate subscription status** before allowing actions
 3. **Check limits before incrementing** usage
 4. **Handle expired subscriptions** gracefully (grace period)
@@ -235,14 +235,14 @@ import { canUseFeature, incrementFeatureUsage } from "@/lib/subscription-helpers
 2. Check before creating:
 
 ```typescript
-const merchantId = user.id; // from auth
-const canCreate = await canUseFeature(merchantId, "max_products", 1);
+const tenantId = user.id; // from auth
+const canCreate = await canUseFeature(tenantId, "max_products", 1);
 ```
 
 3. Increment after success:
 
 ```typescript
-await incrementFeatureUsage(merchantId, "max_products", 1);
+await incrementFeatureUsage(tenantId, "max_products", 1);
 ```
 
 ### To Check Subscription Status:
@@ -250,7 +250,7 @@ await incrementFeatureUsage(merchantId, "max_products", 1);
 ```typescript
 import { isSubscriptionActive } from "@/lib/subscription-helpers";
 
-const isActive = await isSubscriptionActive(merchantId);
+const isActive = await isSubscriptionActive(tenantId);
 if (!isActive) {
   // Redirect to subscription page or show upgrade prompt
 }

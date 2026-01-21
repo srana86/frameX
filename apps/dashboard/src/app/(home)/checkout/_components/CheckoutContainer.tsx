@@ -99,10 +99,10 @@ function CheckoutContainerInner() {
   const [loading, setLoading] = useState(false);
   const [currencySymbol, setCurrencySymbol] = useState(getCurrencySymbol(DEFAULT_CURRENCY));
   const [formData, setFormData] = useState({
-    // Merchant Info
-    merchantName: "",
-    merchantEmail: "",
-    merchantPhone: "",
+    // Tenant Info
+    tenantName: "",
+    tenantEmail: "",
+    tenantPhone: "",
     customSubdomain: "",
     // Customer Info (for payment)
     customerName: "",
@@ -389,7 +389,7 @@ function CheckoutContainerInner() {
                 </div>
               </div>
 
-              {/* Merchant Information */}
+              {/* Tenant Information */}
               <div className='bg-white rounded-2xl p-5 sm:p-6 md:p-8 border border-slate-200 shadow-sm'>
                 <div className='flex items-center gap-3 mb-5 sm:mb-6'>
                   <div className='w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30'>
@@ -414,8 +414,8 @@ function CheckoutContainerInner() {
                       <Building2 className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 pointer-events-none z-10' />
                       <input
                         type='text'
-                        name='merchantName'
-                        value={formData.merchantName}
+                        name='tenantName'
+                        value={formData.tenantName}
                         onChange={handleInputChange}
                         required
                         placeholder='My Awesome Store'
@@ -433,8 +433,8 @@ function CheckoutContainerInner() {
                       <Mail className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 pointer-events-none z-10' />
                       <input
                         type='email'
-                        name='merchantEmail'
-                        value={formData.merchantEmail}
+                        name='tenantEmail'
+                        value={formData.tenantEmail}
                         onChange={handleInputChange}
                         required
                         placeholder='business@example.com'
@@ -452,8 +452,8 @@ function CheckoutContainerInner() {
                       <Phone className='absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 pointer-events-none z-10' />
                       <input
                         type='tel'
-                        name='merchantPhone'
-                        value={formData.merchantPhone}
+                        name='tenantPhone'
+                        value={formData.tenantPhone}
                         onChange={handleInputChange}
                         required
                         placeholder='+880 1XXX-XXXXXX'

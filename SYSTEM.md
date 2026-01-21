@@ -62,7 +62,7 @@ Request → Nginx → X-Tenant-Subdomain header → Store/Store-API
 1. `x-domain` header
 2. `x-forwarded-domain` header
 3. `Origin` header hostname
-4. `x-merchant-id` header
+4. `x-tenant-id` header
 
 ### Tenant Structure
 

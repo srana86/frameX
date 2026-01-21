@@ -15,9 +15,9 @@ function getApiBaseUrl(): string {
   return process.env.INTERNAL_API_URL || "http://localhost:8080/api/v1";
 }
 
-// Helper to get Merchant ID for tenant context
-function getMerchantId(): string {
-  return process.env.NEXT_PUBLIC_MERCHANT_ID || "";
+// Helper to get Tenant ID for tenant context
+function getTenantId(): string {
+  return process.env.NEXT_PUBLIC_TENANT_ID || "";
 }
 
 // Helper to build headers with tenant context
@@ -32,10 +32,10 @@ function getApiHeaders(
   if (domain) {
     headers["X-Domain"] = domain;
   }
-  // Fallback to merchant ID
-  const merchantId = getMerchantId();
-  if (merchantId) {
-    headers["X-Merchant-ID"] = merchantId;
+  // Fallback to tenant ID
+  const tenantId = getTenantId();
+  if (tenantId) {
+    headers["X-Tenant-ID"] = tenantId;
   }
   return headers;
 }
@@ -275,7 +275,7 @@ export async function sendServerSideTracking(
           console.warn("TikTok Pixel server-side tracking failed");
         }
       })
-      .catch(() => {})
+      .catch(() => { })
   );
 
   // Google Analytics 4
@@ -311,7 +311,7 @@ export async function sendServerSideTracking(
           console.warn("GA4 server-side tracking failed");
         }
       })
-      .catch(() => {})
+      .catch(() => { })
   );
 
   // Execute all promises in parallel (failures are silently caught)

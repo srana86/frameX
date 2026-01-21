@@ -200,7 +200,7 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
         }
 
         const role = user.role?.toUpperCase();
-        if (role !== "MERCHANT" && role !== "SUPER_ADMIN" && role !== "ADMIN") {
+        if (role !== "TENANT" && role !== "SUPER_ADMIN" && role !== "ADMIN") {
             // Redirect other roles
             window.location.href = process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3000";
         }

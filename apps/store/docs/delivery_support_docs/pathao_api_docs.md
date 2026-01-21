@@ -1,4 +1,4 @@
-# Pathao Courier Merchant API Integration Documentation
+# Pathao Courier Tenant API Integration Documentation
 
 ## Summary
 
@@ -8,7 +8,7 @@ For understanding these APIs, we are providing Sandbox/Test Environment's Creden
 
 ## Table of Contents
 
-1. [Merchant API Credentials](#merchant-api-credentials)
+1. [Tenant API Credentials](#tenant-api-credentials)
 2. [Issue an Access Token](#issue-an-access-token)
 3. [Issue an Access Token from Refresh Token](#issue-an-access-token-from-refresh-token)
 4. [Create a New Store](#create-a-new-store)
@@ -19,14 +19,14 @@ For understanding these APIs, we are providing Sandbox/Test Environment's Creden
 9. [Get Zones Inside a Particular City](#get-zones-inside-a-particular-city)
 10. [Get Areas Inside a Particular Zone](#get-areas-inside-a-particular-zone)
 11. [Price Calculation API](#price-calculation-api)
-12. [Get Merchant Store Info](#get-merchant-store-info)
+12. [Get Tenant Store Info](#get-tenant-store-info)
 13. [Webhook Integration](#webhook-integration)
 
 ---
 
-## Merchant API Credentials
+## Tenant API Credentials
 
-Now you can easily integrate Pathao Courier Merchant API's into your website.
+Now you can easily integrate Pathao Courier Tenant API's into your website.
 
 **Client ID:** `5xe7Xyra7r`  
 **Client Secret:** `•••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••`
@@ -47,8 +47,8 @@ Now you can easily integrate Pathao Courier Merchant API's into your website.
 | Field name      | Description                                                      |
 | --------------- | ---------------------------------------------------------------- |
 | `base_url`      | `https://api-hermes.pathao.com`                                  |
-| `client_id`     | You can see client_id from merchant api credentials section.     |
-| `client_secret` | You can see client_secret from merchant api credentials section. |
+| `client_id`     | You can see client_id from tenant api credentials section.     |
+| `client_secret` | You can see client_secret from tenant api credentials section. |
 
 ---
 
@@ -56,7 +56,7 @@ Now you can easily integrate Pathao Courier Merchant API's into your website.
 
 **Endpoint:** `/aladdin/api/v1/issue-token`
 
-For any kind of access to the Pathao Courier Merchant API, you need to issue an access token first. This token will be used to authenticate your API requests.
+For any kind of access to the Pathao Courier Tenant API, you need to issue an access token first. This token will be used to authenticate your API requests.
 
 ### Sample Request
 
@@ -158,7 +158,7 @@ curl --location '{{base_url}}/aladdin/api/v1/issue-token' \
 
 **Endpoint:** `/aladdin/api/v1/stores`
 
-To create a Store in Pathao Courier Merchant API, you need to provide the required information. The API will return a success response with the created store details.
+To create a Store in Pathao Courier Tenant API, you need to provide the required information. The API will return a success response with the created store details.
 
 ### Sample Request
 
@@ -168,7 +168,7 @@ curl --location '{{base_url}}/aladdin/api/v1/stores' \
 --header 'Authorization: Bearer {{access_token}}' \
 --data '{
   "name": "Demo Store",
-  "contact_name": "Test Merchant",
+  "contact_name": "Test Tenant",
   "contact_number": "017XXXXXXXX",
   "secondary_contact": "015XXXXXXXX",
   "otp_number": "017XXXXXXXX",
@@ -188,7 +188,7 @@ curl --location '{{base_url}}/aladdin/api/v1/stores' \
 | `contact_number`    | string     | Yes      | Store contact person phone number. Contact number length should be 11 characters.                                                  |
 | `secondary_contact` | string     | No       | Store contact person secondary phone number. Secondary contact number length should be 11 characters. This field is optional.      |
 | `otp_number`        | string     | No       | OTP for orders from this order will be sent to this number                                                                         |
-| `address`           | string     | Yes      | Merchant Store address. Address length should be between 15 to 120 characters.                                                     |
+| `address`           | string     | Yes      | Tenant Store address. Address length should be between 15 to 120 characters.                                                     |
 | `city_id`           | integer    | Yes      | Recipient city_id                                                                                                                  |
 | `zone_id`           | integer    | Yes      | Recipient zone_id                                                                                                                  |
 | `area_id`           | integer    | Yes      | Recipient area_id                                                                                                                  |
@@ -218,7 +218,7 @@ curl --location '{{base_url}}/aladdin/api/v1/stores' \
 
 **Endpoint:** `/aladdin/api/v1/orders`
 
-To create a New order in Pathao Courier Merchant API, you need to provide the required information. The API will return a success response with the created order details.
+To create a New order in Pathao Courier Tenant API, you need to provide the required information. The API will return a success response with the created order details.
 
 ### Sample Request
 
@@ -227,8 +227,8 @@ curl --location '{{base_url}}/aladdin/api/v1/orders' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer {{access_token}}' \
 --data '{
-  "store_id": {{merchant_store_id}},
-  "merchant_order_id": "{{merchant_order_id}}",
+  "store_id": {{tenant_store_id}},
+  "tenant_order_id": "{{tenant_order_id}}",
   "recipient_name": "Demo Recipient",
   "recipient_phone": "017XXXXXXXX",
   "recipient_address": "House 123, Road 4, Sector 10, Uttara, Dhaka-1230, Bangladesh",
@@ -246,8 +246,8 @@ curl --location '{{base_url}}/aladdin/api/v1/orders' \
 
 | Field name                  | Field type | Required | Description                                                                                                                                                                                                                        |
 | --------------------------- | ---------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `store_id`                  | integer    | Yes      | store_id is provided by the merchant and not changeable. This store ID will set the pickup location of the order according to the location of the store.                                                                           |
-| `merchant_order_id`         | string     | No       | Optional parameter, merchant order info/tracking id                                                                                                                                                                                |
+| `store_id`                  | integer    | Yes      | store_id is provided by the tenant and not changeable. This store ID will set the pickup location of the order according to the location of the store.                                                                           |
+| `tenant_order_id`         | string     | No       | Optional parameter, tenant order info/tracking id                                                                                                                                                                                |
 | `recipient_name`            | string     | Yes      | Parcel receivers name. Name length should be between 3 to 100 characters.                                                                                                                                                          |
 | `recipient_phone`           | string     | Yes      | Parcel receivers contact number. Recipient phone length should be 11 characters.                                                                                                                                                   |
 | `recipient_secondary_phone` | string     | No       | Parcel receivers secondary contact number. Recipient secondary phone length should be 11 characters. This field is optional.                                                                                                       |
@@ -272,7 +272,7 @@ curl --location '{{base_url}}/aladdin/api/v1/orders' \
   "code": 200,
   "data": {
     "consignment_id": "{{ORDER_CONSIGNMENT_ID}}",
-    "merchant_order_id": "{{merchant_order_id}}",
+    "tenant_order_id": "{{tenant_order_id}}",
     "order_status": "Pending",
     "delivery_fee": 80
   }
@@ -284,7 +284,7 @@ curl --location '{{base_url}}/aladdin/api/v1/orders' \
 | Field name          | Field type | Optional | Description                                            |
 | ------------------- | ---------- | -------- | ------------------------------------------------------ |
 | `consignment_id`    | string     | No       | A unique identifier for the consignment.               |
-| `merchant_order_id` | string     | Yes      | The order id you provided to keep track of your order. |
+| `tenant_order_id` | string     | Yes      | The order id you provided to keep track of your order. |
 | `order_status`      | string     | No       | Your current order status                              |
 | `delivery_fee`      | number     | No       | Your parcel delivery fee                               |
 
@@ -294,7 +294,7 @@ curl --location '{{base_url}}/aladdin/api/v1/orders' \
 
 **Endpoint:** `/aladdin/api/v1/orders/bulk`
 
-To create multiple orders at a time in Pathao Courier Merchant API, you need to provide the required information. The API will return a success response with the created order details.
+To create multiple orders at a time in Pathao Courier Tenant API, you need to provide the required information. The API will return a success response with the created order details.
 
 ### Sample Request
 
@@ -305,8 +305,8 @@ curl --location '{{base_url}}/aladdin/api/v1/orders/bulk' \
 --data '{
   "orders": [
     {
-      "store_id": {{merchant_store_id}},
-      "merchant_order_id": "{{merchant_order_id}}",
+      "store_id": {{tenant_store_id}},
+      "tenant_order_id": "{{tenant_order_id}}",
       "recipient_name": "Demo Recipient One",
       "recipient_phone": "017XXXXXXXX",
       "recipient_address": "House 123, Road 4, Sector 10, Uttara, Dhaka-1230, Bangladesh",
@@ -319,8 +319,8 @@ curl --location '{{base_url}}/aladdin/api/v1/orders/bulk' \
       "item_description": "This is a Cloth item, price- 3000"
     },
     {
-      "store_id": {{merchant_store_id}},
-      "merchant_order_id": "{{merchant_order_id}}",
+      "store_id": {{tenant_store_id}},
+      "tenant_order_id": "{{tenant_order_id}}",
       "recipient_name": "Demo Recipient Two",
       "recipient_phone": "015XXXXXXXX",
       "recipient_address": "House 3, Road 14, Dhanmondi, Dhaka-1205, Bangladesh",
@@ -346,8 +346,8 @@ curl --location '{{base_url}}/aladdin/api/v1/orders/bulk' \
 
 | Field name                  | Field type | Required | Description                                                                                                                                                                                                                        |
 | --------------------------- | ---------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `store_id`                  | integer    | Yes      | store_id is provided by the merchant and not changeable. This store ID will set the pickup location of the order according to the location of the store                                                                            |
-| `merchant_order_id`         | string     | No       | Optional parameter, merchant order info/tracking id                                                                                                                                                                                |
+| `store_id`                  | integer    | Yes      | store_id is provided by the tenant and not changeable. This store ID will set the pickup location of the order according to the location of the store                                                                            |
+| `tenant_order_id`         | string     | No       | Optional parameter, tenant order info/tracking id                                                                                                                                                                                |
 | `recipient_name`            | string     | Yes      | Parcel receivers name. Name length should be between 3 to 100 characters.                                                                                                                                                          |
 | `recipient_phone`           | string     | Yes      | Parcel receivers contact number. Recipient phone length should be 11 characters.                                                                                                                                                   |
 | `recipient_secondary_phone` | string     | No       | Parcel receivers secondary contact number. Recipient secondary phone length should be 11characters. This field is optional.                                                                                                        |
@@ -412,7 +412,7 @@ curl --location '{{base_url}}/aladdin/api/v1/orders/{{consignment_id}}/info' \
   "code": 200,
   "data": {
     "consignment_id": "{{consignment_id}}",
-    "merchant_order_id": "{{merchant_order_id}}",
+    "tenant_order_id": "{{tenant_order_id}}",
     "order_status": "Pending",
     "order_status_slug": "Pending",
     "updated_at": "2024-11-20 15:11:40",
@@ -426,7 +426,7 @@ curl --location '{{base_url}}/aladdin/api/v1/orders/{{consignment_id}}/info' \
 | Field name          | Field type | Optional | Description                             |
 | ------------------- | ---------- | -------- | --------------------------------------- |
 | `consignment_id`    | string     | No       | A unique identifier for the consignment |
-| `merchant_order_id` | string     | Yes      | The order id you provided               |
+| `tenant_order_id` | string     | Yes      | The order id you provided               |
 | `order_status_slug` | string     | No       | Current status of your order            |
 
 ---
@@ -603,18 +603,18 @@ curl --location '{{base_url}}/aladdin/api/v1/zones/{{zone_id}}/area-list' \
 
 ## Price Calculation API
 
-**Endpoint:** `/aladdin/api/v1/merchant/price-plan`
+**Endpoint:** `/aladdin/api/v1/tenant/price-plan`
 
 To calculate price of the order use this post api.
 
 ### Sample Request
 
 ```bash
-curl --location '{{base_url}}/aladdin/api/v1/merchant/price-plan' \
+curl --location '{{base_url}}/aladdin/api/v1/tenant/price-plan' \
 --header 'Content-Type: application/json; charset=UTF-8' \
 --header 'Authorization: Bearer {{issue_token}}' \
 --data '{
-  "store_id": "{{merchant_store_id}}",
+  "store_id": "{{tenant_store_id}}",
   "item_type": 2,
   "delivery_type": 48,
   "item_weight": 0.5,
@@ -627,7 +627,7 @@ curl --location '{{base_url}}/aladdin/api/v1/merchant/price-plan' \
 
 | Field name       | Field type | Required | Description                                                                                                                                              |
 | ---------------- | ---------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `store_id`       | integer    | Yes      | store_id is provided by the merchant and not changeable. This store ID will set the pickup location of the order according to the location of the store. |
+| `store_id`       | integer    | Yes      | store_id is provided by the tenant and not changeable. This store ID will set the pickup location of the order according to the location of the store. |
 | `item_type`      | integer    | Yes      | `1` for Document, `2` for Parcel                                                                                                                         |
 | `delivery_type`  | integer    | Yes      | `48` for Normal Delivery, `12` for On Demand Delivery                                                                                                    |
 | `item_weight`    | float      | Yes      | Minimum 0.5 KG to Maximum 10 kg. Weight of your parcel in kg                                                                                             |
@@ -668,7 +668,7 @@ curl --location '{{base_url}}/aladdin/api/v1/merchant/price-plan' \
 
 ---
 
-## Get Merchant Store Info
+## Get Tenant Store Info
 
 **Endpoint:** `/aladdin/api/v1/stores`
 
@@ -693,8 +693,8 @@ curl --location '{{base_url}}/aladdin/api/v1/stores' \
   "data": {
     "data": [
       {
-        "store_id": "{{merchant_store_id}}",
-        "store_name": "{{merchant_store_name}}",
+        "store_id": "{{tenant_store_id}}",
+        "store_name": "{{tenant_store_name}}",
         "store_address": "House 123, Road 4, Sector 10, Uttara, Dhaka-1230, Bangladesh",
         "is_active": 1,
         "city_id": "{{city_id}}",

@@ -6,9 +6,9 @@ export interface CurrentUser {
   fullName: string;
   email?: string;
   phone?: string;
-  role: "customer" | "staff" | "merchant" | "admin" | "super_admin";
+  role: "customer" | "staff" | "tenant" | "admin" | "super_admin";
   tenantId?: string;
-  merchantId?: string;
+  tenantId?: string;
   createdAt: string;
 }
 
@@ -41,7 +41,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     const normalizedRole = ((user as any).role || "CUSTOMER").toLowerCase() as
       | "customer"
       | "staff"
-      | "merchant"
+      | "tenant"
       | "admin"
       | "super_admin";
 
@@ -52,7 +52,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
       phone: (user as any).phone,
       role: normalizedRole,
       tenantId: (user as any).tenantId,
-      merchantId: (user as any).merchantId,
+      tenantId: (user as any).tenantId,
       createdAt: user.createdAt.toString(),
     };
   } catch (error) {

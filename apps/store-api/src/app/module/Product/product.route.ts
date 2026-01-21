@@ -45,28 +45,28 @@ router.post(
 router.post(
   "/categories",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(ProductValidation.createCategoryValidationSchema),
   ProductControllers.createCategory
 );
 router.put(
   "/categories",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(ProductValidation.updateCategoryOrderValidationSchema),
   ProductControllers.updateCategoryOrder
 );
 router.put(
   "/categories/:id",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(ProductValidation.updateCategoryValidationSchema),
   ProductControllers.updateCategory
 );
 router.delete(
   "/categories/:id",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   ProductControllers.deleteCategory
 );
 
@@ -74,7 +74,7 @@ router.delete(
 router.post(
   "/",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   upload.array("images", 20),
   validateRequest(ProductValidation.createProductValidationSchema),
   ProductControllers.createProduct
@@ -82,7 +82,7 @@ router.post(
 router.put(
   "/:id",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   upload.array("images", 20),
   validateRequest(ProductValidation.updateProductValidationSchema),
   ProductControllers.updateProduct
@@ -90,13 +90,13 @@ router.put(
 router.delete(
   "/:id",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   ProductControllers.deleteProduct
 );
 router.put(
   "/:id/order",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(ProductValidation.updateProductOrderValidationSchema),
   ProductControllers.updateProductOrder
 );

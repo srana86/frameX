@@ -9,14 +9,14 @@ const router = express.Router();
 // Get all investments
 router.get(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   InvestmentControllers.getAllInvestments
 );
 
 // Create investment
 router.post(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(InvestmentValidation.createInvestmentValidationSchema),
   InvestmentControllers.createInvestment
 );
@@ -24,7 +24,7 @@ router.post(
 // Update investment
 router.put(
   "/:id",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(InvestmentValidation.updateInvestmentValidationSchema),
   InvestmentControllers.updateInvestment
 );
@@ -32,7 +32,7 @@ router.put(
 // Delete investment
 router.delete(
   "/:id",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   InvestmentControllers.deleteInvestment
 );
 

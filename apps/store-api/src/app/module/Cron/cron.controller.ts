@@ -12,7 +12,7 @@ import sendResponse from "../../utils/sendResponse";
 import { syncDeliveryStatus } from "../../jobs/syncDeliveryStatus";
 import { cleanupOrphanedAssets } from "../../jobs/cleanupOrphanedAssets";
 
-// Sync delivery status for all merchants
+// Sync delivery status for all tenants
 const syncDeliveryStatusHandler = catchAsync(async (req: Request, res: Response) => {
   const tenantId = req.query.tenantId as string | undefined;
 

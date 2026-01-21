@@ -5,13 +5,13 @@ import { PaymentServices } from "./payment.service";
 
 const getAllPayments = catchAsync(async (req, res) => {
   const status = req.query.status as string;
-  const merchantId = req.query.merchantId as string;
+  const tenantId = req.query.tenantId as string;
   const limit = parseInt(req.query.limit as string) || 100;
   const page = parseInt(req.query.page as string) || 1;
 
   const result = await PaymentServices.getAllPayments(
     status,
-    merchantId,
+    tenantId,
     limit,
     page
   );

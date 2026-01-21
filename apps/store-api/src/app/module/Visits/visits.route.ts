@@ -15,7 +15,7 @@ router.post(
   VisitsControllers.trackVisit
 );
 
-// Get visits (admin/merchant)
-router.get("/", auth("admin", "merchant"), VisitsControllers.getVisits);
+// Get visits (admin/tenant)
+router.get("/", auth("admin", "tenant"), VisitsControllers.getVisits);
 
 export const VisitsRoutes = router;

@@ -2,15 +2,15 @@ import { z } from "zod";
 
 export const createDatabaseValidationSchema = z.object({
   body: z.object({
-    merchantId: z.string().min(1, "Merchant ID is required"),
+    tenantId: z.string().min(1, "Tenant ID is required"),
   }),
 });
 
 export const createDeploymentValidationSchema = z.object({
   body: z.object({
-    merchantId: z.string().min(1, "Merchant ID is required"),
-    merchantName: z.string().min(1, "Merchant name is required"),
-    merchantEmail: z.string().email().optional(),
+    tenantId: z.string().min(1, "Tenant ID is required"),
+    tenantName: z.string().min(1, "Tenant name is required"),
+    tenantEmail: z.string().email().optional(),
     databaseName: z.string().min(1, "Database name is required"),
     customSubdomain: z.string().optional(),
   }),

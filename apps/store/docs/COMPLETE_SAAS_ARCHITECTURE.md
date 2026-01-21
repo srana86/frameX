@@ -3,10 +3,10 @@
 
 ## 🎯 Overview
 
-When a merchant purchases a subscription plan, the system will:
-1. ✅ Automatically create a MongoDB database for the merchant
-2. ✅ Automatically deploy to Vercel with merchant-specific configuration
-3. ✅ Allow merchant to configure custom domain from their panel
+When a tenant purchases a subscription plan, the system will:
+1. ✅ Automatically create a MongoDB database for the tenant
+2. ✅ Automatically deploy to Vercel with tenant-specific configuration
+3. ✅ Allow tenant to configure custom domain from their panel
 4. ✅ Track everything in the central database
 
 ## 🏗️ Architecture Flow
@@ -14,11 +14,11 @@ When a merchant purchases a subscription plan, the system will:
 ### Subscription → Deployment Flow
 
 ```
-Merchant Purchases Plan
+Tenant Purchases Plan
     ↓
 Create Subscription Record
     ↓
-Create MongoDB Database (merchant_123_db)
+Create MongoDB Database (tenant_123_db)
     ↓
 Generate Deployment Configuration
     ↓
@@ -26,11 +26,11 @@ Deploy to Vercel (via API)
     ↓
 Configure Environment Variables
     ↓
-Set Up Subdomain (merchant1.shoestore.com)
+Set Up Subdomain (tenant1.shoestore.com)
     ↓
-Merchant Receives Credentials
+Tenant Receives Credentials
     ↓
-Merchant Configures Custom Domain (optional)
+Tenant Configures Custom Domain (optional)
 ```
 
 ## 📊 Database Architecture
@@ -39,18 +39,18 @@ Merchant Configures Custom Domain (optional)
 **Database Name:** `shoestore_main`
 
 **Collections:**
-- `merchants` - All merchant accounts
-- `merchant_databases` - MongoDB database configs per merchant
-- `merchant_deployments` - Vercel deployment configs
+- `tenants` - All tenant accounts
+- `tenant_databases` - MongoDB database configs per tenant
+- `tenant_deployments` - Vercel deployment configs
 - `subscription_plans` - Available plans
-- `merchant_subscriptions` - Active subscriptions
+- `tenant_subscriptions` - Active subscriptions
 - `subscription_invoices` - Billing records
 - `domain_configurations` - Custom domain configs
 
-### Merchant Databases (Per Merchant)
-**Database Name Pattern:** `merchant_{merchantId}_db`
+### Tenant Databases (Per Tenant)
+**Database Name Pattern:** `tenant_{tenantId}_db`
 
-**Collections (Each Merchant):**
+**Collections (Each Tenant):**
 - `products` - Products
 - `orders` - Orders
 - `categories` - Categories
@@ -60,7 +60,7 @@ Merchant Configures Custom Domain (optional)
 - `ads_config` - Ads config
 - `pages` - Custom pages
 - `hero_slides` - Hero slides
-- `users` - Merchant's customers (if needed)
+- `users` - Tenant's customers (if needed)
 
 ## 🔧 System Components
 
@@ -69,7 +69,7 @@ Merchant Configures Custom Domain (optional)
 **File:** `lib/database-service.ts`
 
 Responsibilities:
-- Create MongoDB database for new merchant
+- Create MongoDB database for new tenant
 - Generate connection strings
 - Store database credentials securely
 - Handle database deletion (on cancellation)
@@ -80,7 +80,7 @@ Responsibilities:
 
 Responsibilities:
 - Create Vercel project
-- Deploy merchant instance
+- Deploy tenant instance
 - Configure environment variables
 - Set up subdomain
 - Handle custom domain configuration
@@ -102,8 +102,8 @@ Responsibilities:
 
 #### Step 1: MongoDB Database Creation
 ```typescript
-// When merchant subscribes
-1. Generate unique database name: merchant_{merchantId}_db
+// When tenant subscribes
+1. Generate unique database name: tenant_{tenantId}_db
 2. Create database in MongoDB
 3. Initialize collections
 4. Store connection string (encrypted)
@@ -112,16 +112,16 @@ Responsibilities:
 
 #### Step 2: Connection Management
 ```typescript
-// Each merchant deployment uses their own DB
-MERCHANT_DB_NAME=merchant_123_db
-MONGODB_URI=mongodb://.../merchant_123_db
+// Each tenant deployment uses their own DB
+MERCHANT_DB_NAME=tenant_123_db
+MONGODB_URI=mongodb://.../tenant_123_db
 ```
 
 ### Phase 2: Vercel Deployment Automation
 
 #### Step 1: Project Creation
 ```typescript
-// Create Vercel project for merchant
+// Create Vercel project for tenant
 1. Create project via Vercel API
 2. Link to GitHub repository
 3. Configure build settings
@@ -130,10 +130,10 @@ MONGODB_URI=mongodb://.../merchant_123_db
 
 #### Step 2: Environment Variables
 ```typescript
-// Auto-configured per merchant
-MERCHANT_ID=merchant_123
-MERCHANT_DB_NAME=merchant_123_db
-MONGODB_URI=mongodb://.../merchant_123_db
+// Auto-configured per tenant
+MERCHANT_ID=tenant_123
+MERCHANT_DB_NAME=tenant_123_db
+MONGODB_URI=mongodb://.../tenant_123_db
 CUSTOM_DOMAIN=shop.example.com (if configured)
 ```
 
@@ -142,14 +142,14 @@ CUSTOM_DOMAIN=shop.example.com (if configured)
 #### Step 1: Subdomain Setup
 ```typescript
 // Automatic subdomain
-merchant1.shoestore.com
-merchant2.shoestore.com
+tenant1.shoestore.com
+tenant2.shoestore.com
 ```
 
-#### Step 2: Custom Domain (Merchant Panel)
+#### Step 2: Custom Domain (Tenant Panel)
 ```typescript
-// Merchant configures from panel
-1. Merchant enters domain: shop.example.com
+// Tenant configures from panel
+1. Tenant enters domain: shop.example.com
 2. System validates domain
 3. Provides DNS instructions
 4. Verifies domain ownership
@@ -159,12 +159,12 @@ merchant2.shoestore.com
 
 ## 📋 Database Schema
 
-### merchant_databases Collection
+### tenant_databases Collection
 ```typescript
 {
   id: string;
-  merchantId: string;
-  databaseName: string; // "merchant_123_db"
+  tenantId: string;
+  databaseName: string; // "tenant_123_db"
   connectionString: string; // Encrypted
   status: "active" | "inactive" | "suspended";
   createdAt: string;
@@ -172,14 +172,14 @@ merchant2.shoestore.com
 }
 ```
 
-### merchant_deployments Collection
+### tenant_deployments Collection
 ```typescript
 {
   id: string;
-  merchantId: string;
+  tenantId: string;
   vercelProjectId: string;
   vercelDeploymentId: string;
-  deploymentUrl: string; // "merchant1.shoestore.com"
+  deploymentUrl: string; // "tenant1.shoestore.com"
   customDomain?: string; // "shop.example.com"
   domainStatus: "pending" | "active" | "failed";
   environmentVariables: Record<string, string>;
@@ -194,7 +194,7 @@ merchant2.shoestore.com
 ```typescript
 {
   id: string;
-  merchantId: string;
+  tenantId: string;
   domain: string; // "shop.example.com"
   domainType: "custom" | "subdomain";
   dnsRecords: {
@@ -223,13 +223,13 @@ POST /api/subscriptions/create
 4. Create Vercel project
 5. Deploy to Vercel
 6. Configure subdomain
-7. Send credentials to merchant
+7. Send credentials to tenant
 ```
 
 ### 2. Custom Domain Setup Flow
 
 ```typescript
-POST /api/merchant/domain/configure
+POST /api/tenant/domain/configure
   ↓
 1. Validate domain format
 2. Check domain availability
@@ -272,33 +272,33 @@ VERCEL_TEAM_ID=your_team_id
 GITHUB_REPO=your_repo_url
 ```
 
-### Each Merchant Deployment
+### Each Tenant Deployment
 ```env
-MERCHANT_ID=merchant_123
-MERCHANT_DB_NAME=merchant_123_db
-MONGODB_URI=mongodb://.../merchant_123_db
+MERCHANT_ID=tenant_123
+MERCHANT_DB_NAME=tenant_123_db
+MONGODB_URI=mongodb://.../tenant_123_db
 CUSTOM_DOMAIN=shop.example.com
-NEXT_PUBLIC_MERCHANT_ID=merchant_123
+NEXT_PUBLIC_MERCHANT_ID=tenant_123
 ```
 
 ## 🔐 Security Considerations
 
-1. **Database Isolation**: Each merchant has separate database
+1. **Database Isolation**: Each tenant has separate database
 2. **Connection Strings**: Encrypted storage in central DB
 3. **Vercel Tokens**: Secure storage, never exposed
 4. **Domain Verification**: Prevent domain hijacking
-5. **Access Control**: Merchant can only access their own data
+5. **Access Control**: Tenant can only access their own data
 
 ## 📊 Monitoring & Management
 
 ### Super Admin Dashboard
-- View all merchant deployments
+- View all tenant deployments
 - Monitor database usage
 - Track deployment status
 - Manage domains
 - View system health
 
-### Merchant Panel
+### Tenant Panel
 - View deployment status
 - Configure custom domain
 - View database info
@@ -307,7 +307,7 @@ NEXT_PUBLIC_MERCHANT_ID=merchant_123
 
 ## 🚀 Deployment Checklist
 
-### When Merchant Subscribes:
+### When Tenant Subscribes:
 - [ ] Create MongoDB database
 - [ ] Initialize collections
 - [ ] Create Vercel project
@@ -317,7 +317,7 @@ NEXT_PUBLIC_MERCHANT_ID=merchant_123
 - [ ] Send credentials
 - [ ] Create deployment record
 
-### When Merchant Configures Domain:
+### When Tenant Configures Domain:
 - [ ] Validate domain
 - [ ] Generate DNS records
 - [ ] Store configuration
@@ -328,9 +328,9 @@ NEXT_PUBLIC_MERCHANT_ID=merchant_123
 
 ## 💡 Benefits of This Architecture
 
-1. **Complete Isolation**: Each merchant has own database
+1. **Complete Isolation**: Each tenant has own database
 2. **Automatic Setup**: Zero manual intervention
-3. **Scalable**: Easy to add new merchants
+3. **Scalable**: Easy to add new tenants
 4. **Secure**: Encrypted credentials, isolated databases
 5. **Flexible**: Support custom domains
 6. **Manageable**: Central admin panel for oversight
@@ -341,7 +341,7 @@ NEXT_PUBLIC_MERCHANT_ID=merchant_123
 2. `lib/vercel-service.ts` - Vercel deployment management
 3. `lib/domain-service.ts` - Domain configuration
 4. `app/api/admin/deployments/route.ts` - Deployment management
-5. `app/api/merchant/domain/route.ts` - Domain configuration
+5. `app/api/tenant/domain/route.ts` - Domain configuration
 6. `app/api/webhooks/vercel/route.ts` - Vercel webhooks
 7. `app/api/webhooks/subscription/route.ts` - Subscription webhooks
 

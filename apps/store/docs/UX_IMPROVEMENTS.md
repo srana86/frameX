@@ -1,6 +1,6 @@
 # UX Improvements Guide
 
-This document outlines all the UX improvements implemented for the merchant dashboard and e-commerce platform.
+This document outlines all the UX improvements implemented for the tenant dashboard and e-commerce platform.
 
 ## 🎯 Implemented Features
 
@@ -62,7 +62,7 @@ This document outlines all the UX improvements implemented for the merchant dash
   - Visual selection indicators
 
 ### 7. **Order Timeline** ✅
-- **Location**: `app/(home)/merchant/orders/[id]/OrderTimeline.tsx`
+- **Location**: `app/(home)/tenant/orders/[id]/OrderTimeline.tsx`
 - **Features**:
   - Visual timeline of order status changes
   - Icons for each status
@@ -71,7 +71,7 @@ This document outlines all the UX improvements implemented for the merchant dash
   - Recent events badge
 
 ### 8. **Editable Customer Fields** ✅
-- **Location**: `app/(home)/merchant/orders/[id]/CustomerInfoCard.tsx`
+- **Location**: `app/(home)/tenant/orders/[id]/CustomerInfoCard.tsx`
 - **Features**:
   - Inline editing for all customer fields
   - Auto-save to database

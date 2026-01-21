@@ -30,7 +30,7 @@ const calculateShipping = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// Get courier services config (admin/merchant)
+// Get courier services config (admin/tenant)
 const getCourierServicesConfig = catchAsync(
   async (req: Request, res: Response) => {
     const result = await DeliveryServices.getCourierServicesConfigFromDB((req as any).tenantId);

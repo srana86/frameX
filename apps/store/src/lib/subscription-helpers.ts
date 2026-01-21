@@ -1,26 +1,26 @@
 // Server-only subscription helper functions
 // Uses super-admin database for subscription data
-import { getMerchantSubscriptionFromSuperAdmin, getMerchantSubscriptionData } from "./super-admin-client";
-import type { MerchantSubscription, SubscriptionInvoice, SubscriptionPlan, SubscriptionStatusDetails } from "./subscription-types";
+import { getTenantSubscriptionFromSuperAdmin, getTenantSubscriptionData } from "./super-admin-client";
+import type { TenantSubscription, SubscriptionInvoice, SubscriptionPlan, SubscriptionStatusDetails } from "./subscription-types";
 import { getSubscriptionStatusDetails, calculatePeriodEnd, calculateGracePeriodEnd, generateInvoiceNumber } from "./subscription-types";
 
 // Get super-admin URL
 const SUPER_ADMIN_URL = process.env.SUPER_ADMIN_URL || process.env.NEXT_PUBLIC_SUPER_ADMIN_URL || "https://framextech.com";
 
 /**
- * Get active subscription for a merchant from super-admin
+ * Get active subscription for a tenant from super-admin
  */
-export async function getMerchantSubscription(merchantId: string): Promise<MerchantSubscription | null> {
+export async function getTenantSubscription(tenantId: string): Promise<TenantSubscription | null> {
   try {
     // Try to get from super-admin API first
-    const data = await getMerchantSubscriptionData(merchantId);
+    const data = await getTenantSubscriptionData(tenantId);
 
     if (data?.subscription) {
       // Map super-admin subscription to our type
       const sub = data.subscription as any;
       return {
         id: sub.id,
-        merchantId: sub.merchantId,
+        tenantId: sub.tenantId,
         planId: sub.planId,
         planName: sub.planName || data.plan?.name,
         // Use dynamic status from super-admin if available
@@ -46,12 +46,12 @@ export async function getMerchantSubscription(merchantId: string): Promise<Merch
     }
 
     // Fallback: try direct API call
-    const subscription = await getMerchantSubscriptionFromSuperAdmin(merchantId);
+    const subscription = await getTenantSubscriptionFromSuperAdmin(tenantId);
     if (subscription) {
       const sub = subscription as any;
       return {
         id: sub.id,
-        merchantId: sub.merchantId,
+        tenantId: sub.tenantId,
         planId: sub.planId,
         planName: sub.planName || sub.plan?.name,
         status: sub.dynamicStatus || sub.status || "active",
@@ -75,7 +75,7 @@ export async function getMerchantSubscription(merchantId: string): Promise<Merch
 
     return null;
   } catch (error) {
-    console.error("Error fetching merchant subscription from super-admin:", error);
+    console.error("Error fetching tenant subscription from super-admin:", error);
     return null;
   }
 }
@@ -132,8 +132,8 @@ export async function getActivePlans(): Promise<SubscriptionPlan[]> {
 /**
  * Check if subscription is active and not expired
  */
-export async function isSubscriptionActive(merchantId: string): Promise<boolean> {
-  const subscription = await getMerchantSubscription(merchantId);
+export async function isSubscriptionActive(tenantId: string): Promise<boolean> {
+  const subscription = await getTenantSubscription(tenantId);
   if (!subscription) return false;
 
   if (subscription.status !== "active" && subscription.status !== "trial") {
@@ -149,30 +149,30 @@ export async function isSubscriptionActive(merchantId: string): Promise<boolean>
 /**
  * Get subscription with full status details
  */
-export async function getSubscriptionWithStatus(merchantId: string): Promise<{
-  subscription: MerchantSubscription | null;
+export async function getSubscriptionWithStatus(tenantId: string): Promise<{
+  subscription: TenantSubscription | null;
   status: SubscriptionStatusDetails;
   pendingInvoice: SubscriptionInvoice | null;
 }> {
-  const subscription = await getMerchantSubscription(merchantId);
+  const subscription = await getTenantSubscription(tenantId);
   const status = getSubscriptionStatusDetails(subscription);
 
   let pendingInvoice: SubscriptionInvoice | null = null;
 
   if (status.requiresPayment && subscription) {
-    pendingInvoice = await getPendingInvoice(merchantId);
+    pendingInvoice = await getPendingInvoice(tenantId);
   }
 
   return { subscription, status, pendingInvoice };
 }
 
 /**
- * Get pending invoice for merchant from super-admin
+ * Get pending invoice for tenant from super-admin
  */
-export async function getPendingInvoice(merchantId: string): Promise<SubscriptionInvoice | null> {
+export async function getPendingInvoice(tenantId: string): Promise<SubscriptionInvoice | null> {
   try {
     const baseUrl = SUPER_ADMIN_URL.endsWith("/") ? SUPER_ADMIN_URL.slice(0, -1) : SUPER_ADMIN_URL;
-    const response = await fetch(`${baseUrl}/api/v1/invoices?merchantId=${merchantId}&status=pending`, {
+    const response = await fetch(`${baseUrl}/api/v1/invoices?tenantId=${tenantId}&status=pending`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -198,7 +198,7 @@ export async function getPendingInvoice(merchantId: string): Promise<Subscriptio
 /**
  * Create renewal invoice for subscription via super-admin
  */
-export async function createRenewalInvoice(merchantId: string, subscription: MerchantSubscription): Promise<SubscriptionInvoice | null> {
+export async function createRenewalInvoice(tenantId: string, subscription: TenantSubscription): Promise<SubscriptionInvoice | null> {
   try {
     const plan = await getSubscriptionPlan(subscription.planId);
     if (!plan) return null;
@@ -214,9 +214,9 @@ export async function createRenewalInvoice(merchantId: string, subscription: Mer
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        merchantId,
-        merchantName: subscription.planName,
-        merchantEmail: "",
+        tenantId,
+        tenantName: subscription.planName,
+        tenantEmail: "",
         subscriptionId: subscription.id,
         planId: plan.id,
         planName: plan.name,
@@ -250,19 +250,19 @@ export async function createRenewalInvoice(merchantId: string, subscription: Mer
 /**
  * Update subscription status based on current date
  */
-export async function updateSubscriptionStatus(merchantId: string): Promise<MerchantSubscription | null> {
+export async function updateSubscriptionStatus(tenantId: string): Promise<TenantSubscription | null> {
   // This is now handled by super-admin
   // Just return the current subscription
-  return await getMerchantSubscription(merchantId);
+  return await getTenantSubscription(tenantId);
 }
 
 /**
- * Get all invoices for merchant from super-admin
+ * Get all invoices for tenant from super-admin
  */
-export async function getMerchantInvoices(merchantId: string): Promise<SubscriptionInvoice[]> {
+export async function getTenantInvoices(tenantId: string): Promise<SubscriptionInvoice[]> {
   try {
     const baseUrl = SUPER_ADMIN_URL.endsWith("/") ? SUPER_ADMIN_URL.slice(0, -1) : SUPER_ADMIN_URL;
-    const response = await fetch(`${baseUrl}/api/v1/invoices?merchantId=${merchantId}`, {
+    const response = await fetch(`${baseUrl}/api/v1/invoices?tenantId=${tenantId}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -275,16 +275,16 @@ export async function getMerchantInvoices(merchantId: string): Promise<Subscript
     const invoices = await response.json();
     return Array.isArray(invoices) ? invoices : [];
   } catch (error) {
-    console.error("Error fetching merchant invoices:", error);
+    console.error("Error fetching tenant invoices:", error);
     return [];
   }
 }
 
 /**
- * Check if merchant has access to a feature based on plan
+ * Check if tenant has access to a feature based on plan
  */
-export async function checkFeatureAccess(merchantId: string, featureKey: string): Promise<boolean> {
-  const subscription = await getMerchantSubscription(merchantId);
+export async function checkFeatureAccess(tenantId: string, featureKey: string): Promise<boolean> {
+  const subscription = await getTenantSubscription(tenantId);
   if (!subscription) return false;
 
   // Get plan from super-admin
@@ -315,10 +315,10 @@ export async function getPlansGrouped(): Promise<Record<string, SubscriptionPlan
 }
 
 /**
- * Get feature limit for merchant from plan
+ * Get feature limit for tenant from plan
  */
-export async function getFeatureLimit(merchantId: string, featureKey: string): Promise<number | "unlimited" | null> {
-  const subscription = await getMerchantSubscription(merchantId);
+export async function getFeatureLimit(tenantId: string, featureKey: string): Promise<number | "unlimited" | null> {
+  const subscription = await getTenantSubscription(tenantId);
   if (!subscription) return null;
 
   const plan = await getSubscriptionPlan(subscription.planId);
@@ -337,7 +337,7 @@ export async function getFeatureLimit(merchantId: string, featureKey: string): P
  * Get current usage for a feature
  * Returns 0 if no usage tracking exists (to be implemented with database)
  */
-export async function getFeatureUsage(merchantId: string, featureKey: string): Promise<number> {
+export async function getFeatureUsage(tenantId: string, featureKey: string): Promise<number> {
   // TODO: Implement usage tracking from database
   // For now, return 0 as default
   // This should query a subscription_usage collection or similar
@@ -345,14 +345,14 @@ export async function getFeatureUsage(merchantId: string, featureKey: string): P
 }
 
 /**
- * Check if merchant can use a feature within limits
+ * Check if tenant can use a feature within limits
  */
-export async function canUseFeature(merchantId: string, featureKey: string, amount: number = 1): Promise<boolean> {
-  const limit = await getFeatureLimit(merchantId, featureKey);
+export async function canUseFeature(tenantId: string, featureKey: string, amount: number = 1): Promise<boolean> {
+  const limit = await getFeatureLimit(tenantId, featureKey);
   if (limit === null) return false; // Feature doesn't exist
   if (limit === "unlimited") return true;
 
-  const currentUsage = await getFeatureUsage(merchantId, featureKey);
+  const currentUsage = await getFeatureUsage(tenantId, featureKey);
   return currentUsage + amount <= limit;
 }
 
@@ -360,9 +360,9 @@ export async function canUseFeature(merchantId: string, featureKey: string, amou
  * Increment feature usage
  * TODO: Implement with database usage tracking
  */
-export async function incrementFeatureUsage(merchantId: string, featureKey: string, amount: number = 1): Promise<void> {
+export async function incrementFeatureUsage(tenantId: string, featureKey: string, amount: number = 1): Promise<void> {
   // TODO: Implement usage tracking to database
   // This should update/create a subscription_usage document
   // For now, just log it
-  console.log(`[Feature Usage] ${merchantId} - ${featureKey}: +${amount}`);
+  console.log(`[Feature Usage] ${tenantId} - ${featureKey}: +${amount}`);
 }

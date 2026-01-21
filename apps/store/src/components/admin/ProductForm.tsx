@@ -220,7 +220,7 @@ export default function ProductForm({ initial }: { initial?: Product }) {
       toast.loading(id ? "Updating product..." : "Creating product...", { id: "save-product" });
       await apiRequest(id ? "PUT" : "POST", id ? `/products/${id}` : "/products", payload);
       toast.success(id ? "Product updated" : "Product created", { id: "save-product" });
-      router.push("/merchant/products");
+      router.push("/tenant/products");
       router.refresh();
     } catch (error: any) {
       toast.error(error?.message || "Failed to save product", { id: "save-product" });
@@ -756,7 +756,7 @@ export default function ProductForm({ initial }: { initial?: Product }) {
 
         {/* Action Buttons */}
         <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2 border-t'>
-          <Button type='button' variant='outline' size='sm' onClick={() => router.push("/merchant/products")} className='h-9'>
+          <Button type='button' variant='outline' size='sm' onClick={() => router.push("/tenant/products")} className='h-9'>
             Cancel
           </Button>
           <Button type='submit' size='sm' disabled={submitting} className='h-9 min-w-[120px]'>

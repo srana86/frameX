@@ -43,7 +43,7 @@ interface FeatureRequest {
   priority: FeatureRequestPriority;
   contactEmail?: string;
   contactPhone?: string;
-  merchantId: string;
+  tenantId: string;
   status: FeatureRequestStatus;
   createdAt: string;
 }
@@ -107,7 +107,7 @@ export default function FeatureRequestsPage() {
         q === "" ||
         r.title.toLowerCase().includes(q) ||
         r.description.toLowerCase().includes(q) ||
-        r.merchantId.toLowerCase().includes(q) ||
+        r.tenantId.toLowerCase().includes(q) ||
         (r.contactEmail || "").toLowerCase().includes(q) ||
         (r.contactPhone || "").toLowerCase().includes(q);
       return matchesStatus && matchesPriority && matchesSearch;
@@ -146,7 +146,7 @@ export default function FeatureRequestsPage() {
             Feature Requests
           </h1>
           <p className="text-muted-foreground">
-            Merchant-submitted requests from the support portal.
+            Tenant-submitted requests from the support portal.
           </p>
         </div>
         <Button variant="outline" onClick={loadRequests} disabled={loading}>
@@ -163,7 +163,7 @@ export default function FeatureRequestsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search by title, description, merchant, or contact..."
+                placeholder="Search by title, description, tenant, or contact..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -236,7 +236,7 @@ export default function FeatureRequestsPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Title</TableHead>
-                        <TableHead>Merchant</TableHead>
+                        <TableHead>Tenant</TableHead>
                         <TableHead>Priority</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Contact</TableHead>
@@ -261,7 +261,7 @@ export default function FeatureRequestsPage() {
                             </p>
                           </TableCell>
                           <TableCell className="font-mono text-xs text-muted-foreground">
-                            {req.merchantId}
+                            {req.tenantId}
                           </TableCell>
                           <TableCell>
                             <Select

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The FraudShield integration provides powerful fraud detection capabilities by analyzing customer courier delivery history across multiple courier services in Bangladesh. This helps merchants make informed decisions about order processing and identify potentially risky customers.
+The FraudShield integration provides powerful fraud detection capabilities by analyzing customer courier delivery history across multiple courier services in Bangladesh. This helps tenants make informed decisions about order processing and identify potentially risky customers.
 
 ## Features
 
@@ -45,13 +45,13 @@ FRAUDSHIELD_API_KEY=your_fraudshield_api_key_here
 
 ### 3. Access the Fraud Check Page
 
-Navigate to `/merchant/fraud-check` in your admin dashboard to start using the fraud detection feature.
+Navigate to `/tenant/fraud-check` in your admin dashboard to start using the fraud detection feature.
 
 ## How to Use
 
 ### Checking a Customer
 
-1. Go to **Merchant Dashboard** → **Settings** → **Fraud Check**
+1. Go to **Tenant Dashboard** → **Settings** → **Fraud Check**
 2. Enter the customer's Bangladeshi phone number (e.g., 01712345678)
 3. Click **Check** or press Enter
 4. View the comprehensive fraud risk assessment
@@ -83,7 +83,7 @@ Navigate to `/merchant/fraud-check` in your admin dashboard to start using the f
 ### Check Customer
 
 ```typescript
-POST /api/merchant/fraud-check
+POST /api/tenant/fraud-check
 Content-Type: application/json
 
 {
@@ -118,7 +118,7 @@ Content-Type: application/json
 ### Get Usage Statistics
 
 ```typescript
-GET /api/merchant/fraud-check
+GET /api/tenant/fraud-check
 ```
 
 **Response:**
@@ -152,11 +152,11 @@ my-app/
 │       └── fraudshield-api.ts          # New FraudShield API client
 ├── app/
 │   ├── api/
-│   │   └── merchant/
+│   │   └── tenant/
 │   │       └── fraud-check/
 │   │           └── route.ts            # API endpoints
 │   └── (home)/
-│       └── merchant/
+│       └── tenant/
 │           └── fraud-check/
 │               ├── page.tsx            # Page component
 │               └── FraudCheckClient.tsx # Client component with UI
@@ -178,13 +178,13 @@ my-app/
 - Request/response type definitions
 - Error handling
 
-#### 3. API Routes (`app/api/merchant/fraud-check/route.ts`)
+#### 3. API Routes (`app/api/tenant/fraud-check/route.ts`)
 - GET endpoint for usage statistics
 - POST endpoint for customer checks
 - Environment variable handling
 - Error responses
 
-#### 4. UI Components (`app/(home)/merchant/fraud-check/`)
+#### 4. UI Components (`app/(home)/tenant/fraud-check/`)
 - Main page component
 - Client component with state management
 - Beautiful, responsive design

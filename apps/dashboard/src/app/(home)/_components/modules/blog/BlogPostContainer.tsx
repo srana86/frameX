@@ -39,7 +39,7 @@ const getPostById = (id: string) => {
       <h2 class="text-2xl font-bold text-gray-900 mt-10 mb-4">3. Sustainable Logistics</h2>
       <p class="mb-6 text-lg leading-relaxed text-gray-700">Sustainability has moved from a "nice-to-have" to a deal-breaker. Consumers are demanding transparency in the supply chain. We're seeing a massive shift towards carbon-neutral shipping, biodegradable packaging, and circular economy models where recommerce (reselling used goods) is integrated directly into the checkout flow.</p>
       
-      <p class="mb-6 text-lg leading-relaxed text-gray-700">Merchants who adapt to these trends aren't just surviving; they're thriving. The tools to implement these strategies are more accessible than ever, thanks to platforms like FrameX making enterprise-grade technology available to everyone.</p>
+      <p class="mb-6 text-lg leading-relaxed text-gray-700">Tenants who adapt to these trends aren't just surviving; they're thriving. The tools to implement these strategies are more accessible than ever, thanks to platforms like FrameX making enterprise-grade technology available to everyone.</p>
     `,
   };
 };

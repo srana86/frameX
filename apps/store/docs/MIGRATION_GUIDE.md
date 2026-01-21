@@ -19,12 +19,12 @@ export async function GET() {
 
 ```typescript
 // app/api/products/route.ts
-import { getMerchantCollection } from "@/lib/mongodb-tenant";
+import { getTenantCollection } from "@/lib/mongodb-tenant";
 import { requireAuth } from "@/lib/auth-helpers";
 
 export async function GET() {
-  const user = await requireAuth("merchant");
-  const col = await getMerchantCollection("products", user.id);
+  const user = await requireAuth("tenant");
+  const col = await getTenantCollection("products", user.id);
   const products = await col.find({}).toArray();
   return NextResponse.json(products);
 }
@@ -39,19 +39,19 @@ export async function GET() {
 import { getCollection } from "@/lib/mongodb";
 
 // NEW
-import { getMerchantCollection } from "@/lib/mongodb-tenant";
+import { getTenantCollection } from "@/lib/mongodb-tenant";
 import { requireAuth } from "@/lib/auth-helpers";
 ```
 
-### Step 2: Get Merchant Context
+### Step 2: Get Tenant Context
 
 ```typescript
-// Get authenticated merchant
-const user = await requireAuth("merchant");
-const merchantId = user.id;
+// Get authenticated tenant
+const user = await requireAuth("tenant");
+const tenantId = user.id;
 ```
 
-### Step 3: Use Merchant Collection
+### Step 3: Use Tenant Collection
 
 ```typescript
 // OLD
@@ -59,26 +59,26 @@ const col = await getCollection("products");
 const items = await col.find({}).toArray();
 
 // NEW
-const col = await getMerchantCollection("products", merchantId);
+const col = await getTenantCollection("products", tenantId);
 const items = await col.find({}).toArray();
-// Automatically filters by merchantId
+// Automatically filters by tenantId
 ```
 
 ### Step 4: Update POST/PUT/DELETE
 
 ```typescript
 // POST - Create
-const col = await getMerchantCollection("products", merchantId);
+const col = await getTenantCollection("products", tenantId);
 await col.insertOne({ name: "Product", price: 100 });
-// merchantId automatically added
+// tenantId automatically added
 
 // PUT - Update
 await col.updateOne({ id: productId }, { $set: { name: "Updated" } });
-// Only updates if merchantId matches
+// Only updates if tenantId matches
 
 // DELETE
 await col.deleteOne({ id: productId });
-// Only deletes if merchantId matches
+// Only deletes if tenantId matches
 ```
 
 ## 🎯 APIs to Update
@@ -106,15 +106,15 @@ await col.deleteOne({ id: productId });
 
 ```typescript
 import { NextResponse } from "next/server";
-import { getMerchantCollection } from "@/lib/mongodb-tenant";
+import { getTenantCollection } from "@/lib/mongodb-tenant";
 import { requireAuth } from "@/lib/auth-helpers";
 import type { Product } from "@/lib/types";
 import { ObjectId } from "mongodb";
 
 export async function GET() {
   try {
-    const user = await requireAuth("merchant");
-    const col = await getMerchantCollection("products", user.id);
+    const user = await requireAuth("tenant");
+    const col = await getTenantCollection("products", user.id);
 
     const docs = await col.find({}).sort({ order: 1, _id: -1 }).toArray();
     const items: Product[] = docs.map((d: any) => ({
@@ -132,10 +132,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const user = await requireAuth("merchant");
+    const user = await requireAuth("tenant");
     const body = await request.json();
 
-    const col = await getMerchantCollection("products", user.id);
+    const col = await getTenantCollection("products", user.id);
 
     // Check product limit (from subscription)
     // ... subscription check code ...
@@ -144,7 +144,7 @@ export async function POST(request: Request) {
       ...body,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      // merchantId is automatically added by getMerchantCollection
+      // tenantId is automatically added by getTenantCollection
     };
 
     await col.insertOne(newProduct);
@@ -161,42 +161,42 @@ export async function POST(request: Request) {
 
 ## ⚠️ Important Notes
 
-1. **Always use `getMerchantCollection`** for merchant-specific data
-2. **Never manually add merchantId** - it's automatic
-3. **Always require authentication** before accessing merchant data
-4. **Use `requireAuth("merchant")`** to get merchant context
-5. **Test data isolation** - ensure merchants can't see each other's data
+1. **Always use `getTenantCollection`** for tenant-specific data
+2. **Never manually add tenantId** - it's automatic
+3. **Always require authentication** before accessing tenant data
+4. **Use `requireAuth("tenant")`** to get tenant context
+5. **Test data isolation** - ensure tenants can't see each other's data
 
 ## 🧪 Testing Multi-Tenant Isolation
 
 ```typescript
-// Test that merchant A can't see merchant B's data
-const merchantA = await requireAuth("merchant"); // merchant_123
-const merchantB = await requireAuth("merchant"); // merchant_456
+// Test that tenant A can't see tenant B's data
+const tenantA = await requireAuth("tenant"); // tenant_123
+const tenantB = await requireAuth("tenant"); // tenant_456
 
-const colA = await getMerchantCollection("products", merchantA.id);
-const colB = await getMerchantCollection("products", merchantB.id);
+const colA = await getTenantCollection("products", tenantA.id);
+const colB = await getTenantCollection("products", tenantB.id);
 
 const productsA = await colA.find({}).toArray();
 const productsB = await colB.find({}).toArray();
 
-// productsA should only contain merchant_123's products
-// productsB should only contain merchant_456's products
+// productsA should only contain tenant_123's products
+// productsB should only contain tenant_456's products
 // They should never overlap
 ```
 
 ## 🔐 Security Checklist
 
-- [ ] All merchant APIs require authentication
-- [ ] All queries use `getMerchantCollection` (not `getCollection`)
-- [ ] No direct database access without merchantId
-- [ ] Super admin uses `getCollection` (no merchantId filter)
-- [ ] Custom domain validation before merchant access
+- [ ] All tenant APIs require authentication
+- [ ] All queries use `getTenantCollection` (not `getCollection`)
+- [ ] No direct database access without tenantId
+- [ ] Super admin uses `getCollection` (no tenantId filter)
+- [ ] Custom domain validation before tenant access
 - [ ] Environment variables isolated per deployment
 
 ## 📊 Database Migration
 
-### Add merchantId to Existing Data
+### Add tenantId to Existing Data
 
 ```typescript
 // Migration script
@@ -205,10 +205,10 @@ import { getCollection } from "@/lib/mongodb";
 async function migrateExistingData() {
   const productsCol = await getCollection("products");
 
-  // Assign all existing products to a default merchant
-  const defaultMerchantId = "merchant_default";
+  // Assign all existing products to a default tenant
+  const defaultTenantId = "tenant_default";
 
-  await productsCol.updateMany({ merchantId: { $exists: false } }, { $set: { merchantId: defaultMerchantId } });
+  await productsCol.updateMany({ tenantId: { $exists: false } }, { $set: { tenantId: defaultTenantId } });
 
   // Repeat for other collections
 }
@@ -218,17 +218,17 @@ async function migrateExistingData() {
 
 | Task           | Old Code                      | New Code                                          |
 | -------------- | ----------------------------- | ------------------------------------------------- |
-| Get collection | `getCollection("products")`   | `getMerchantCollection("products", merchantId)`   |
-| Find all       | `col.find({})`                | `col.find({})` (auto-filters by merchantId)       |
-| Insert         | `col.insertOne(doc)`          | `col.insertOne(doc)` (auto-adds merchantId)       |
-| Update         | `col.updateOne({id}, update)` | `col.updateOne({id}, update)` (checks merchantId) |
-| Delete         | `col.deleteOne({id})`         | `col.deleteOne({id})` (checks merchantId)         |
+| Get collection | `getCollection("products")`   | `getTenantCollection("products", tenantId)`   |
+| Find all       | `col.find({})`                | `col.find({})` (auto-filters by tenantId)       |
+| Insert         | `col.insertOne(doc)`          | `col.insertOne(doc)` (auto-adds tenantId)       |
+| Update         | `col.updateOne({id}, update)` | `col.updateOne({id}, update)` (checks tenantId) |
+| Delete         | `col.deleteOne({id})`         | `col.deleteOne({id})` (checks tenantId)         |
 
 ## ✅ Migration Complete When
 
-- [ ] All merchant APIs use `getMerchantCollection`
+- [ ] All tenant APIs use `getTenantCollection`
 - [ ] All APIs require authentication
-- [ ] Existing data has merchantId field
+- [ ] Existing data has tenantId field
 - [ ] Data isolation tested
 - [ ] Super admin panel functional
 - [ ] Deployment system ready

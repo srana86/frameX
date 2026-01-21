@@ -17,7 +17,7 @@ declare global {
 
 /**
  * Tenant middleware - extracts and validates tenant from request
- * Priority: 1. x-domain header, 2. Origin header, 3. x-merchant-id header
+ * Priority: 1. x-domain header, 2. Origin header, 3. x-tenant-id header
  */
 export const tenantMiddleware = async (
     req: Request,
@@ -101,9 +101,9 @@ export const tenantMiddleware = async (
             }
         }
 
-        // Priority 5: x-merchant-id header (direct fallback)
+        // Priority 5: x-tenant-id / x-tenant-id header (direct fallback)
         if (!tenantId) {
-            tenantId = req.headers["x-merchant-id"] as string;
+            tenantId = (req.headers["x-tenant-id"] as string) || (req.headers["x-tenant-id"] as string);
         }
 
         console.log(`[TenantMiddleware] Resolved tenantId: ${tenantId} for URL: ${req.url}`);
@@ -112,7 +112,7 @@ export const tenantMiddleware = async (
             console.log("[TenantMiddleware] No tenant ID found in headers or domain");
             return res.status(400).json({
                 success: false,
-                message: "Tenant identification required. Send x-domain or x-merchant-id header.",
+                message: "Tenant identification required. Send x-domain or x-tenant-id header.",
             });
         }
 
@@ -166,7 +166,7 @@ export const optionalTenantMiddleware = async (
     next: NextFunction
 ) => {
     try {
-        const tenantId = req.headers["x-merchant-id"] as string;
+        const tenantId = (req.headers["x-tenant-id"] as string) || (req.headers["x-tenant-id"] as string);
 
         if (tenantId) {
             req.tenantId = tenantId;

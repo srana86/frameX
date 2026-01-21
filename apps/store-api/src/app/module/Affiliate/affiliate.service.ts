@@ -328,7 +328,7 @@ const getWithdrawalsFromDB = async (
 ) => {
   let finalAffiliateId = affiliateId;
 
-  if (user.role !== "MERCHANT" && user.role !== "ADMIN" && !affiliateId) {
+  if (user.role !== "TENANT" && user.role !== "ADMIN" && !affiliateId) {
     const affiliate = await prisma.affiliate.findFirst({
       where: { tenantId, userId: user.id },
     });

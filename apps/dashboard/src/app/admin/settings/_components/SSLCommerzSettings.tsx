@@ -306,7 +306,7 @@ export function SSLCommerzSettings() {
                 placeholder="Enter your Store ID"
               />
               <p className="text-xs text-muted-foreground">
-                Your SSLCommerz merchant Store ID
+                Your SSLCommerz tenant Store ID
               </p>
             </div>
 
@@ -338,7 +338,7 @@ export function SSLCommerzSettings() {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Your SSLCommerz merchant Store Password
+                Your SSLCommerz tenant Store Password
               </p>
             </div>
           </div>
@@ -398,7 +398,7 @@ export function SSLCommerzSettings() {
             Webhook Configuration
           </CardTitle>
           <CardDescription>
-            Configure these URLs in your SSLCommerz merchant dashboard
+            Configure these URLs in your SSLCommerz tenant dashboard
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -421,7 +421,7 @@ export function SSLCommerzSettings() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Set this URL in your SSLCommerz merchant panel for payment
+              Set this URL in your SSLCommerz tenant panel for payment
               verification
             </p>
           </div>
@@ -432,12 +432,12 @@ export function SSLCommerzSettings() {
               <li>
                 Log in to your{" "}
                 <a
-                  href="https://merchant.sslcommerz.com"
+                  href="https://tenant.sslcommerz.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
-                  SSLCommerz Merchant Panel
+                  SSLCommerz Tenant Panel
                 </a>
               </li>
               <li>Navigate to Settings → API/Integration</li>

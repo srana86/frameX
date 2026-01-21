@@ -9,7 +9,7 @@ export interface AuthUser {
   fullName: string;
   email?: string;
   phone?: string;
-  role: "customer" | "staff" | "merchant" | "admin" | "super_admin";
+  role: "customer" | "staff" | "tenant" | "admin" | "super_admin";
   tenantId?: string;
 }
 
@@ -19,9 +19,9 @@ interface UseAuthOptions {
    */
   required?: boolean;
   /**
-   * Required role to access the page (customer < merchant < admin)
+   * Required role to access the page (customer < tenant < admin)
    */
-  requiredRole?: "customer" | "staff" | "merchant" | "admin" | "super_admin";
+  requiredRole?: "customer" | "staff" | "tenant" | "admin" | "super_admin";
   /**
    * Redirect URL when not authenticated
    */
@@ -65,7 +65,7 @@ export function useAuth(options: UseAuthOptions = {}): UseAuthReturn {
       fullName: session.data.user.name || "",
       email: session.data.user.email,
       phone: session.data.user.phone,
-      role: ((session.data.user.role || "CUSTOMER").toLowerCase() as "customer" | "staff" | "merchant" | "admin" | "super_admin"),
+      role: ((session.data.user.role || "CUSTOMER").toLowerCase() as "customer" | "staff" | "tenant" | "admin" | "super_admin"),
       tenantId: session.data.user.tenantId,
     }
     : null;
@@ -108,7 +108,7 @@ export function useAuth(options: UseAuthOptions = {}): UseAuthReturn {
       const roleHierarchy: Record<string, number> = {
         customer: 1,
         staff: 2,
-        merchant: 3,
+        tenant: 3,
         admin: 4,
         super_admin: 5,
       };
@@ -121,8 +121,8 @@ export function useAuth(options: UseAuthOptions = {}): UseAuthReturn {
         // Redirect to appropriate page based on role
         if (user.role === "customer") {
           router.push("/account");
-        } else if (user.role === "merchant") {
-          router.push("/merchant");
+        } else if (user.role === "tenant") {
+          router.push("/tenant");
         } else {
           router.push("/");
         }

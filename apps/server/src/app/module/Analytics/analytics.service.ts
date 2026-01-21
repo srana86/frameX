@@ -2,7 +2,7 @@ import { prisma } from "@framex/database";
 import { isExpiringSoon } from "../../utils/date-utils";
 
 const getAnalytics = async () => {
-  // Using Tenant instead of Merchant (merged models)
+  // Using Tenant instead of Tenant (merged models)
   const [tenants, subscriptions, plans, deployments, databases] =
     await Promise.all([
       prisma.tenant.findMany(),
@@ -16,8 +16,8 @@ const getAnalytics = async () => {
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-  // Tenant stats (keeping 'merchant' naming for backward compatibility with frontend)
-  const merchantStats = {
+  // Tenant stats (keeping 'tenant' naming for backward compatibility with frontend)
+  const tenantStats = {
     total: tenants.length,
     active: tenants.filter((t) => t.status === "ACTIVE").length,
     trial: tenants.filter((t) => t.status === "TRIAL").length,
@@ -138,7 +138,7 @@ const getAnalytics = async () => {
 
   // Growth trends (mock data - in production, this would come from historical data)
   const growthTrends = {
-    merchantGrowth: "+12%",
+    tenantGrowth: "+12%",
     revenueGrowth: "+15%",
     subscriptionGrowth: "+8%",
     deploymentGrowth: "+5%",
@@ -160,7 +160,7 @@ const getAnalytics = async () => {
     ...tenants
       .filter((t) => t.createdAt)
       .map((t) => ({
-        type: "merchant",
+        type: "tenant",
         action: "created",
         id: t.id,
         name: t.name,
@@ -192,7 +192,7 @@ const getAnalytics = async () => {
   return {
     success: true,
     timestamp: now.toISOString(),
-    merchants: merchantStats, // Keep 'merchants' key for backward compatibility
+    tenants: tenantStats, // Keep 'tenants' key for backward compatibility
     subscriptions: subscriptionStats,
     plans: planStats,
     deployments: deploymentStats,

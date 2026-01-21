@@ -50,9 +50,9 @@ const getCommissions = catchAsync(async (req: Request, res: Response) => {
   const user = (req as any).user;
   const { affiliateId } = req.query;
 
-  const userId = user.role !== "merchant" ? user.id : null;
+  const userId = user.role !== "tenant" ? user.id : null;
   const finalAffiliateId =
-    user.role === "merchant" && affiliateId ? String(affiliateId) : null;
+    user.role === "tenant" && affiliateId ? String(affiliateId) : null;
 
   const result = await AffiliateServices.getCommissionsFromDB(
     user.tenantId,
@@ -125,7 +125,7 @@ const handleWithdrawal = catchAsync(async (req: Request, res: Response) => {
       message: "Withdrawal request created successfully",
       data: { withdrawal: result },
     });
-  } else if (action === "update" && user.role === "merchant") {
+  } else if (action === "update" && user.role === "tenant") {
     const result = await AffiliateServices.updateWithdrawalFromDB(
       user.tenantId,
       withdrawalId,

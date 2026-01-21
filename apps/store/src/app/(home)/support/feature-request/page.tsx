@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { FeatureRequestForm } from "./FeatureRequestForm";
-import { getMerchantId } from "@/lib/env-utils";
+import { getTenantId } from "@/lib/env-utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,16 +13,16 @@ type FeatureRequest = {
   priority: "low" | "medium" | "high";
   contactEmail?: string;
   contactPhone?: string;
-  merchantId: string;
+  tenantId: string;
   status: "new" | "in_review" | "resolved";
   createdAt: string;
 };
 
-async function getMyRequests(merchantId: string): Promise<FeatureRequest[]> {
+async function getMyRequests(tenantId: string): Promise<FeatureRequest[]> {
   const apiBase = process.env.SUPER_ADMIN_URL || process.env.NEXT_PUBLIC_SUPERADMIN_API_URL;
   if (!apiBase) return [];
   try {
-    const res = await fetch(`${apiBase}/api/feature-requests?merchantId=${merchantId}`, { cache: "no-store" });
+    const res = await fetch(`${apiBase}/api/feature-requests?tenantId=${tenantId}`, { cache: "no-store" });
     if (!res.ok) return [];
     const data = await res.json();
     return data.data || [];
@@ -37,15 +37,15 @@ export const metadata: Metadata = {
 };
 
 export default async function FeatureRequestPage() {
-  const merchantId = getMerchantId();
-  const requests = merchantId ? await getMyRequests(merchantId) : [];
+  const tenantId = getTenantId();
+  const requests = tenantId ? await getMyRequests(tenantId) : [];
 
-  if (!merchantId) {
+  if (!tenantId) {
     return (
       <div className='mx-auto max-w-3xl px-4 py-10 sm:py-14 space-y-4'>
         <Alert variant='destructive'>
-          <AlertTitle>Missing merchant configuration</AlertTitle>
-          <AlertDescription>Set MERCHANT_ID to submit a feature request.</AlertDescription>
+          <AlertTitle>Missing tenant configuration</AlertTitle>
+          <AlertDescription>Set TENANT_ID to submit a feature request.</AlertDescription>
         </Alert>
       </div>
     );

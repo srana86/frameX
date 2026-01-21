@@ -90,7 +90,7 @@ export default function HeroContainer() {
             padding: "0 0.5rem",
           }}
         >
-          Launch your professional e-commerce store in minutes with FrameX Tech. We help merchants in Bangladesh build affordable,
+          Launch your professional e-commerce store in minutes with FrameX Tech. We help tenants in Bangladesh build affordable,
           fully-featured online stores to start selling and grow faster.
         </p>
         {/* CTA Buttons - Always flex */}

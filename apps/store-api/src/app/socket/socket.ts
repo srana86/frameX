@@ -19,7 +19,7 @@ let io: SocketIOServer | null = null;
  * Architecture decisions:
  * - Redis adapter enables pub/sub across multiple server instances
  * - JWT authentication on handshake prevents unauthorized connections
- * - Rooms enable targeted messaging (merchant-specific, user-specific)
+ * - Rooms enable targeted messaging (tenant-specific, user-specific)
  * - Rate limiting prevents event spam and DDOS
  * - Stateless design (no in-memory state) for horizontal scaling
  */

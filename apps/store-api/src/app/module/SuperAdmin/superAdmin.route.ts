@@ -9,42 +9,42 @@ const router = express.Router();
 // All super admin routes require admin role
 router.use(auth("admin"));
 
-// Get all merchants
-router.get("/merchants", SuperAdminControllers.getAllMerchants);
+// Get all tenants
+router.get("/tenants", SuperAdminControllers.getAllTenants);
 
-// Create new merchant
+// Create new tenant
 router.post(
-  "/merchants",
-  validateRequest(SuperAdminValidation.createMerchantValidationSchema),
-  SuperAdminControllers.createMerchant
+  "/tenants",
+  validateRequest(SuperAdminValidation.createTenantValidationSchema),
+  SuperAdminControllers.createTenant
 );
 
-// Update merchant
+// Update tenant
 router.put(
-  "/merchants",
-  validateRequest(SuperAdminValidation.updateMerchantValidationSchema),
-  SuperAdminControllers.updateMerchant
+  "/tenants",
+  validateRequest(SuperAdminValidation.updateTenantValidationSchema),
+  SuperAdminControllers.updateTenant
 );
 
-// Get full merchant data
-router.get("/merchants/:id/full", SuperAdminControllers.getFullMerchantData);
+// Get full tenant data
+router.get("/tenants/:id/full", SuperAdminControllers.getFullTenantData);
 
-// Get merchant database
+// Get tenant database
 router.get(
-  "/merchants/:id/database",
-  SuperAdminControllers.getMerchantDatabase
+  "/tenants/:id/database",
+  SuperAdminControllers.getTenantDatabase
 );
 
-// Get merchant deployment
+// Get tenant deployment
 router.get(
-  "/merchants/:id/deployment",
-  SuperAdminControllers.getMerchantDeployment
+  "/tenants/:id/deployment",
+  SuperAdminControllers.getTenantDeployment
 );
 
-// Get merchant subscription
+// Get tenant subscription
 router.get(
-  "/merchants/:id/subscription",
-  SuperAdminControllers.getMerchantSubscription
+  "/tenants/:id/subscription",
+  SuperAdminControllers.getTenantSubscription
 );
 
 export const SuperAdminRoutes = router;

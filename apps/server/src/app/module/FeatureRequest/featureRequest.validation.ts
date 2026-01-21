@@ -10,7 +10,7 @@ export const createFeatureRequestValidationSchema = z.object({
     priority: featureRequestPriorityEnum.optional(),
     contactEmail: z.string().email().optional(),
     contactPhone: z.string().optional(),
-    merchantId: z.string().min(1, "Merchant ID is required"),
+    tenantId: z.string().min(1, "Tenant ID is required"),
     status: featureRequestStatusEnum.optional(),
   }),
 });

@@ -4,20 +4,20 @@ import { PathaoControllers } from "./pathao.controller";
 
 const router = express.Router();
 
-// Pathao endpoints (admin/merchant)
+// Pathao endpoints (admin/tenant)
 router.get(
   "/cities",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   PathaoControllers.getPathaoCities
 );
 router.get(
   "/zones",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   PathaoControllers.getPathaoZones
 );
 router.get(
   "/areas",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   PathaoControllers.getPathaoAreas
 );
 

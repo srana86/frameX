@@ -34,7 +34,7 @@ const trackVisit = catchAsync(async (req: Request, res: Response) => {
 
 // Get visits
 const getVisits = catchAsync(async (req: Request, res: Response) => {
-  const tenantId = req.user?.merchantId;
+  const tenantId = req.user?.tenantId;
   const result = await VisitsServices.getVisitsFromDB(tenantId as string, req.query);
 
   sendResponse(res, {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { loadMerchantCollectionData } from "@/lib/merchant-data-loader";
+import { loadTenantCollectionData } from "@/lib/tenant-data-loader";
 import type { Product } from "@/lib/types";
 import { ProductsListingClient } from "./ProductsListingClient";
 
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 async function getProducts(): Promise<Product[]> {
   try {
-    const docs = await loadMerchantCollectionData<any>("products", {}, { sort: { order: 1, _id: -1 } });
+    const docs = await loadTenantCollectionData<any>("products", {}, { sort: { order: 1, _id: -1 } });
     return docs.map((d) => ({
       id: String(d._id),
       slug: d.slug,

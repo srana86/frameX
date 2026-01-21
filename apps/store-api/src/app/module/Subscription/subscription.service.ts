@@ -12,9 +12,8 @@ const getActiveSubscriptionPlansFromDB = async () => {
   return result;
 };
 
-// Get current tenant subscription (renamed from merchant)
-const getCurrentMerchantSubscriptionFromDB = async (tenantId: string) => {
-  // Using TenantSubscription instead of MerchantSubscription
+// Get current tenant subscription
+const getTenantSubscriptionFromDB = async (tenantId: string) => {
   const result = await prisma.tenantSubscription.findFirst({
     where: {
       tenantId,
@@ -28,7 +27,7 @@ const getCurrentMerchantSubscriptionFromDB = async (tenantId: string) => {
 
 // Get subscription status
 const getSubscriptionStatusFromDB = async (tenantId: string) => {
-  const subscription = await getCurrentMerchantSubscriptionFromDB(tenantId);
+  const subscription = await getTenantSubscriptionFromDB(tenantId);
 
   return {
     subscription,
@@ -40,7 +39,7 @@ const getSubscriptionStatusFromDB = async (tenantId: string) => {
   };
 };
 
-// Create subscription for tenant (was merchant)
+// Create subscription for tenant (was tenant)
 const createSubscriptionIntoDB = async (
   tenantId: string,
   payload: { planId: string; trialDays?: number }
@@ -106,7 +105,7 @@ const createSubscriptionIntoDB = async (
 
 export const SubscriptionServices = {
   getActiveSubscriptionPlansFromDB,
-  getCurrentMerchantSubscriptionFromDB, // Keep name for backward compat
+  getTenantSubscriptionFromDB,
   getSubscriptionStatusFromDB,
   createSubscriptionIntoDB,
 };

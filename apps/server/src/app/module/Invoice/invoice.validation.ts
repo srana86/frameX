@@ -17,9 +17,9 @@ const invoiceItemSchema = z.object({
 
 export const createInvoiceValidationSchema = z.object({
   body: z.object({
-    merchantId: z.string().min(1, "Merchant ID is required"),
-    merchantName: z.string().min(1, "Merchant name is required"),
-    merchantEmail: z.string().email("Invalid merchant email"),
+    tenantId: z.string().min(1, "Tenant ID is required"),
+    tenantName: z.string().min(1, "Tenant name is required"),
+    tenantEmail: z.string().email("Invalid tenant email"),
     subscriptionId: z.string().optional(),
     planId: z.string().optional(),
     planName: z.string().optional(),
@@ -39,8 +39,8 @@ export const updateInvoiceValidationSchema = z.object({
     id: z.string().min(1, "Invoice ID is required"),
   }),
   body: z.object({
-    merchantName: z.string().optional(),
-    merchantEmail: z.string().email().optional(),
+    tenantName: z.string().optional(),
+    tenantEmail: z.string().email().optional(),
     subscriptionId: z.string().optional(),
     planId: z.string().optional(),
     planName: z.string().optional(),

@@ -1,5 +1,5 @@
 export type ActivityLogType =
-  | "merchant"
+  | "tenant"
   | "subscription"
   | "plan"
   | "deployment"

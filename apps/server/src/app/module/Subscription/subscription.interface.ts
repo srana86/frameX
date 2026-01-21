@@ -8,7 +8,7 @@ export type BillingCycle = "monthly" | "semi_annual" | "yearly";
 
 export interface ISubscription {
   id: string;
-  merchantId: string;
+  tenantId: string;
   planId: string;
   planName?: string;
   billingCycleMonths: number; // 1, 6, or 12

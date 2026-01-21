@@ -58,9 +58,9 @@ import { api } from "@/lib/api-client";
 interface Invoice {
   id: string;
   invoiceNumber: string;
-  merchantId: string;
-  merchantName: string;
-  merchantEmail: string;
+  tenantId: string;
+  tenantName: string;
+  tenantEmail: string;
   subscriptionId?: string;
   planName: string;
   billingCycle: string;
@@ -167,8 +167,8 @@ export default function InvoicesPage() {
     return invoices.filter((i) => {
       const matchesSearch =
         searchQuery === "" ||
-        i.merchantName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        i.merchantEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        i.tenantName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        i.tenantEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         i.invoiceNumber?.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesStatus = statusFilter === "all" || i.status === statusFilter;
@@ -222,7 +222,7 @@ export default function InvoicesPage() {
     const csvContent = [
       [
         "Invoice #",
-        "Merchant",
+        "Tenant",
         "Email",
         "Amount",
         "Status",
@@ -232,8 +232,8 @@ export default function InvoicesPage() {
       ...filteredInvoices.map((i) =>
         [
           i.invoiceNumber,
-          i.merchantName,
-          i.merchantEmail,
+          i.tenantName,
+          i.tenantEmail,
           i.amount,
           i.status,
           new Date(i.dueDate).toLocaleDateString(),
@@ -361,7 +361,7 @@ export default function InvoicesPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search by merchant, email, or invoice number..."
+                placeholder="Search by tenant, email, or invoice number..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -420,7 +420,7 @@ export default function InvoicesPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Invoice</TableHead>
-                    <TableHead>Merchant</TableHead>
+                    <TableHead>Tenant</TableHead>
                     <TableHead>Plan</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
@@ -444,16 +444,16 @@ export default function InvoicesPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
-                            {(invoice.merchantName || "?")
+                            {(invoice.tenantName || "?")
                               .charAt(0)
                               .toUpperCase()}
                           </div>
                           <div>
                             <p className="font-medium">
-                              {invoice.merchantName}
+                              {invoice.tenantName}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {invoice.merchantEmail}
+                              {invoice.tenantEmail}
                             </p>
                           </div>
                         </div>
@@ -557,9 +557,9 @@ export default function InvoicesPage() {
                   <Label className="text-xs text-muted-foreground">
                     Bill To
                   </Label>
-                  <p className="font-medium">{viewingInvoice.merchantName}</p>
+                  <p className="font-medium">{viewingInvoice.tenantName}</p>
                   <p className="text-sm text-muted-foreground">
-                    {viewingInvoice.merchantEmail}
+                    {viewingInvoice.tenantEmail}
                   </p>
                 </div>
                 <div className="space-y-1 rounded-lg border p-4">

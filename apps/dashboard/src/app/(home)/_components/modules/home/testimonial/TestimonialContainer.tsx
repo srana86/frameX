@@ -26,7 +26,7 @@ const testimonials: Testimonial[] = [
     quote:
       "Finally launched my e-commerce business without breaking the bank. Everything I need is included - product management, order tracking, and customer support. My sales have doubled in the first month.",
     name: "Karim Hossain",
-    title: "Electronics Merchant",
+    title: "Electronics Tenant",
     rating: 5,
     avatar: "/testimonials/karim.avif",
   },
@@ -44,7 +44,7 @@ const testimonials: Testimonial[] = [
     quote:
       "Uploaded all my products easily with bulk import. Inventory tracking saved me so much time. The store looks professional and my customers love the smooth checkout process.",
     name: "Mahmudul Hasan",
-    title: "Home Decor Merchant",
+    title: "Home Decor Tenant",
     rating: 5,
     avatar: "/testimonials/mahmudul.avif",
   },
@@ -104,8 +104,8 @@ export default function TestimonialContainer() {
         {/* Header */}
         <div ref={headerRef} className='mb-12 sm:mb-16 md:mb-20'>
           <SectionHeader
-            title='Trusted by Thousands of Merchants'
-            subtitle='Join thousands of successful merchants who started their e-commerce business with our affordable platform — everything you need to launch and grow your online store.'
+            title='Trusted by Thousands of Tenants'
+            subtitle='Join thousands of successful tenants who started their e-commerce business with our affordable platform — everything you need to launch and grow your online store.'
           />
         </div>
 

@@ -5,12 +5,12 @@ import { InvoiceServices } from "./invoice.service";
 
 const getAllInvoices = catchAsync(async (req, res) => {
   const status = req.query.status as string;
-  const merchantId = req.query.merchantId as string;
+  const tenantId = req.query.tenantId as string;
   const limit = parseInt(req.query.limit as string) || 100;
 
   const result = await InvoiceServices.getAllInvoices(
     status,
-    merchantId,
+    tenantId,
     limit
   );
   sendResponse(res, {

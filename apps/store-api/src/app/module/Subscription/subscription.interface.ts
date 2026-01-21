@@ -34,9 +34,9 @@ export interface TSubscriptionPlan {
   updatedAt?: Date;
 }
 
-export interface TMerchantSubscription {
+export interface TTenantSubscription {
   id: string;
-  merchantId: string;
+  tenantId: string;
   planId: string;
   planName?: string;
   status: SubscriptionStatus;

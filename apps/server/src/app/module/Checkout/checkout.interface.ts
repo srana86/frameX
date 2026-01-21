@@ -6,10 +6,10 @@ export interface ICheckoutSession {
   planName?: string;
   planPrice: number;
   billingCycle?: string;
-  merchantName?: string;
-  merchantEmail?: string;
-  merchantPhone?: string;
-  merchantId?: string;
+  tenantName?: string;
+  tenantEmail?: string;
+  tenantPhone?: string;
+  tenantId?: string;
   customSubdomain?: string;
   customerName?: string;
   customerEmail?: string;

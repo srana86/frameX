@@ -7,12 +7,12 @@ import { PaymentValidation } from "./payment.validation";
 const router = express.Router();
 
 // Get all payments
-router.get("/", auth("admin", "merchant"), PaymentControllers.getAllPayments);
+router.get("/", auth("admin", "tenant"), PaymentControllers.getAllPayments);
 
 // Get single payment
 router.get(
   "/:id",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   PaymentControllers.getSinglePayment
 );
 

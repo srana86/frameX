@@ -7,7 +7,7 @@ import jwt, { type JwtPayload } from "jsonwebtoken";
  */
 export interface JWTPayload extends JwtPayload {
   userId: string;
-  role: "customer" | "merchant" | "admin";
+  role: "customer" | "tenant" | "admin";
   tenantId: string;
 }
 

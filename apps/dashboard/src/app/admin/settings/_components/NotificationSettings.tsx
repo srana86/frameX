@@ -19,7 +19,7 @@ import { toast } from "sonner";
 export function NotificationSettings() {
   const [settings, setSettings] = useState({
     emailNotifications: true,
-    newMerchantAlert: true,
+    newTenantAlert: true,
     paymentAlert: true,
     subscriptionExpiryAlert: true,
     systemAlert: true,
@@ -68,16 +68,16 @@ export function NotificationSettings() {
                   <Mail className="h-4 w-4 text-green-500" />
                 </div>
                 <div className="space-y-0.5">
-                  <Label className="text-base">New Merchant Registration</Label>
+                  <Label className="text-base">New Tenant Registration</Label>
                   <p className="text-sm text-muted-foreground">
-                    Get notified when a new merchant signs up
+                    Get notified when a new tenant signs up
                   </p>
                 </div>
               </div>
               <Switch
-                checked={settings.newMerchantAlert}
+                checked={settings.newTenantAlert}
                 onCheckedChange={(checked) =>
-                  setSettings({ ...settings, newMerchantAlert: checked })
+                  setSettings({ ...settings, newTenantAlert: checked })
                 }
               />
             </div>

@@ -107,7 +107,7 @@ export async function getCourierOrderStatus(
 export async function createCourierOrder(
   service: CourierService,
   order: TOrder,
-  merchantTrackingId?: string,
+  tenantTrackingId?: string,
   deliveryDetails?: DeliveryDetails
 ): Promise<CourierStatusResult> {
   switch (service.id) {
@@ -115,28 +115,28 @@ export async function createCourierOrder(
       return createPathaoOrder(
         service,
         order,
-        merchantTrackingId,
+        tenantTrackingId,
         deliveryDetails
       );
     case "redx":
       return createRedxOrder(
         service,
         order,
-        merchantTrackingId,
+        tenantTrackingId,
         deliveryDetails
       );
     case "steadfast":
       return createSteadfastOrder(
         service,
         order,
-        merchantTrackingId,
+        tenantTrackingId,
         deliveryDetails
       );
     case "paperfly":
       return createPaperflyOrder(
         service,
         order,
-        merchantTrackingId,
+        tenantTrackingId,
         deliveryDetails
       );
     default:
@@ -186,7 +186,7 @@ async function getPathaoOrderStatus(
 async function createPathaoOrder(
   service: CourierService,
   order: TOrder,
-  merchantTrackingId?: string,
+  tenantTrackingId?: string,
   deliveryDetails?: DeliveryDetails
 ): Promise<CourierStatusResult> {
   const creds = service.credentials || {};
@@ -243,7 +243,7 @@ async function createPathaoOrder(
 
   const body = {
     store_id: Number(storeId) || storeId,
-    merchant_order_id: merchantTrackingId || order.id,
+    tenant_order_id: tenantTrackingId || order.id,
     recipient_name: recipientName,
     recipient_phone: recipientPhone,
     recipient_address: recipientAddress,
@@ -327,7 +327,7 @@ async function getRedxOrderStatus(
 async function createRedxOrder(
   service: CourierService,
   order: TOrder,
-  merchantTrackingId?: string,
+  tenantTrackingId?: string,
   deliveryDetails?: DeliveryDetails
 ): Promise<CourierStatusResult> {
   const creds = service.credentials || {};
@@ -371,7 +371,7 @@ async function createRedxOrder(
     delivery_area: deliveryArea,
     delivery_area_id: deliveryAreaId,
     customer_address: recipientAddress,
-    merchant_invoice_id: merchantTrackingId || order.id,
+    tenant_invoice_id: tenantTrackingId || order.id,
     cash_collection_amount: String(amountToCollect),
     parcel_weight: parcelWeight,
     instruction: instruction,
@@ -611,7 +611,7 @@ async function getSteadfastOrderStatus(
 async function createSteadfastOrder(
   service: CourierService,
   order: TOrder,
-  merchantTrackingId?: string,
+  tenantTrackingId?: string,
   deliveryDetails?: DeliveryDetails
 ): Promise<CourierStatusResult> {
   const creds = service.credentials || {};
@@ -658,7 +658,7 @@ async function createSteadfastOrder(
     ) || 1;
 
   const body = {
-    invoice: merchantTrackingId || order.id,
+    invoice: tenantTrackingId || order.id,
     recipient_name: recipientName,
     recipient_phone: recipientPhone,
     recipient_address: recipientAddress,
@@ -705,7 +705,7 @@ async function createSteadfastOrder(
 async function createPaperflyOrder(
   service: CourierService,
   order: TOrder,
-  merchantTrackingId?: string,
+  tenantTrackingId?: string,
   deliveryDetails?: DeliveryDetails
 ): Promise<CourierStatusResult> {
   const creds = service.credentials || {};
@@ -723,7 +723,7 @@ async function createPaperflyOrder(
   }
 
   const baseUrl =
-    "https://api.paperfly.com.bd/merchant/api/service/new_order.php";
+    "https://api.paperfly.com.bd/tenant/api/service/new_order.php";
 
   const normalizeThana = (thana: string): string => {
     return thana
@@ -749,12 +749,12 @@ async function createPaperflyOrder(
 
   for (const customerThana of thanaVariations) {
     const body = {
-      merOrderRef: merchantTrackingId || order.id,
-      pickMerchantName: "Merchant",
-      pickMerchantAddress: "",
-      pickMerchantThana: "",
-      pickMerchantDistrict: "",
-      pickupMerchantPhone: order.customer.phone || "",
+      merOrderRef: tenantTrackingId || order.id,
+      pickTenantName: "Tenant",
+      pickTenantAddress: "",
+      pickTenantThana: "",
+      pickTenantDistrict: "",
+      pickupTenantPhone: order.customer.phone || "",
       productSizeWeight: "standard",
       productBrief: `Order ${order.id} - ${order.items.length} items`,
       packagePrice: String(Math.round(order.total)),
@@ -797,7 +797,7 @@ async function createPaperflyOrder(
         data?.data?.orderId ||
         data?.tracking_id ||
         data?.trackingId ||
-        merchantTrackingId ||
+        tenantTrackingId ||
         order.id;
 
       // Extract status from various possible fields

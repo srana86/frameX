@@ -2,40 +2,40 @@
 
 ## 🎯 Overview
 
-Your platform now supports **multiple merchants** with **separate deployments** (for custom domains) while maintaining a **centralized super admin panel** for management.
+Your platform now supports **multiple tenants** with **separate deployments** (for custom domains) while maintaining a **centralized super admin panel** for management.
 
 ## ✅ What's Been Implemented
 
 ### 1. **Database Architecture**
 
-- ✅ Merchant types and interfaces
-- ✅ Merchant helper functions
+- ✅ Tenant types and interfaces
+- ✅ Tenant helper functions
 - ✅ Multi-tenant database helpers
 - ✅ Support for both shared and separate databases
 
 ### 2. **Super Admin API**
 
-- ✅ `/api/super-admin/merchants` - Manage all merchants (GET, POST, PUT)
+- ✅ `/api/super-admin/tenants` - Manage all tenants (GET, POST, PUT)
 
 ### 3. **Database Collections**
 
 **Core Collections (Shared):**
 
-- `merchants` - Merchant account information
-- `merchant_deployments` - Deployment configurations
-- `merchant_databases` - Database configurations
+- `tenants` - Tenant account information
+- `tenant_deployments` - Deployment configurations
+- `tenant_databases` - Database configurations
 - `subscription_plans` - Subscription plans
-- `merchant_subscriptions` - Active subscriptions
+- `tenant_subscriptions` - Active subscriptions
 
-**Merchant-Specific Collections (with merchantId):**
+**Tenant-Specific Collections (with tenantId):**
 
-- `products` - Products per merchant
-- `orders` - Orders per merchant
-- `categories` - Categories per merchant
-- `brand_config` - Brand config per merchant
-- `sslcommerz_config` - Payment config per merchant
-- `ads_config` - Ads config per merchant
-- All other merchant-specific data
+- `products` - Products per tenant
+- `orders` - Orders per tenant
+- `categories` - Categories per tenant
+- `brand_config` - Brand config per tenant
+- `sslcommerz_config` - Payment config per tenant
+- `ads_config` - Ads config per tenant
+- All other tenant-specific data
 
 ## 🏗️ Architecture Approach
 
@@ -43,50 +43,50 @@ Your platform now supports **multiple merchants** with **separate deployments** 
 
 1. **Shared Database** for:
 
-   - Merchant accounts
+   - Tenant accounts
    - Subscriptions
    - System-wide data
 
-2. **Merchant-Specific Data** with `merchantId` field:
+2. **Tenant-Specific Data** with `tenantId` field:
 
    - Products, orders, inventory
    - Brand configurations
-   - All merchant store data
+   - All tenant store data
 
-3. **Separate Deployments** per merchant:
-   - Each merchant gets their own deployment
+3. **Separate Deployments** per tenant:
+   - Each tenant gets their own deployment
    - Custom domain support
    - Environment variables per deployment
 
 ## 📊 Database Structure
 
-### Merchants Collection
+### Tenants Collection
 
 ```typescript
 {
-  id: "merchant_123",
+  id: "tenant_123",
   name: "ABC Shoes",
-  email: "merchant@example.com",
+  email: "tenant@example.com",
   status: "active",
   customDomain: "shop.example.com",
-  deploymentUrl: "merchant1.shoestore.com",
+  deploymentUrl: "tenant1.shoestore.com",
   subscriptionId: "sub_123",
   settings: { brandName: "ABC Shoes", ... }
 }
 ```
 
-### Merchant Deployments Collection
+### Tenant Deployments Collection
 
 ```typescript
 {
   id: "deploy_123",
-  merchantId: "merchant_123",
+  tenantId: "tenant_123",
   deploymentType: "custom_domain",
   customDomain: "shop.example.com",
   deploymentStatus: "active",
   deploymentUrl: "https://shop.example.com",
   environmentVariables: {
-    MERCHANT_ID: "merchant_123",
+    MERCHANT_ID: "tenant_123",
     CUSTOM_DOMAIN: "shop.example.com"
   }
 }
@@ -94,32 +94,32 @@ Your platform now supports **multiple merchants** with **separate deployments** 
 
 ## 🔧 How It Works
 
-### 1. **Merchant Context**
+### 1. **Tenant Context**
 
-Every API call automatically filters by `merchantId`:
+Every API call automatically filters by `tenantId`:
 
 ```typescript
-// Using merchant-specific collection helper
-import { getMerchantCollection } from "@/lib/mongodb-tenant";
+// Using tenant-specific collection helper
+import { getTenantCollection } from "@/lib/mongodb-tenant";
 
-const productsCol = await getMerchantCollection("products", merchantId);
+const productsCol = await getTenantCollection("products", tenantId);
 const products = await productsCol.find({}).toArray();
-// Automatically filters by merchantId
+// Automatically filters by tenantId
 ```
 
 ### 2. **Deployment Process**
 
-1. Super admin creates merchant
+1. Super admin creates tenant
 2. System generates deployment config
-3. Deploy to Vercel/Netlify with merchant-specific env vars
+3. Deploy to Vercel/Netlify with tenant-specific env vars
 4. Configure custom domain
-5. Merchant accesses their store
+5. Tenant accesses their store
 
 ### 3. **Environment Variables Per Deployment**
 
 ```env
-# Merchant-specific environment variables
-MERCHANT_ID=merchant_123
+# Tenant-specific environment variables
+MERCHANT_ID=tenant_123
 CUSTOM_DOMAIN=shop.example.com
 MONGODB_DB=shoestore  # Shared database
 ```
@@ -130,27 +130,27 @@ MONGODB_DB=shoestore  # Shared database
 
 Create `/super-admin` pages:
 
-- Dashboard with merchant overview
-- Merchants list and management
+- Dashboard with tenant overview
+- Tenants list and management
 - Deployments management
 - Subscription overview
 
 ### 2. **Update Existing APIs** (Priority: High)
 
-Add `merchantId` filtering to all merchant APIs:
+Add `tenantId` filtering to all tenant APIs:
 
 - Products API
 - Orders API
 - Brand config API
-- All merchant-specific endpoints
+- All tenant-specific endpoints
 
-### 3. **Merchant Context Middleware** (Priority: High)
+### 3. **Tenant Context Middleware** (Priority: High)
 
 Create middleware to:
 
-- Extract merchantId from request
-- Set merchant context
-- Validate merchant access
+- Extract tenantId from request
+- Set tenant context
+- Validate tenant access
 
 ### 4. **Deployment Automation** (Priority: Medium)
 
@@ -161,63 +161,63 @@ Create middleware to:
 
 ### 5. **Migration Script** (Priority: Medium)
 
-- Add `merchantId` to existing data
-- Assign default merchant to existing data
+- Add `tenantId` to existing data
+- Assign default tenant to existing data
 - Verify data isolation
 
 ## 📝 Code Examples
 
-### Using Merchant-Specific Collections
+### Using Tenant-Specific Collections
 
 ```typescript
 // In your API routes
-import { getMerchantCollection } from "@/lib/mongodb-tenant";
+import { getTenantCollection } from "@/lib/mongodb-tenant";
 import { requireAuth } from "@/lib/auth-helpers";
 
 export async function GET(request: Request) {
-  const user = await requireAuth("merchant");
+  const user = await requireAuth("tenant");
 
-  // Get merchant-specific collection
-  const productsCol = await getMerchantCollection("products", user.id);
+  // Get tenant-specific collection
+  const productsCol = await getTenantCollection("products", user.id);
   const products = await productsCol.find({}).toArray();
 
   return NextResponse.json(products);
 }
 ```
 
-### Creating Merchant (Super Admin)
+### Creating Tenant (Super Admin)
 
 ```typescript
-import { createMerchant } from "@/lib/merchant-helpers";
+import { createTenant } from "@/lib/tenant-helpers";
 
-const merchant = await createMerchant({
-  name: "New Merchant",
-  email: "merchant@example.com",
+const tenant = await createTenant({
+  name: "New Tenant",
+  email: "tenant@example.com",
   status: "trial",
   settings: {
-    brandName: "New Merchant",
+    brandName: "New Tenant",
     currency: "USD",
   },
 });
 ```
 
-### Getting Merchant by Domain
+### Getting Tenant by Domain
 
 ```typescript
-import { getMerchantByDomain } from "@/lib/merchant-helpers";
+import { getTenantByDomain } from "@/lib/tenant-helpers";
 
 // When request comes from custom domain
-const merchant = await getMerchantByDomain("shop.example.com");
-if (!merchant) {
+const tenant = await getTenantByDomain("shop.example.com");
+if (!tenant) {
   // Handle invalid domain
 }
 ```
 
 ## 🔐 Security Considerations
 
-1. **Always validate merchantId** from authenticated session
-2. **Never allow cross-merchant data access**
-3. **Use merchant-specific collections** for all merchant data
+1. **Always validate tenantId** from authenticated session
+2. **Never allow cross-tenant data access**
+3. **Use tenant-specific collections** for all tenant data
 4. **Validate domain ownership** before allowing custom domain
 5. **Isolate environment variables** per deployment
 
@@ -225,22 +225,22 @@ if (!merchant) {
 
 ### Phase 1: Database Setup
 
-- [ ] Create `merchants` collection
-- [ ] Create `merchant_deployments` collection
-- [ ] Create `merchant_databases` collection
-- [ ] Add `merchantId` field to all merchant collections
+- [ ] Create `tenants` collection
+- [ ] Create `tenant_deployments` collection
+- [ ] Create `tenant_databases` collection
+- [ ] Add `tenantId` field to all tenant collections
 
 ### Phase 2: Code Updates
 
-- [ ] Update all APIs to use merchant collections
-- [ ] Add merchant context middleware
-- [ ] Update authentication to include merchantId
-- [ ] Add domain-based merchant detection
+- [ ] Update all APIs to use tenant collections
+- [ ] Add tenant context middleware
+- [ ] Update authentication to include tenantId
+- [ ] Add domain-based tenant detection
 
 ### Phase 3: Super Admin Panel
 
 - [ ] Create super admin layout
-- [ ] Merchants management page
+- [ ] Tenants management page
 - [ ] Deployments management page
 - [ ] System dashboard
 
@@ -253,20 +253,20 @@ if (!merchant) {
 
 ## 💡 Key Benefits
 
-1. **Custom Domains**: Each merchant can have their own domain
-2. **Data Isolation**: Complete separation of merchant data
-3. **Centralized Management**: Super admin manages all merchants
-4. **Scalable**: Easy to add new merchants
+1. **Custom Domains**: Each tenant can have their own domain
+2. **Data Isolation**: Complete separation of tenant data
+3. **Centralized Management**: Super admin manages all tenants
+4. **Scalable**: Easy to add new tenants
 5. **Flexible**: Support both shared and separate databases
 
 ## 🎨 Super Admin Panel Structure
 
 ```
 /super-admin
-  ├── /dashboard          # Overview of all merchants
-  ├── /merchants          # List and manage merchants
-  │   ├── /new            # Create new merchant
-  │   └── /[id]           # Edit merchant
+  ├── /dashboard          # Overview of all tenants
+  ├── /tenants          # List and manage tenants
+  │   ├── /new            # Create new tenant
+  │   └── /[id]           # Edit tenant
   ├── /deployments        # Manage deployments
   ├── /subscriptions      # View all subscriptions
   └── /settings           # System settings
@@ -274,36 +274,36 @@ if (!merchant) {
 
 ## 🔄 Data Flow
 
-### Merchant Registration
+### Tenant Registration
 
-1. Super admin creates merchant in super admin panel
-2. System creates merchant record
+1. Super admin creates tenant in super admin panel
+2. System creates tenant record
 3. System generates deployment configuration
-4. Deploy merchant instance (manual or automated)
+4. Deploy tenant instance (manual or automated)
 5. Configure custom domain
-6. Merchant receives credentials
+6. Tenant receives credentials
 
-### Merchant Login
+### Tenant Login
 
-1. Merchant logs in
-2. System identifies merchant (from email or domain)
-3. Set merchant context
-4. All queries filtered by merchantId
-5. Redirect to merchant dashboard
+1. Tenant logs in
+2. System identifies tenant (from email or domain)
+3. Set tenant context
+4. All queries filtered by tenantId
+5. Redirect to tenant dashboard
 
 ### Data Access
 
-1. Request comes in with merchant context
-2. All queries automatically filter by merchantId
-3. No cross-merchant data leakage
+1. Request comes in with tenant context
+2. All queries automatically filter by tenantId
+3. No cross-tenant data leakage
 4. Complete isolation
 
 ## 📚 Files Created
 
-1. `lib/merchant-types.ts` - Merchant type definitions
-2. `lib/merchant-helpers.ts` - Merchant helper functions
+1. `lib/tenant-types.ts` - Tenant type definitions
+2. `lib/tenant-helpers.ts` - Tenant helper functions
 3. `lib/mongodb-tenant.ts` - Multi-tenant database helpers
-4. `app/api/super-admin/merchants/route.ts` - Super admin API
+4. `app/api/super-admin/tenants/route.ts` - Super admin API
 5. `docs/MULTI_TENANT_ARCHITECTURE.md` - Architecture plan
 6. `docs/MULTI_TENANT_IMPLEMENTATION_SUMMARY.md` - This file
 
@@ -311,10 +311,10 @@ if (!merchant) {
 
 The foundation is complete! You can now:
 
-- ✅ Manage multiple merchants
-- ✅ Deploy each merchant separately
+- ✅ Manage multiple tenants
+- ✅ Deploy each tenant separately
 - ✅ Support custom domains
-- ✅ Isolate merchant data
+- ✅ Isolate tenant data
 - ✅ Centralize management
 
-Next: Build the super admin UI and update existing APIs to use merchant collections.
+Next: Build the super admin UI and update existing APIs to use tenant collections.

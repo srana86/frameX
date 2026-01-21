@@ -2,7 +2,7 @@
 
 ## 🎯 Overview
 
-The system uses a **single source of truth** for subscription plans stored in the database. Admins can customize plans dynamically, and merchants automatically get features based on their plan.
+The system uses a **single source of truth** for subscription plans stored in the database. Admins can customize plans dynamically, and tenants automatically get features based on their plan.
 
 ## 📊 How It Works
 
@@ -22,7 +22,7 @@ The system uses a **single source of truth** for subscription plans stored in th
 - Admin can customize any plan from `/admin/subscription-plans`
 - Features are configured per plan
 - Changes are saved to database
-- Merchants get updated features automatically
+- Tenants get updated features automatically
 
 ## 🔧 Admin Panel Usage
 
@@ -52,14 +52,14 @@ The system uses a **single source of truth** for subscription plans stored in th
 - **String features**: Select from dropdown
 - **Array features**: Check/uncheck options
 
-## 💡 How Merchants Get Features
+## 💡 How Tenants Get Features
 
 ### Example 1: Check Product Limit
 ```typescript
 import { canUseFeature, incrementFeatureUsage } from "@/lib/subscription-helpers";
 
 // Before creating product
-const canCreate = await canUseFeature(merchantId, "max_products", 1);
+const canCreate = await canUseFeature(tenantId, "max_products", 1);
 if (!canCreate) {
   return NextResponse.json({ 
     error: "Product limit reached. Please upgrade your plan." 
@@ -67,14 +67,14 @@ if (!canCreate) {
 }
 
 // After creating product
-await incrementFeatureUsage(merchantId, "max_products", 1);
+await incrementFeatureUsage(tenantId, "max_products", 1);
 ```
 
 ### Example 2: Check Custom Domain Access
 ```typescript
 import { hasFeature } from "@/lib/feature-helpers";
 
-const canUseCustomDomain = await hasFeature(merchantId, "custom_domain");
+const canUseCustomDomain = await hasFeature(tenantId, "custom_domain");
 if (!canUseCustomDomain) {
   // Show upgrade prompt
   return NextResponse.json({ 
@@ -87,9 +87,9 @@ if (!canUseCustomDomain) {
 ```typescript
 import { hasFeatureValue } from "@/lib/feature-helpers";
 
-// Check if merchant can use TikTok pixel
+// Check if tenant can use TikTok pixel
 const canUseTikTok = await hasFeatureValue(
-  merchantId, 
+  tenantId, 
   "ads_tracking_platforms", 
   "tiktok"
 );
@@ -104,11 +104,11 @@ if (!canUseTikTok) {
 import { getFeatureAsNumber, getFeatureAsArray } from "@/lib/feature-helpers";
 
 // Get storage limit
-const storageLimit = await getFeatureAsNumber(merchantId, "max_storage_gb");
+const storageLimit = await getFeatureAsNumber(tenantId, "max_storage_gb");
 // Returns: 50 or "unlimited" or null
 
 // Get available ads platforms
-const platforms = await getFeatureAsArray(merchantId, "ads_tracking_platforms");
+const platforms = await getFeatureAsArray(tenantId, "ads_tracking_platforms");
 // Returns: ["meta", "tiktok", "gtm"] or null
 ```
 
@@ -161,7 +161,7 @@ export interface PlanFeatures {
 ```typescript
 import { hasFeature } from "@/lib/feature-helpers";
 
-const hasNewFeature = await hasFeature(merchantId, "new_feature");
+const hasNewFeature = await hasFeature(tenantId, "new_feature");
 ```
 
 ## 🔄 Flow Diagram
@@ -171,9 +171,9 @@ Admin Updates Plan
     ↓
 Plan Saved to Database
     ↓
-Merchant API Call
+Tenant API Call
     ↓
-getMerchantSubscription() → Gets subscription
+getTenantSubscription() → Gets subscription
     ↓
 getSubscriptionPlan() → Gets plan from database
     ↓
@@ -181,7 +181,7 @@ plan.features → Returns current features
     ↓
 Feature Check → Uses actual plan features
     ↓
-Merchant Gets Feature Access
+Tenant Gets Feature Access
 ```
 
 ## ✅ Benefits
@@ -198,7 +198,7 @@ Merchant Gets Feature Access
 2. **Edit a Plan**: Click edit on any plan
 3. **Configure Features**: Change feature values
 4. **Save**: Changes are saved to database
-5. **Test**: Merchants immediately get new features
+5. **Test**: Tenants immediately get new features
 
 ## 📚 Key Files
 

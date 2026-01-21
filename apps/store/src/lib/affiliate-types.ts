@@ -25,11 +25,11 @@ export interface Affiliate {
   assignedCouponId?: string; // Coupon assigned to this affiliate
   createdAt: string;
   updatedAt: string;
-  merchantId?: string; // For shared database
+  tenantId?: string; // For shared database
 }
 
 /**
- * Affiliate Settings - Merchant configuration
+ * Affiliate Settings - Tenant configuration
  */
 export interface AffiliateSettings {
   id: string;
@@ -48,7 +48,7 @@ export interface AffiliateSettings {
   cookieExpiryDays: number; // How long affiliate cookie is valid (default: 30)
   createdAt: string;
   updatedAt: string;
-  merchantId?: string; // For shared database
+  tenantId?: string; // For shared database
 }
 
 /**
@@ -65,7 +65,7 @@ export interface AffiliateCommission {
   status: "pending" | "approved" | "cancelled"; // pending until order delivered, approved after delivery, cancelled if order cancelled
   createdAt: string;
   updatedAt: string;
-  merchantId?: string; // For shared database
+  tenantId?: string; // For shared database
 }
 
 /**
@@ -86,9 +86,9 @@ export interface AffiliateWithdrawal {
   };
   requestedAt: string;
   processedAt?: string;
-  processedBy?: string; // Merchant/admin who processed
+  processedBy?: string; // Tenant/admin who processed
   notes?: string; // Admin notes
-  merchantId?: string; // For shared database
+  tenantId?: string; // For shared database
 }
 
 /**

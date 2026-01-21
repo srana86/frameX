@@ -12,76 +12,76 @@ const router = express.Router();
 // tenantMiddleware MUST come before auth for proper tenant validation
 // =====================
 
-// Get all orders with pagination, filter, and search (admin/merchant only)
+// Get all orders with pagination, filter, and search (admin/tenant only)
 router.get(
   "/",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   OrderControllers.getAllOrders
 );
 
 // Get user orders
 router.get("/user", tenantMiddleware, auth(), OrderControllers.getUserOrders);
 
-// Sync courier status for all orders (admin/merchant only)
+// Sync courier status for all orders (admin/tenant only)
 router.post(
   "/sync-courier-status",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   OrderControllers.syncCourierStatus
 );
 
 // Get single order by ID
 router.get("/:id", tenantMiddleware, auth(), OrderControllers.getSingleOrder);
 
-// Update order (admin/merchant only)
+// Update order (admin/tenant only)
 router.put(
   "/:id",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(OrderValidation.updateOrderValidationSchema),
   OrderControllers.updateOrder
 );
 
-// Delete order (admin/merchant only)
+// Delete order (admin/tenant only)
 router.delete(
   "/:id",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   OrderControllers.deleteOrder
 );
 
-// Assign courier to order (admin/merchant only)
+// Assign courier to order (admin/tenant only)
 router.post(
   "/:id/courier",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(OrderValidation.assignCourierValidationSchema),
   OrderControllers.assignCourier
 );
 
-// Remove courier from order (admin/merchant only)
+// Remove courier from order (admin/tenant only)
 router.delete(
   "/:id/courier",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   OrderControllers.removeCourier
 );
 
-// Send order to courier service (admin/merchant only)
+// Send order to courier service (admin/tenant only)
 router.post(
   "/:id/courier/send",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(OrderValidation.sendOrderToCourierValidationSchema),
   OrderControllers.sendOrderToCourier
 );
 
-// Check courier order status (admin/merchant only)
+// Check courier order status (admin/tenant only)
 router.get(
   "/:id/courier/status",
   tenantMiddleware,
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   OrderControllers.checkCourierStatus
 );
 

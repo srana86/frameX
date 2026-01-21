@@ -13,7 +13,7 @@ router.get("/", tenantMiddleware, PromotionalBannerControllers.getPromotionalBan
 // Update promotional banner
 router.put(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   tenantMiddleware,
   validateRequest(
     PromotionalBannerValidation.updatePromotionalBannerValidationSchema

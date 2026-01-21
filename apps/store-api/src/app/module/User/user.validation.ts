@@ -18,7 +18,7 @@ const createUserValidationSchema = z.object({
       .min(6, { message: "Password must be at least 6 characters" })
       .max(50, { message: "Password cannot be more than 50 characters" }),
     role: z
-      .enum([USER_ROLE.customer, USER_ROLE.merchant, USER_ROLE.admin] as [
+      .enum([USER_ROLE.customer, USER_ROLE.tenant, USER_ROLE.admin] as [
         string,
         ...string[],
       ])
@@ -53,7 +53,7 @@ const updateUserValidationSchema = z.object({
       .max(50, { message: "Password cannot be more than 50 characters" })
       .optional(),
     role: z
-      .enum([USER_ROLE.customer, USER_ROLE.merchant, USER_ROLE.admin] as [
+      .enum([USER_ROLE.customer, USER_ROLE.tenant, USER_ROLE.admin] as [
         string,
         ...string[],
       ])

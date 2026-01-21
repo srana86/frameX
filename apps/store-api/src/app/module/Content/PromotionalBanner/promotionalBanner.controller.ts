@@ -6,7 +6,7 @@ import { PromotionalBannerServices } from "./promotionalBanner.service";
 
 // Get promotional banner
 const getPromotionalBanner = catchAsync(async (req: Request, res: Response) => {
-  const tenantId = req.tenantId || (req.user as any)?.merchantId;
+  const tenantId = req.tenantId || (req.user as any)?.tenantId;
 
   if (!tenantId) {
     throw new Error("Tenant ID is missing");
@@ -25,7 +25,7 @@ const getPromotionalBanner = catchAsync(async (req: Request, res: Response) => {
 // Update promotional banner
 const updatePromotionalBanner = catchAsync(
   async (req: Request, res: Response) => {
-    const tenantId = req.tenantId || (req.user as any)?.merchantId;
+    const tenantId = req.tenantId || (req.user as any)?.tenantId;
 
     if (!tenantId) {
       throw new Error("Tenant ID is missing");

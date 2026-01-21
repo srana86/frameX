@@ -105,7 +105,7 @@ export default function PageForm({ initial }: { initial?: FooterPage }) {
       }
 
       toast.success(initial ? "Page updated" : "Page created", { id: "save-page" });
-      router.push("/merchant/pages");
+      router.push("/tenant/pages");
       router.refresh();
     } catch (error: any) {
       toast.error(error?.message || "Failed to save page", { id: "save-page" });

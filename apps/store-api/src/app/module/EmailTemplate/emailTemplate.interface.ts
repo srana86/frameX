@@ -17,7 +17,7 @@ export type EmailTemplateDesign = Record<string, any> | null;
 
 export interface EmailTemplate {
   id: string;
-  merchantId?: string;
+  tenantId?: string;
   event: EmailEvent;
   name: string;
   description?: string;

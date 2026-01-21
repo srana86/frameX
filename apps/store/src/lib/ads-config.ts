@@ -12,8 +12,8 @@ export { defaultAdsConfig } from "./ads-config-types";
  */
 export async function getAdsConfig(): Promise<AdsConfig> {
   try {
-    const { getMerchantCollectionForAPI } = await import("./api-helpers");
-    const col = await getMerchantCollectionForAPI<AdsConfig>("ads_config");
+    const { getTenantCollectionForAPI } = await import("./api-helpers");
+    const col = await getTenantCollectionForAPI<AdsConfig>("ads_config");
     const doc = await col.findOne({ id: "ads_config_v1" });
 
     if (doc) {

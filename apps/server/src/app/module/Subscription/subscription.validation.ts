@@ -12,7 +12,7 @@ const billingCycleEnum = z.enum(["monthly", "semi_annual", "yearly"]);
 export const createSubscriptionValidationSchema = z.object({
   body: z.object({
     id: z.string().optional(),
-    merchantId: z.string().min(1, "Merchant ID is required"),
+    tenantId: z.string().min(1, "Tenant ID is required"),
     planId: z.string().min(1, "Plan ID is required"),
     planName: z.string().optional(),
     billingCycleMonths: z.number().int().min(1).max(12).optional(),

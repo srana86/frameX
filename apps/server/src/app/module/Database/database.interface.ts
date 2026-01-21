@@ -1,6 +1,6 @@
 export interface IDatabase {
   id?: string;
-  merchantId: string;
+  tenantId: string;
   databaseName: string;
   status?: string;
   useSharedDatabase?: boolean;

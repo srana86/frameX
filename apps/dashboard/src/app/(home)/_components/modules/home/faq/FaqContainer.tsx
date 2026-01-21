@@ -29,7 +29,7 @@ const faqItems: FAQItem[] = [
     id: "2",
     question: "Do I need technical knowledge to set up my online store?",
     answer:
-      "No technical skills required! Our platform is designed for merchants of all levels. You can set up your complete e-commerce store in minutes, add products easily, and start selling right away. We provide step-by-step guidance for everything.",
+      "No technical skills required! Our platform is designed for tenants of all levels. You can set up your complete e-commerce store in minutes, add products easily, and start selling right away. We provide step-by-step guidance for everything.",
   },
   {
     id: "3",

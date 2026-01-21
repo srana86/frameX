@@ -4,106 +4,106 @@ import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { SuperAdminServices } from "./superAdmin.service";
 
-// Get all merchants
-const getAllMerchants = catchAsync(async (req: Request, res: Response) => {
-  const result = await SuperAdminServices.getAllMerchantsFromDB();
+// Get all tenants
+const getAllTenants = catchAsync(async (req: Request, res: Response) => {
+  const result = await SuperAdminServices.getAllTenantsFromDB();
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: "Merchants retrieved successfully",
+    message: "Tenants retrieved successfully",
     data: {
-      merchants: result,
+      tenants: result,
     },
   });
 });
 
-// Create new merchant
-const createMerchant = catchAsync(async (req: Request, res: Response) => {
-  const result = await SuperAdminServices.createMerchantFromDB(req.body);
+// Create new tenant
+const createTenant = catchAsync(async (req: Request, res: Response) => {
+  const result = await SuperAdminServices.createTenantFromDB(req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,
     success: true,
-    message: "Merchant created successfully",
+    message: "Tenant created successfully",
     data: result,
   });
 });
 
-// Update merchant
-const updateMerchant = catchAsync(async (req: Request, res: Response) => {
-  const result = await SuperAdminServices.updateMerchantFromDB(req.body);
+// Update tenant
+const updateTenant = catchAsync(async (req: Request, res: Response) => {
+  const result = await SuperAdminServices.updateTenantFromDB(req.body);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: "Merchant updated successfully",
+    message: "Tenant updated successfully",
     data: result,
   });
 });
 
-// Get full merchant data
-const getFullMerchantData = catchAsync(async (req: Request, res: Response) => {
+// Get full tenant data
+const getFullTenantData = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await SuperAdminServices.getFullMerchantDataFromDB(id);
+  const result = await SuperAdminServices.getFullTenantDataFromDB(id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: "Full merchant data retrieved successfully",
+    message: "Full tenant data retrieved successfully",
     data: result,
   });
 });
 
-// Get merchant database
-const getMerchantDatabase = catchAsync(async (req: Request, res: Response) => {
+// Get tenant database
+const getTenantDatabase = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await SuperAdminServices.getMerchantDatabaseFromDB(id);
+  const result = await SuperAdminServices.getTenantDatabaseFromDB(id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: "Merchant database information retrieved successfully",
+    message: "Tenant database information retrieved successfully",
     data: result,
   });
 });
 
-// Get merchant deployment
-const getMerchantDeployment = catchAsync(
+// Get tenant deployment
+const getTenantDeployment = catchAsync(
   async (req: Request, res: Response) => {
     const { id } = req.params;
-    const result = await SuperAdminServices.getMerchantDeploymentFromDB(id);
+    const result = await SuperAdminServices.getTenantDeploymentFromDB(id);
 
     sendResponse(res, {
       statusCode: StatusCodes.OK,
       success: true,
-      message: "Merchant deployment information retrieved successfully",
+      message: "Tenant deployment information retrieved successfully",
       data: result,
     });
   }
 );
 
-// Get merchant subscription
-const getMerchantSubscription = catchAsync(
+// Get tenant subscription
+const getTenantSubscription = catchAsync(
   async (req: Request, res: Response) => {
     const { id } = req.params;
-    const result = await SuperAdminServices.getMerchantSubscriptionFromDB(id);
+    const result = await SuperAdminServices.getTenantSubscriptionFromDB(id);
 
     sendResponse(res, {
       statusCode: StatusCodes.OK,
       success: true,
-      message: "Merchant subscription information retrieved successfully",
+      message: "Tenant subscription information retrieved successfully",
       data: result,
     });
   }
 );
 
 export const SuperAdminControllers = {
-  getAllMerchants,
-  createMerchant,
-  updateMerchant,
-  getFullMerchantData,
-  getMerchantDatabase,
-  getMerchantDeployment,
-  getMerchantSubscription,
+  getAllTenants,
+  createTenant,
+  updateTenant,
+  getFullTenantData,
+  getTenantDatabase,
+  getTenantDeployment,
+  getTenantSubscription,
 };

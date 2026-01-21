@@ -10,7 +10,7 @@ interface TopNavProps {
 
 export default function TopNav({ brandConfig }: TopNavProps) {
   const pathname = usePathname();
-  const isAdmin = pathname?.startsWith("/merchant") || pathname?.startsWith("/admin");
+  const isAdmin = pathname?.startsWith("/tenant") || pathname?.startsWith("/admin");
   // Hide TopNav for admin pages since admin layout has its own header
   if (isAdmin) return null;
   return <Navbar brandConfig={brandConfig} />;

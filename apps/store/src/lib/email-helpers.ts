@@ -1,4 +1,4 @@
-import { getMerchantCollectionForAPI } from "./api-helpers";
+import { getTenantCollectionForAPI } from "./api-helpers";
 import {
   buildDefaultTemplate,
   defaultEmailTemplates,
@@ -15,11 +15,11 @@ export const EMAIL_TEMPLATE_COLLECTION = "email_templates";
 export const EMAIL_PROVIDER_COLLECTION = "email_providers";
 
 export async function getEmailTemplatesCollection() {
-  return getMerchantCollectionForAPI<EmailTemplate>(EMAIL_TEMPLATE_COLLECTION);
+  return getTenantCollectionForAPI<EmailTemplate>(EMAIL_TEMPLATE_COLLECTION);
 }
 
 export async function getEmailProvidersCollection() {
-  return getMerchantCollectionForAPI<EmailProviderSettings>(EMAIL_PROVIDER_COLLECTION);
+  return getTenantCollectionForAPI<EmailProviderSettings>(EMAIL_PROVIDER_COLLECTION);
 }
 
 export function normalizeTemplate(doc: any): EmailTemplate {
@@ -28,11 +28,11 @@ export function normalizeTemplate(doc: any): EmailTemplate {
   return rest as EmailTemplate;
 }
 
-export function buildDefaultEmailTemplates(merchantId?: string, brand?: BrandEmailMeta): EmailTemplate[] {
-  return emailEvents.map((event) => buildDefaultTemplate(event, merchantId, brand));
+export function buildDefaultEmailTemplates(tenantId?: string, brand?: BrandEmailMeta): EmailTemplate[] {
+  return emailEvents.map((event) => buildDefaultTemplate(event, tenantId, brand));
 }
 
-export async function ensureEmailTemplatesExist(merchantId?: string, baseQuery: Record<string, any> = {}, brand?: BrandEmailMeta) {
+export async function ensureEmailTemplatesExist(tenantId?: string, baseQuery: Record<string, any> = {}, brand?: BrandEmailMeta) {
   const col = await getEmailTemplatesCollection();
   // Shim allows usage of countDocuments
   const existingCount = await col.countDocuments(baseQuery);
@@ -49,7 +49,7 @@ export async function ensureEmailTemplatesExist(merchantId?: string, baseQuery: 
   if (missing.length === 0) return;
 
   const docs = missing.map((event) => ({
-    ...buildDefaultTemplate(event, merchantId, brand),
+    ...buildDefaultTemplate(event, tenantId, brand),
     ...baseQuery,
   }));
 
@@ -146,11 +146,11 @@ export function maskProviderSecrets(config: EmailProviderConfig): EmailProviderC
   }
 }
 
-export function buildEmptyProviderSettings(merchantId?: string): EmailProviderSettings {
+export function buildEmptyProviderSettings(tenantId?: string): EmailProviderSettings {
   const now = new Date().toISOString();
   return {
     id: "email_providers_default",
-    merchantId,
+    tenantId,
     defaultProviderId: undefined,
     fallbackProviderId: undefined,
     providers: [],

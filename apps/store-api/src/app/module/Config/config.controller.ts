@@ -6,7 +6,6 @@ import { ConfigServices } from "./config.service";
 
 // Brand Config
 const getBrandConfig = catchAsync(async (req: Request, res: Response) => {
-  // Use tenantId from tenantMiddleware, fallback to user's merchantId for authenticated routes
   const tenantId = req.tenantId
   const result = await ConfigServices.getBrandConfigFromDB(tenantId);
 
@@ -19,7 +18,6 @@ const getBrandConfig = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateBrandConfig = catchAsync(async (req: Request, res: Response) => {
-  // Use tenantId from tenantMiddleware, fallback to user's tenantId for authenticated routes
   const tenantId = req.tenantId;
 
   if (!tenantId) {
@@ -48,7 +46,6 @@ const updateBrandConfig = catchAsync(async (req: Request, res: Response) => {
 // Delivery Config
 const getDeliveryConfig = catchAsync(async (req: Request, res: Response) => {
   const type = req.query.type as string;
-  // Use tenantId from tenantMiddleware, fallback to user's merchantId for authenticated routes
   const tenantId = req.tenantId;
   const result = await ConfigServices.getDeliveryConfigFromDB(tenantId, type);
 
@@ -108,7 +105,6 @@ const updateSSLCommerzConfig = catchAsync(
 
 // OAuth Config
 const getOAuthConfig = catchAsync(async (req: Request, res: Response) => {
-  // Use tenantId from tenantMiddleware, fallback to user's merchantId for authenticated routes
   const tenantId = req.tenantId;
   const result = await ConfigServices.getOAuthConfigFromDB(tenantId);
 
@@ -136,7 +132,6 @@ const updateOAuthConfig = catchAsync(async (req: Request, res: Response) => {
 
 // Ads Config
 const getAdsConfig = catchAsync(async (req: Request, res: Response) => {
-  // Use tenantId from tenantMiddleware, fallback to user's merchantId for authenticated routes
   const tenantId = req.tenantId;
   const result = await ConfigServices.getAdsConfigFromDB(tenantId);
 

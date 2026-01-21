@@ -28,7 +28,7 @@ function mapBillingCycle(months: number): BillingCycle {
   return "YEARLY";
 }
 
-// Using TenantSubscription instead of MerchantSubscription
+// Using TenantSubscription instead of TenantSubscription
 const getAllSubscriptions = async () => {
   const subscriptions = await prisma.tenantSubscription.findMany({
     include: { plan: true },
@@ -54,7 +54,7 @@ const getAllSubscriptions = async () => {
       isExpiringSoon: sub.currentPeriodEnd ? isExpiringSoon(sub.currentPeriodEnd) : false,
       isPastDue: sub.currentPeriodEnd ? isPastDue(sub.currentPeriodEnd) : false,
       daysUntilExpiry: sub.currentPeriodEnd ? getDaysUntilExpiry(sub.currentPeriodEnd) : 0,
-      merchant: tenant ? { name: tenant.name, email: tenant.email } : null, // Keep 'merchant' key for backward compat
+      tenant: tenant ? { name: tenant.name, email: tenant.email } : null, // Keep 'tenant' key for backward compat
     };
   });
 };
@@ -208,7 +208,7 @@ const getExpiringSubscriptions = async (daysAhead = 7) => {
     return {
       ...sub,
       daysUntilExpiry: getDaysUntilExpiry(sub.currentPeriodEnd),
-      merchant: tenant ? { name: tenant.name, email: tenant.email } : null, // Keep 'merchant' key for backward compat
+      tenant: tenant ? { name: tenant.name, email: tenant.email } : null, // Keep 'tenant' key for backward compat
     };
   });
 };

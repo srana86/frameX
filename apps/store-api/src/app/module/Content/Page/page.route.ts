@@ -7,7 +7,7 @@ import { PageValidation } from "./page.validation";
 const router = express.Router();
 
 // Get all pages
-router.get("/", auth("admin", "merchant"), PageControllers.getAllPages);
+router.get("/", auth("admin", "tenant"), PageControllers.getAllPages);
 
 // Get enabled pages (public)
 router.get("/enabled", PageControllers.getEnabledPages);
@@ -18,7 +18,7 @@ router.get("/:slug", PageControllers.getPageBySlug);
 // Create page
 router.post(
   "/",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(PageValidation.createPageValidationSchema),
   PageControllers.createPage
 );
@@ -26,13 +26,13 @@ router.post(
 // Update page
 router.put(
   "/:slug",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(PageValidation.updatePageValidationSchema),
   PageControllers.updatePage
 );
 
 // Delete page
-router.delete("/:slug", auth("admin", "merchant"), PageControllers.deletePage);
+router.delete("/:slug", auth("admin", "tenant"), PageControllers.deletePage);
 
 // Get page categories
 router.get("/categories", PageControllers.getPageCategories);
@@ -40,7 +40,7 @@ router.get("/categories", PageControllers.getPageCategories);
 // Create page category
 router.post(
   "/categories",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(PageValidation.createPageCategoryValidationSchema),
   PageControllers.createPageCategory
 );
@@ -48,7 +48,7 @@ router.post(
 // Update page category
 router.put(
   "/categories/:id",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   validateRequest(PageValidation.updatePageCategoryValidationSchema),
   PageControllers.updatePageCategory
 );
@@ -56,7 +56,7 @@ router.put(
 // Delete page category
 router.delete(
   "/categories/:id",
-  auth("admin", "merchant"),
+  auth("admin", "tenant"),
   PageControllers.deletePageCategory
 );
 

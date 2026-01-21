@@ -71,8 +71,8 @@ export function LoginForm({ googleOAuthEnabled = false }: LoginFormProps) {
       const userRole = (user?.role as string)?.toLowerCase() || "customer";
       if (userRole === "admin") {
         router.push("/admin");
-      } else if (userRole === "merchant") {
-        router.push("/merchant");
+      } else if (userRole === "tenant") {
+        router.push("/tenant");
       } else {
         router.push("/account");
       }

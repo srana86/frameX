@@ -3,7 +3,7 @@ import { prisma, PrismaQueryBuilder, CheckoutStatus } from "@framex/database";
 
 const getAllPayments = async (
   status?: string,
-  merchantId?: string,
+  tenantId?: string,
   limit: number = 100,
   page: number = 1
 ) => {
@@ -11,15 +11,15 @@ const getAllPayments = async (
   if (status && status !== "all") {
     query.status = status.toUpperCase() as CheckoutStatus; // Enum mapping
   }
-  if (merchantId) {
-    query.merchantId = merchantId;
+  if (tenantId) {
+    query.tenantId = tenantId;
   }
 
   const builder = new PrismaQueryBuilder({
     model: prisma.checkout,
     query: { page, limit, ...query },
     searchFields: ["sessionId", "transactionId"] // Checking if transactionId exists in Checkout model? Schema: sessionId is unique.
-    // Schema lines 1002-1020: id, merchantId, sessionId, amount, currency, status, items, customerId, customerEmail, metadata, expiresAt, completedAt
+    // Schema lines 1002-1020: id, tenantId, sessionId, amount, currency, status, items, customerId, customerEmail, metadata, expiresAt, completedAt
     // It seems `sessionId` is the main ID. Mongoose code used `tranId`.
     // I will assume `sessionId` holds the transaction ID.
   });
@@ -34,8 +34,8 @@ const getAllPayments = async (
   const payments = result.data.map((p: any) => ({
     id: p.id,
     tranId: p.sessionId, // Mapping sessionId to tranId
-    merchantId: p.merchantId,
-    // merchantName/Email likely in metadata or need join. 
+    tenantId: p.tenantId,
+    // tenantName/Email likely in metadata or need join. 
     // Schema items/metadata are Json.
     ...(p.metadata || {}),
     status: p.status.toLowerCase(),

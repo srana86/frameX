@@ -1,4 +1,4 @@
-import { buildMerchantQuery, getMerchantCollectionForAPI, getMerchantIdForAPI } from "./api-helpers";
+import { buildTenantQuery, getTenantCollectionForAPI, getTenantIdForAPI } from "./api-helpers";
 import { decryptProviderSecrets, normalizeTemplate } from "./email-helpers";
 import {
   buildDefaultTemplate,
@@ -16,13 +16,13 @@ type SendTemplatedEmailInput = {
   event: EmailEvent;
   template: EmailTemplate;
   variables?: Record<string, string | number>;
-  merchantId?: string;
+  tenantId?: string;
 };
 
 export async function sendTemplatedEmail(input: SendTemplatedEmailInput): Promise<EmailSendResult> {
-  const { to, event, template, variables = {}, merchantId } = input;
+  const { to, event, template, variables = {}, tenantId } = input;
 
-  const { primary, fallback } = await getProviderPreference(merchantId);
+  const { primary, fallback } = await getProviderPreference(tenantId);
   if (!primary && !fallback) {
     const error = "No email provider configured. Please configure an email provider in Settings > Email Settings.";
     console.error(`[Email Service] ${error}`);
@@ -95,18 +95,18 @@ export async function sendEmailEvent(params: {
   event: EmailEvent;
   to: string | string[];
   variables?: Record<string, string | number>;
-  merchantId?: string;
+  tenantId?: string;
   templateOverrides?: Partial<EmailTemplate>;
 }): Promise<EmailSendResult> {
-  const { event, to, variables = {}, merchantId, templateOverrides } = params;
-  const template = await loadTemplate(event, merchantId);
+  const { event, to, variables = {}, tenantId, templateOverrides } = params;
+  const template = await loadTemplate(event, tenantId);
   const mergedTemplate = { ...template, ...(templateOverrides || {}) };
   return sendTemplatedEmail({
     to,
     event,
     template: mergedTemplate,
     variables,
-    merchantId,
+    tenantId,
   });
 }
 
@@ -115,10 +115,10 @@ type ProviderPreference = {
   fallback: EmailProviderConfig | null;
 };
 
-async function getProviderPreference(merchantId?: string): Promise<ProviderPreference> {
+async function getProviderPreference(tenantId?: string): Promise<ProviderPreference> {
   try {
-    const col = await getMerchantCollectionForAPI<EmailProviderSettings>("email_providers");
-    const query = await buildMerchantQuery({ id: "email_providers_default" });
+    const col = await getTenantCollectionForAPI<EmailProviderSettings>("email_providers");
+    const query = await buildTenantQuery({ id: "email_providers_default" });
     const settings = await col.findOne(query);
 
     if (!settings || !settings.providers?.length) {
@@ -231,10 +231,10 @@ async function testConnection(provider: EmailProviderConfig): Promise<EmailSendR
   }
 }
 
-async function loadTemplate(event: EmailEvent, merchantId?: string): Promise<EmailTemplate> {
+async function loadTemplate(event: EmailEvent, tenantId?: string): Promise<EmailTemplate> {
   try {
-    const col = await getMerchantCollectionForAPI<EmailTemplate>("email_templates");
-    const query = await buildMerchantQuery({ event });
+    const col = await getTenantCollectionForAPI<EmailTemplate>("email_templates");
+    const query = await buildTenantQuery({ event });
     const doc = await col.findOne(query);
     if (doc) {
       return normalizeTemplate(doc);
@@ -243,15 +243,15 @@ async function loadTemplate(event: EmailEvent, merchantId?: string): Promise<Ema
     console.error("Failed to load email template:", error);
   }
 
-  const resolvedMerchantId = merchantId || (await getMerchantIdForAPI()) || undefined;
+  const resolvedTenantId = tenantId || (await getTenantIdForAPI()) || undefined;
   const brandMeta = await loadBrandMeta();
-  return buildDefaultTemplate(event, resolvedMerchantId, brandMeta);
+  return buildDefaultTemplate(event, resolvedTenantId, brandMeta);
 }
 
 async function loadBrandMeta(): Promise<BrandEmailMeta | undefined> {
   try {
-    const col = await getMerchantCollectionForAPI("brand_config");
-    const cfg = await col.findOne(await buildMerchantQuery({ id: "brand_config_v1" }));
+    const col = await getTenantCollectionForAPI("brand_config");
+    const cfg = await col.findOne(await buildTenantQuery({ id: "brand_config_v1" }));
     if (cfg) {
       return {
         brandName: (cfg as any)?.brandName,

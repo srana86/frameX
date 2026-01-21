@@ -4,21 +4,21 @@
 
 ## 🎯 Core Concept
 
-All features come from the database plan (single source of truth). When you check a feature, it reads from the merchant's current plan stored in the database.
+All features come from the database plan (single source of truth). When you check a feature, it reads from the tenant's current plan stored in the database.
 
 ## 📚 Available Helper Functions
 
 ### From `lib/subscription-helpers.ts`:
 
-- `checkFeatureAccess()` - Check if merchant has feature access
+- `checkFeatureAccess()` - Check if tenant has feature access
 - `getFeatureLimit()` - Get feature limit/value
 - `canUseFeature()` - Check if can use feature within limits
 - `incrementFeatureUsage()` - Track usage
 
 ### From `lib/feature-helpers.ts`:
 
-- `getMerchantFeatures()` - Get all features for merchant
-- `getMerchantFeature()` - Get specific feature value
+- `getTenantFeatures()` - Get all features for tenant
+- `getTenantFeature()` - Get specific feature value
 - `hasFeature()` - Check boolean feature
 - `getFeatureAsNumber()` - Get numeric feature
 - `getFeatureAsArray()` - Get array feature
@@ -34,10 +34,10 @@ import { canUseFeature, incrementFeatureUsage } from "@/lib/subscription-helpers
 import { requireAuth } from "@/lib/auth-helpers";
 
 export async function POST(request: Request) {
-  const user = await requireAuth("merchant");
+  const user = await requireAuth("tenant");
   const body = await request.json();
 
-  // Check if merchant can create more products
+  // Check if tenant can create more products
   const canCreate = await canUseFeature(user.id, "max_products", 1);
 
   if (!canCreate) {
@@ -69,7 +69,7 @@ import { getFeatureAsNumber, getFeatureUsage } from "@/lib/feature-helpers";
 import { requireAuth } from "@/lib/auth-helpers";
 
 export async function POST(request: Request) {
-  const user = await requireAuth("merchant");
+  const user = await requireAuth("tenant");
   const formData = await request.formData();
   const file = formData.get("file") as File;
 
@@ -111,15 +111,15 @@ export async function POST(request: Request) {
 ### Example 3: Custom Domain Configuration
 
 ```typescript
-// app/api/merchant/domain/configure/route.ts
+// app/api/tenant/domain/configure/route.ts
 import { hasFeature } from "@/lib/feature-helpers";
 import { requireAuth } from "@/lib/auth-helpers";
 
 export async function POST(request: Request) {
-  const user = await requireAuth("merchant");
+  const user = await requireAuth("tenant");
   const { domain } = await request.json();
 
-  // Check if merchant has custom domain feature
+  // Check if tenant has custom domain feature
   const canUseCustomDomain = await hasFeature(user.id, "custom_domain");
 
   if (!canUseCustomDomain) {
@@ -146,7 +146,7 @@ import { hasFeatureValue, getFeatureAsArray } from "@/lib/feature-helpers";
 import { requireAuth } from "@/lib/auth-helpers";
 
 export async function PUT(request: Request) {
-  const user = await requireAuth("merchant");
+  const user = await requireAuth("tenant");
   const body = await request.json();
 
   // Get available platforms from plan
@@ -188,7 +188,7 @@ import { getFeatureAsNumber } from "@/lib/feature-helpers";
 import { requireAuth } from "@/lib/auth-helpers";
 
 export async function PUT(request: Request) {
-  const user = await requireAuth("merchant");
+  const user = await requireAuth("tenant");
   const body = await request.json();
 
   // Get payment gateway limit
@@ -227,7 +227,7 @@ import { getFeatureAsString } from "@/lib/feature-helpers";
 import { requireAuth } from "@/lib/auth-helpers";
 
 export async function GET(request: Request) {
-  const user = await requireAuth("merchant");
+  const user = await requireAuth("tenant");
 
   // Check API access level
   const apiAccess = await getFeatureAsString(user.id, "api_access");
@@ -254,7 +254,7 @@ import { canUseFeature, incrementFeatureUsage } from "@/lib/subscription-helpers
 import { requireAuth } from "@/lib/auth-helpers";
 
 export async function POST(request: Request) {
-  const user = await requireAuth("merchant");
+  const user = await requireAuth("tenant");
   const body = await request.json();
 
   // Check team member limit
@@ -285,7 +285,7 @@ export async function POST(request: Request) {
 ### Show/Hide Features Based on Plan
 
 ```typescript
-// components/merchant/FeatureGate.tsx
+// components/tenant/FeatureGate.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -296,7 +296,7 @@ export function FeatureGate({ feature, children, fallback }: { feature: string; 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/merchant/features/check", {
+    fetch("/api/tenant/features/check", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ feature }),
@@ -322,7 +322,7 @@ export function FeatureGate({ feature, children, fallback }: { feature: string; 
 ### Display Feature Limits
 
 ```typescript
-// components/merchant/FeatureLimit.tsx
+// components/tenant/FeatureLimit.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -333,8 +333,8 @@ export function FeatureLimit({ feature }: { feature: string }) {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/merchant/features/limit?feature=" + feature).then((r) => r.json()),
-      fetch("/api/merchant/features/usage?feature=" + feature).then((r) => r.json()),
+      fetch("/api/tenant/features/limit?feature=" + feature).then((r) => r.json()),
+      fetch("/api/tenant/features/usage?feature=" + feature).then((r) => r.json()),
     ]).then(([limitData, usageData]) => {
       setLimit(limitData.limit);
       setUsage(usageData.usage);
@@ -361,12 +361,12 @@ export function FeatureLimit({ feature }: { feature: string }) {
 
 1. **Admin updates plan** in `/admin/subscription-plans`
 2. **Plan saved to database** in `subscription_plans` collection
-3. **Merchant makes API call** (e.g., create product)
-4. **System checks feature** using `canUseFeature(merchantId, "max_products")`
+3. **Tenant makes API call** (e.g., create product)
+4. **System checks feature** using `canUseFeature(tenantId, "max_products")`
 5. **Function reads plan** from database via `getSubscriptionPlan()`
 6. **Returns feature value** from `plan.features.max_products`
 7. **Decision made** based on actual plan value
-8. **Merchant gets access** or upgrade prompt
+8. **Tenant gets access** or upgrade prompt
 
 ## ✅ Key Points
 

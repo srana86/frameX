@@ -8,7 +8,7 @@ export interface IFeatureRequest {
   priority: FeatureRequestPriority;
   contactEmail?: string;
   contactPhone?: string;
-  merchantId: string;
+  tenantId: string;
   status: FeatureRequestStatus;
   createdAt: string;
 }
