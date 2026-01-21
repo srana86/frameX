@@ -6,8 +6,7 @@ export interface CurrentUser {
   fullName: string;
   email?: string;
   phone?: string;
-  role: "customer" | "staff" | "tenant" | "admin" | "super_admin";
-  tenantId?: string;
+  role: "customer" | "staff" | "tenant" | "admin" | "super_admin" | "owner";
   tenantId?: string;
   createdAt: string;
 }
@@ -43,7 +42,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
       | "staff"
       | "tenant"
       | "admin"
-      | "super_admin";
+      | "owner";
 
     return {
       id: user.id,
@@ -51,7 +50,6 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
       email: user.email,
       phone: (user as any).phone,
       role: normalizedRole,
-      tenantId: (user as any).tenantId,
       tenantId: (user as any).tenantId,
       createdAt: user.createdAt.toString(),
     };

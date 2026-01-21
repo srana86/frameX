@@ -206,7 +206,7 @@ export async function getTenantIdForAPI(): Promise<string | null> {
 
   try {
     const headersList = await headers();
-    cachedTenantId = headersList.get("x-tenant-id") || headersList.get("x-tenant-id");
+    cachedTenantId = headersList.get("x-tenant-id");
     return cachedTenantId || null;
   } catch (e) {
     return null;

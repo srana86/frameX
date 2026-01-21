@@ -8,7 +8,7 @@ export type TUser = {
     password: string;
     name?: string | null;
     phone?: string | null;
-    role: "SUPER_ADMIN" | "ADMIN" | "STAFF";
+    role: "SUPER_ADMIN" | "ADMIN" | "STAFF" | "OWNER" | "TENANT";
     status: "ACTIVE" | "INACTIVE" | "BLOCKED";
     emailVerified: boolean;
     tenantId?: string | null;
@@ -16,7 +16,7 @@ export type TUser = {
     updatedAt?: Date;
 };
 
-export type TUserRole = "SUPER_ADMIN" | "ADMIN" | "STAFF";
+export type TUserRole = "SUPER_ADMIN" | "ADMIN" | "STAFF" | "OWNER" | "TENANT";
 
 // User helper functions (replacing Mongoose static methods)
 

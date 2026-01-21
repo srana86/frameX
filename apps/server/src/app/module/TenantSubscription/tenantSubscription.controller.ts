@@ -7,11 +7,7 @@ import httpStatus from "http-status";
 // Using Tenant instead of Tenant (merged models)
 const getTenantSubscription = catchAsync(async (req, res) => {
   // Prioritize tenantId/x-tenant-id
-  const tenantId =
-    (req.query.tenantId as string) ||
-    (req.headers["x-tenant-id"] as string) ||
-    (req.query.tenantId as string) ||
-    (req.headers["x-tenant-id"] as string);
+  const tenantId = (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string);
 
   if (!tenantId) {
     return sendResponse(res, {

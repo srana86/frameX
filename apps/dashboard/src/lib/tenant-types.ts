@@ -55,9 +55,4 @@ export interface TenantFullData {
   database: TenantDatabase | null;
 }
 
-// Backward compatibility aliases
-export type Tenant = Tenant;
-export type TenantDeployment = TenantDeployment;
-export type TenantDatabase = TenantDatabase;
-export type TenantSubscription = TenantSubscription;
-export type TenantFullData = TenantFullData;
+

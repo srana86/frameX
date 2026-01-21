@@ -102,9 +102,7 @@ export const tenantMiddleware = async (
         }
 
         // Priority 5: x-tenant-id / x-tenant-id header (direct fallback)
-        if (!tenantId) {
-            tenantId = (req.headers["x-tenant-id"] as string) || (req.headers["x-tenant-id"] as string);
-        }
+        tenantId = req.headers["x-tenant-id"] as string;
 
         console.log(`[TenantMiddleware] Resolved tenantId: ${tenantId} for URL: ${req.url}`);
 
@@ -166,7 +164,7 @@ export const optionalTenantMiddleware = async (
     next: NextFunction
 ) => {
     try {
-        const tenantId = (req.headers["x-tenant-id"] as string) || (req.headers["x-tenant-id"] as string);
+        const tenantId = req.headers["x-tenant-id"] as string;
 
         if (tenantId) {
             req.tenantId = tenantId;
