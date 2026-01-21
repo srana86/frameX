@@ -905,3 +905,23 @@ export async function getCheckoutSessionFromSuperAdmin(tranId: string): Promise<
     return null;
   }
 }
+
+// ============================================================
+// Tenant Aliases for Backward Compatibility
+// ============================================================
+
+// Type aliases - tenant terminology
+export type SuperAdminTenantSubscription = SuperAdminMerchantSubscription;
+export type SuperAdminTenantDeployment = SuperAdminMerchantDeployment;
+export type SuperAdminTenantDatabase = SuperAdminMerchantDatabase;
+export type SuperAdminTenantFullData = SuperAdminMerchantFullData;
+
+// Function aliases - use tenantId parameter names but call merchant functions
+// These maintain API compatibility while allowing code to use tenant terminology
+
+export const getTenantSubscriptionFromSuperAdmin = getMerchantSubscriptionFromSuperAdmin;
+export const getTenantDeploymentFromSuperAdmin = getMerchantDeploymentFromSuperAdmin;
+export const getTenantDatabaseFromSuperAdmin = getMerchantDatabaseFromSuperAdmin;
+export const getTenantSubscriptionData = getMerchantSubscriptionData;
+export const getTenantFullDataFromSuperAdmin = getMerchantFullDataFromSuperAdmin;
+

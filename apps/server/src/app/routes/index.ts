@@ -19,6 +19,7 @@ import { CloudinaryRoutes } from "../module/Cloudinary/cloudinary.route";
 import { SimulateRoutes } from "../module/Simulate/simulate.route";
 import { AuthRoutes } from '../module/Auth/auth.route';
 import { MerchantSubscriptionRoutes } from "../module/MerchantSubscription/merchantSubscription.route";
+import { OwnerRoutes } from "../module/Owner/owner.route";
 
 const router = Router();
 
@@ -102,6 +103,10 @@ const moduleRoutes = [
   {
     path: "/merchant-subscription",
     route: MerchantSubscriptionRoutes,
+  },
+  {
+    path: "/owner",
+    route: OwnerRoutes,
   },
 ];
 

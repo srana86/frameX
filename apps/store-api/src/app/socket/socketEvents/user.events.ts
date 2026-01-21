@@ -54,17 +54,17 @@ export const registerUserEvents = (io: Server, socket: AuthenticatedSocket) => {
   });
 
   // Join merchant room
-  socket.on("user:join-merchant", async (merchantId: string) => {
+  socket.on("user:join-merchant", async (tenantId: string) => {
     const startTime = Date.now();
     try {
-      if (!merchantId) {
-        socket.emit("error", { message: "Merchant ID required" });
+      if (!tenantId) {
+        socket.emit("error", { message: "Tenant ID required" });
         return;
       }
 
-      const room = `merchant:${merchantId}`;
+      const room = `merchant:${tenantId}`;
       await socket.join(room);
-      console.log(`Socket ${socket.id} joined merchant:${merchantId}`);
+      console.log(`Socket ${socket.id} joined merchant:${tenantId}`);
 
       const duration = Date.now() - startTime;
       socketLogger.logEvent("user:join-merchant", socket, duration);

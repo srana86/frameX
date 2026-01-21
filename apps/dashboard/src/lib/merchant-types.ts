@@ -1,8 +1,8 @@
-// Merchant Types for Super Admin
+// Tenant/Merchant Types for Super Admin
 
-export interface MerchantDeployment {
+export interface TenantDeployment {
   id: string;
-  merchantId: string;
+  tenantId: string;
   deploymentType: "subdomain" | "custom" | "local";
   subdomain?: string;
   deploymentStatus: "active" | "pending" | "failed" | "inactive";
@@ -15,3 +15,6 @@ export interface MerchantDeployment {
   createdAt: string;
   updatedAt: string;
 }
+
+// Backward compatibility alias
+export type MerchantDeployment = TenantDeployment;

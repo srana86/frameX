@@ -13,7 +13,7 @@ function generateInvoiceNumber(): string {
 
 const getAllInvoices = async (
   status?: string,
-  merchantId?: string,
+  tenantId?: string,
   limit: number = 100
 ) => {
   const where: any = {};
@@ -23,8 +23,8 @@ const getAllInvoices = async (
     // Code below handles case conversion if necessary
     where.status = status.toUpperCase() as InvoiceStatus;
   }
-  if (merchantId) {
-    where.merchantId = merchantId;
+  if (tenantId) {
+    where.tenantId = tenantId;
   }
 
   // Fetch manual invoices
@@ -36,8 +36,8 @@ const getAllInvoices = async (
 
   // Fetch successful checkouts to include as invoices
   const checkoutWhere: any = { status: "COMPLETED" };
-  if (merchantId) {
-    checkoutWhere.merchantId = merchantId;
+  if (tenantId) {
+    checkoutWhere.tenantId = tenantId;
   }
 
   const completedCheckouts = await prisma.checkout.findMany({
@@ -58,10 +58,10 @@ const getAllInvoices = async (
     return {
       id: p.id,
       invoiceNumber: `PAY-${p.sessionId || p.id}`, // using sessionId or id
-      merchantId: p.merchantId,
+      tenantId: p.tenantId,
       merchantName: metadata.merchantName,
       merchantEmail: p.customerEmail, // or metadata.merchantEmail
-      subscriptionId: p.merchantId,
+      subscriptionId: p.tenantId,
       planId: metadata.planId,
       planName: planName,
       billingCycle,
@@ -125,7 +125,7 @@ const createInvoice = async (payload: any) => {
 
   const invoiceData = {
     invoiceNumber: generateInvoiceNumber(),
-    merchantId: payload.merchantId,
+    tenantId: payload.tenantId || payload.merchantId,
     // merchantName/Email not in Prisma Invoice model, likely needing join or ignore? 
     // Schema: tenantId, merchantId, subscriptionId, invoiceNumber, amount, currency, status, dueDate, paidAt, paymentMethodId, items
     // No merchantName/Email. We'll store relevant details in `items` or just ignore if not needed solely for display.
@@ -159,7 +159,7 @@ const createInvoice = async (payload: any) => {
       resourceId: invoice.invoiceNumber,
       details: {
         invoiceNumber: invoice.invoiceNumber,
-        merchantId: invoice.merchantId,
+        tenantId: invoice.tenantId,
         amount: Number(invoice.amount)
       }
     }
@@ -237,7 +237,7 @@ const sendInvoice = async (id: string) => {
       resourceId: existing.invoiceNumber,
       details: {
         invoiceNumber: existing.invoiceNumber,
-        merchantId: existing.merchantId
+        tenantId: existing.tenantId
       }
     }
   });

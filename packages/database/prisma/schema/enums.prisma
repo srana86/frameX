@@ -80,6 +80,12 @@ enum UserStatus {
   BLOCKED
 }
 
+// Store Owner
+enum StoreOwnerRole {
+  OWNER // Full access - can create, edit, delete stores
+  MANAGER // Can manage store but not delete
+}
+
 // Products
 enum ProductStatus {
   ACTIVE

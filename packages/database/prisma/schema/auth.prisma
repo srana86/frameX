@@ -24,6 +24,9 @@ model User {
   accounts  Account[]
   affiliate Affiliate?
 
+  // Store Owner relation (for multi-store management)
+  storeOwner StoreOwner?
+
   tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([email])

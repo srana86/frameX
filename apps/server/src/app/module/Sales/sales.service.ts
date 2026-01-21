@@ -4,14 +4,14 @@ import { prisma, Decimal } from "@framex/database";
 const getAllSales = async (
   status?: string,
   type?: string,
-  merchantId?: string,
+  tenantId?: string,
   startDate?: string,
   endDate?: string,
   limit: number = 100
 ) => {
   const where: any = {};
   // Ignoring status and type as they don't exist in Prisma Sales model
-  if (merchantId) where.merchantId = merchantId;
+  if (tenantId) where.tenantId = tenantId;
   if (startDate || endDate) {
     where.createdAt = {};
     if (startDate) where.createdAt.gte = new Date(startDate);
@@ -47,7 +47,7 @@ const getAllSales = async (
 const createSale = async (payload: any) => {
   const sale = await prisma.sales.create({
     data: {
-      merchantId: payload.merchantId,
+      tenantId: payload.tenantId,
       orderId: payload.transactionId || payload.orderId,
       amount: new Decimal(payload.amount),
       productName: payload.planName || payload.productName,
@@ -64,7 +64,7 @@ const createSale = async (payload: any) => {
       resourceId: sale.id,
       details: {
         saleId: sale.id,
-        merchantId: sale.merchantId,
+        tenantId: sale.tenantId,
         amount: Number(sale.amount)
       }
     }

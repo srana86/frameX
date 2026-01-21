@@ -42,7 +42,7 @@ const initCheckout = async (payload: any) => {
   // Create session
   const session = await prisma.checkout.create({
     data: {
-      merchantId: payload.merchantId || "unknown", // Schema requires merchantId
+      tenantId: payload.tenantId || "unknown", // Schema requires tenantId
       sessionId: tranId,
       amount: new Decimal(payload.amount || payload.planPrice),
       currency: "BDT",

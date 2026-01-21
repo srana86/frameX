@@ -8,26 +8,16 @@ import {
   CheckCircle2,
   Loader2,
   Rocket,
-  Database,
-  CreditCard,
   X,
   ExternalLink,
   Copy,
-  Sparkles,
   Server,
   Globe,
-  Settings,
-  Zap,
   ArrowRight,
   User,
   Building2,
-  Layers,
-  HardDrive,
-  Shield,
   Clock,
   Play,
-  RefreshCw,
-  ChevronRight,
   Terminal,
   PartyPopper,
 } from "lucide-react";
@@ -109,9 +99,8 @@ function StepConnector({ isActive, isCompleted }: { isActive: boolean; isComplet
   return (
     <div className='relative h-6 w-0.5 mx-auto overflow-hidden'>
       <div
-        className={`absolute inset-0 transition-all duration-500 ${
-          isCompleted ? "bg-green-500" : isActive ? "bg-blue-500" : "bg-gray-200"
-        }`}
+        className={`absolute inset-0 transition-all duration-500 ${isCompleted ? "bg-green-500" : isActive ? "bg-blue-500" : "bg-gray-200"
+          }`}
       />
       {isActive && <div className='absolute inset-0 bg-blue-500 animate-pulse' />}
     </div>
@@ -609,10 +598,10 @@ function SuccessContainerInner() {
                               step.status === "completed"
                                 ? "text-green-600"
                                 : step.status === "running"
-                                ? "text-blue-600"
-                                : step.status === "error"
-                                ? "text-red-600"
-                                : "text-gray-400"
+                                  ? "text-blue-600"
+                                  : step.status === "error"
+                                    ? "text-red-600"
+                                    : "text-gray-400"
                             )}
                           >
                             {step.name}

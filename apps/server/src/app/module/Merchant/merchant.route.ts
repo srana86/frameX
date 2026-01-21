@@ -1,6 +1,6 @@
 import express from "express";
 import validateRequest from "../../middlewares/validateRequest";
-import { MerchantControllers } from "./merchant.controller";
+import { TenantControllers, MerchantControllers } from "./merchant.controller";
 import {
   createMerchantValidationSchema,
   updateMerchantValidationSchema,
@@ -10,60 +10,65 @@ import {
 
 const router = express.Router();
 
-router.get("/", MerchantControllers.getAllMerchants);
+// All routes use TenantControllers internally
+
+router.get("/", TenantControllers.getAllTenants);
 
 router.post(
   "/",
   validateRequest(createMerchantValidationSchema),
-  MerchantControllers.createMerchant
+  TenantControllers.createTenant
 );
 
 router.get(
   "/:id",
   validateRequest(getMerchantValidationSchema),
-  MerchantControllers.getMerchantById
+  TenantControllers.getTenantById
 );
 
 router.put(
   "/:id",
   validateRequest(updateMerchantValidationSchema),
-  MerchantControllers.updateMerchant
+  TenantControllers.updateTenant
 );
 
 router.get(
   "/:id/full",
   validateRequest(getMerchantValidationSchema),
-  MerchantControllers.getMerchantFull
+  TenantControllers.getTenantFull
 );
 
 router.get(
   "/:id/subscription",
   validateRequest(getMerchantValidationSchema),
-  MerchantControllers.getMerchantSubscription
+  TenantControllers.getTenantSubscription
 );
 
 router.get(
   "/:id/deployment",
   validateRequest(getMerchantValidationSchema),
-  MerchantControllers.getMerchantDeployment
+  TenantControllers.getTenantDeployment
 );
 
 router.get(
   "/:id/database",
   validateRequest(getMerchantValidationSchema),
-  MerchantControllers.getMerchantDatabase
+  TenantControllers.getTenantDatabase
 );
 
 router.put(
   "/:id/domain",
   validateRequest(updateMerchantValidationSchema),
-  MerchantControllers.updateMerchantDomain
+  TenantControllers.updateTenantDomain
 );
 
 router.delete(
   "/:id",
   validateRequest(deleteMerchantValidationSchema),
-  MerchantControllers.deleteMerchant
+  TenantControllers.deleteTenant
 );
 
+// Export as both TenantRoutes and MerchantRoutes for backward compatibility
+// MerchantRoutes stays at /api/v1/merchants path for API compatibility
+export const TenantRoutes = router;
 export const MerchantRoutes = router;

@@ -28,7 +28,7 @@ const getAllDatabases = async () => {
       name: info.databaseName,
       sizeOnDisk: info.size, // stored in BigInt, convert to number or string?
       empty: false, // Placeholder
-      merchantId: info.merchantId,
+      tenantId: info.tenantId,
       createdAt: info.createdAt,
       connectionString: info.databaseUrl ? "***encrypted***" : null,
     };

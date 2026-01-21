@@ -13,12 +13,12 @@ import {
 } from "./merchant.interface";
 
 // Get merchant context
-const getMerchantContextFromDB = async (merchantId?: string) => {
-  if (!merchantId) throw new AppError(StatusCodes.BAD_REQUEST, "Merchant ID required");
+const getMerchantContextFromDB = async (tenantId?: string) => {
+  if (!tenantId) throw new AppError(StatusCodes.BAD_REQUEST, "Tenant ID required");
 
   // Retrieve merchant from User table (as merchants are Users in the platform)
   const userMerchant = await prisma.user.findFirst({
-    where: { id: merchantId } // merchantId is guaranteed to be string here due to check above
+    where: { id: tenantId } // tenantId is guaranteed to be string here due to check above
   });
 
   if (!userMerchant) {
@@ -66,8 +66,8 @@ const getMerchantContextFromDB = async (merchantId?: string) => {
 };
 
 // Get merchant data from brand config
-const getMerchantDataFromBrandConfig = async (merchantId: string) => {
-  const brandConfig = await ConfigServices.getBrandConfigFromDB(merchantId);
+const getMerchantDataFromBrandConfig = async (tenantId: string) => {
+  const brandConfig = await ConfigServices.getBrandConfigFromDB(tenantId);
   return {
     merchant: {
       name: brandConfig.name,
@@ -78,16 +78,16 @@ const getMerchantDataFromBrandConfig = async (merchantId: string) => {
 };
 
 // Get merchant plan subscription
-const getMerchantPlanSubscriptionFromDB = async (merchantId: string) => {
+const getMerchantPlanSubscriptionFromDB = async (tenantId: string) => {
   const subscription =
-    await SubscriptionServices.getCurrentMerchantSubscriptionFromDB(merchantId);
+    await SubscriptionServices.getCurrentMerchantSubscriptionFromDB(tenantId);
   return subscription;
 };
 
 // Check features
-const checkFeaturesFromDB = async (merchantId: string, features: string[]) => {
+const checkFeaturesFromDB = async (tenantId: string, features: string[]) => {
   const subscription =
-    await SubscriptionServices.getCurrentMerchantSubscriptionFromDB(merchantId);
+    await SubscriptionServices.getCurrentMerchantSubscriptionFromDB(tenantId);
 
   // Get plan features if subscription exists
   let planFeatures: any = {};
@@ -113,9 +113,9 @@ const checkFeaturesFromDB = async (merchantId: string, features: string[]) => {
 };
 
 // Get feature limits
-const getFeatureLimitsFromDB = async (merchantId: string) => {
+const getFeatureLimitsFromDB = async (tenantId: string) => {
   const subscription =
-    await SubscriptionServices.getCurrentMerchantSubscriptionFromDB(merchantId);
+    await SubscriptionServices.getCurrentMerchantSubscriptionFromDB(tenantId);
 
   let planFeatures: any = {};
   if (subscription?.planId) {
@@ -135,9 +135,9 @@ const getFeatureLimitsFromDB = async (merchantId: string) => {
 };
 
 // Get feature usage
-const getFeatureUsageFromDB = async (merchantId: string) => {
+const getFeatureUsageFromDB = async (tenantId: string) => {
   const subscription =
-    await SubscriptionServices.getCurrentMerchantSubscriptionFromDB(merchantId);
+    await SubscriptionServices.getCurrentMerchantSubscriptionFromDB(tenantId);
 
   let planFeatures: any = {};
   if (subscription?.planId) {
@@ -177,7 +177,7 @@ const checkFraudFromDB = async (phone: string): Promise<FraudCheckData> => {
 
 // Domain configuration
 const getDomainConfigFromDB = async (
-  merchantId: string
+  tenantId: string
 ): Promise<DomainConfig> => {
   // TODO: Implement actual domain configuration logic
   return {
@@ -187,12 +187,12 @@ const getDomainConfigFromDB = async (
   };
 };
 
-const configureDomainFromDB = async (merchantId: string, domain: string) => {
+const configureDomainFromDB = async (tenantId: string, domain: string) => {
   // TODO: Implement actual domain configuration logic
   return { success: true, domain };
 };
 
-const verifyDomainFromDB = async (merchantId: string, domain: string) => {
+const verifyDomainFromDB = async (tenantId: string, domain: string) => {
   // TODO: Implement actual domain verification logic
   return {
     verified: false,
@@ -200,46 +200,46 @@ const verifyDomainFromDB = async (merchantId: string, domain: string) => {
   };
 };
 
-const removeDomainFromDB = async (merchantId: string) => {
+const removeDomainFromDB = async (tenantId: string) => {
   // TODO: Implement actual domain removal logic
   return { success: true };
 };
 
 // Get super admin data
-const getSuperAdminDataFromDB = async (merchantId: string, type?: string) => {
+const getSuperAdminDataFromDB = async (tenantId: string, type?: string) => {
   switch (type) {
     case "subscription":
       const subscription =
-        await SuperAdminServices.getMerchantSubscriptionFromDB(merchantId);
+        await SuperAdminServices.getMerchantSubscriptionFromDB(tenantId);
       return { subscription };
     case "deployment":
       const deploymentData =
-        await SuperAdminServices.getMerchantDeploymentFromDB(merchantId);
+        await SuperAdminServices.getMerchantDeploymentFromDB(tenantId);
       return deploymentData;
     case "database":
       const databaseData =
-        await SuperAdminServices.getMerchantDatabaseFromDB(merchantId);
+        await SuperAdminServices.getMerchantDatabaseFromDB(tenantId);
       return databaseData;
     case "full":
     default:
-      return await SuperAdminServices.getFullMerchantDataFromDB(merchantId);
+      return await SuperAdminServices.getFullMerchantDataFromDB(tenantId);
   }
 };
 
 // Email settings - using EmailTemplate module
-const getEmailSettingsFromDB = async (merchantId: string) => {
+const getEmailSettingsFromDB = async (tenantId: string) => {
   const { EmailProviderServices } = await import(
     "../EmailTemplate/emailProvider.service"
   );
-  return await EmailProviderServices.getEmailProviderSettingsFromDB(merchantId);
+  return await EmailProviderServices.getEmailProviderSettingsFromDB(tenantId);
 };
 
-const updateEmailSettingsFromDB = async (merchantId: string, payload: any) => {
+const updateEmailSettingsFromDB = async (tenantId: string, payload: any) => {
   const { EmailProviderServices } = await import(
     "../EmailTemplate/emailProvider.service"
   );
   return await EmailProviderServices.updateEmailProviderSettingsFromDB(
-    merchantId,
+    tenantId,
     payload
   );
 };
@@ -254,18 +254,18 @@ const testEmailSettingsFromDB = async (payload: any) => {
 };
 
 // Email templates - using EmailTemplate module
-const getEmailTemplatesFromDB = async (merchantId: string, event?: string) => {
+const getEmailTemplatesFromDB = async (tenantId: string, event?: string) => {
   const { EmailTemplateServices } = await import(
     "../EmailTemplate/emailTemplate.service"
   );
   return await EmailTemplateServices.getEmailTemplatesFromDB(
-    merchantId,
+    tenantId,
     event as any
   );
 };
 
 const updateEmailTemplatesFromDB = async (
-  merchantId: string,
+  tenantId: string,
   payload: {
     event: string;
     template?: any;
@@ -283,17 +283,17 @@ const updateEmailTemplatesFromDB = async (
   return await EmailTemplateServices.updateEmailTemplateFromDB(
     event as any,
     templateData,
-    merchantId
+    tenantId
   );
 };
 
-const createEmailTemplateFromDB = async (merchantId: string, payload: any) => {
+const createEmailTemplateFromDB = async (tenantId: string, payload: any) => {
   const { EmailTemplateServices } = await import(
     "../EmailTemplate/emailTemplate.service"
   );
   return await EmailTemplateServices.createEmailTemplateFromDB(
     payload,
-    merchantId
+    tenantId
   );
 };
 
@@ -317,3 +317,26 @@ export const MerchantServices = {
   updateEmailTemplatesFromDB,
   createEmailTemplateFromDB,
 };
+
+// Tenant naming alias for new code
+export const TenantServices = {
+  getTenantContextFromDB: getMerchantContextFromDB,
+  getTenantDataFromBrandConfig: getMerchantDataFromBrandConfig,
+  getTenantPlanSubscriptionFromDB: getMerchantPlanSubscriptionFromDB,
+  checkFeaturesFromDB,
+  getFeatureLimitsFromDB,
+  getFeatureUsageFromDB,
+  checkFraudFromDB,
+  getDomainConfigFromDB,
+  configureDomainFromDB,
+  verifyDomainFromDB,
+  removeDomainFromDB,
+  getSuperAdminDataFromDB,
+  getEmailSettingsFromDB,
+  updateEmailSettingsFromDB,
+  testEmailSettingsFromDB,
+  getEmailTemplatesFromDB,
+  updateEmailTemplatesFromDB,
+  createEmailTemplateFromDB,
+};
+

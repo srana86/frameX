@@ -6,7 +6,6 @@ import { ExtendedError } from "socket.io/dist/namespace";
 export interface AuthenticatedSocket extends ServerSocket {
   userId?: string;
   userRole?: string;
-  merchantId?: string;
   tenantId?: string;
 }
 

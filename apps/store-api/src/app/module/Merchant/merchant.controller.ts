@@ -6,8 +6,16 @@ import { MerchantServices } from "./merchant.service";
 
 // Get merchant context
 const getMerchantContext = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = (req.query.merchantId as string) || req.user?.userId;
-  const result = await MerchantServices.getMerchantContextFromDB(merchantId);
+  const tenantId = (req.query.tenantId as string);
+  if (!tenantId) {
+    return sendResponse(res, {
+      statusCode: StatusCodes.BAD_REQUEST,
+      success: false,
+      message: "Tenant ID not found",
+      data: null,
+    });
+  }
+  const result = await MerchantServices.getMerchantContextFromDB(tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -20,16 +28,16 @@ const getMerchantContext = catchAsync(async (req: Request, res: Response) => {
 // Get merchant data from brand config
 const getMerchantDataFromBrandConfig = catchAsync(
   async (req: Request, res: Response) => {
-    const merchantId = req.user?.userId;
-    if (!merchantId) {
+    const tenantId = (req.query.tenantId as string);
+    if (!tenantId) {
       return sendResponse(res, {
         statusCode: StatusCodes.BAD_REQUEST,
         success: false,
-        message: "Merchant ID not found",
+        message: "Tenant ID not found",
         data: null,
       });
     }
-    const result = await MerchantServices.getMerchantDataFromBrandConfig(merchantId);
+    const result = await MerchantServices.getMerchantDataFromBrandConfig(tenantId);
 
     sendResponse(res, {
       statusCode: StatusCodes.OK,
@@ -43,18 +51,18 @@ const getMerchantDataFromBrandConfig = catchAsync(
 // Get merchant plan subscription
 const getMerchantPlanSubscription = catchAsync(
   async (req: Request, res: Response) => {
-    const merchantId = req.user?.userId;
-    if (!merchantId) {
+    const tenantId = (req.query.tenantId as string);
+    if (!tenantId) {
       return sendResponse(res, {
         statusCode: StatusCodes.BAD_REQUEST,
         success: false,
-        message: "Merchant ID not found",
+        message: "Tenant ID not found",
         data: null,
       });
     }
 
     const result =
-      await MerchantServices.getMerchantPlanSubscriptionFromDB(merchantId);
+      await MerchantServices.getMerchantPlanSubscriptionFromDB(tenantId);
 
     sendResponse(res, {
       statusCode: StatusCodes.OK,
@@ -67,10 +75,10 @@ const getMerchantPlanSubscription = catchAsync(
 
 // Check features
 const checkFeatures = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = req.user?.userId;
+  const tenantId = (req.query.tenantId as string);
   const { features } = req.body;
 
-  if (!merchantId) {
+  if (!tenantId) {
     return sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
@@ -89,7 +97,7 @@ const checkFeatures = catchAsync(async (req: Request, res: Response) => {
   }
 
   const result = await MerchantServices.checkFeaturesFromDB(
-    merchantId,
+    tenantId,
     features
   );
 
@@ -103,9 +111,9 @@ const checkFeatures = catchAsync(async (req: Request, res: Response) => {
 
 // Get feature limits
 const getFeatureLimits = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = req.user?.userId;
+  const tenantId = (req.query.tenantId as string);
 
-  if (!merchantId) {
+  if (!tenantId) {
     return sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
@@ -114,7 +122,7 @@ const getFeatureLimits = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
-  const result = await MerchantServices.getFeatureLimitsFromDB(merchantId);
+  const result = await MerchantServices.getFeatureLimitsFromDB(tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -126,9 +134,9 @@ const getFeatureLimits = catchAsync(async (req: Request, res: Response) => {
 
 // Get feature usage
 const getFeatureUsage = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = req.user?.userId;
+  const tenantId = (req.query.tenantId as string);
 
-  if (!merchantId) {
+  if (!tenantId) {
     return sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
@@ -137,7 +145,7 @@ const getFeatureUsage = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
-  const result = await MerchantServices.getFeatureUsageFromDB(merchantId);
+  const result = await MerchantServices.getFeatureUsageFromDB(tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -195,10 +203,10 @@ const postFraudCheck = catchAsync(async (req: Request, res: Response) => {
 
 // Configure domain
 const configureDomain = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = req.user?.userId;
+  const tenantId = (req.query.tenantId as string);
   const { domain } = req.body;
 
-  if (!merchantId) {
+  if (!tenantId) {
     return sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
@@ -217,7 +225,7 @@ const configureDomain = catchAsync(async (req: Request, res: Response) => {
   }
 
   const result = await MerchantServices.configureDomainFromDB(
-    merchantId,
+    tenantId,
     domain
   );
 
@@ -231,9 +239,9 @@ const configureDomain = catchAsync(async (req: Request, res: Response) => {
 
 // Get domain config
 const getDomainConfig = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = req.user?.userId;
+  const tenantId = (req.query.tenantId as string);
 
-  if (!merchantId) {
+  if (!tenantId) {
     return sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
@@ -242,7 +250,7 @@ const getDomainConfig = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
-  const result = await MerchantServices.getDomainConfigFromDB(merchantId);
+  const result = await MerchantServices.getDomainConfigFromDB(tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -254,10 +262,10 @@ const getDomainConfig = catchAsync(async (req: Request, res: Response) => {
 
 // Verify domain
 const verifyDomain = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = req.user?.userId;
+  const tenantId = (req.query.tenantId as string);
   const { domain } = req.body;
 
-  if (!merchantId) {
+  if (!tenantId) {
     return sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
@@ -275,7 +283,7 @@ const verifyDomain = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
-  const result = await MerchantServices.verifyDomainFromDB(merchantId, domain);
+  const result = await MerchantServices.verifyDomainFromDB(tenantId, domain);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -287,9 +295,9 @@ const verifyDomain = catchAsync(async (req: Request, res: Response) => {
 
 // Remove domain
 const removeDomain = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = req.user?.userId;
+  const tenantId = (req.query.tenantId as string);
 
-  if (!merchantId) {
+  if (!tenantId) {
     return sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
@@ -298,7 +306,7 @@ const removeDomain = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
-  const result = await MerchantServices.removeDomainFromDB(merchantId);
+  const result = await MerchantServices.removeDomainFromDB(tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -310,10 +318,10 @@ const removeDomain = catchAsync(async (req: Request, res: Response) => {
 
 // Get super admin data
 const getSuperAdminData = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = req.user?.userId;
+  const tenantId = (req.query.tenantId as string);
   const type = req.query.type as string | undefined;
 
-  if (!merchantId) {
+  if (!tenantId) {
     return sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
@@ -323,7 +331,7 @@ const getSuperAdminData = catchAsync(async (req: Request, res: Response) => {
   }
 
   const result = await MerchantServices.getSuperAdminDataFromDB(
-    merchantId,
+    tenantId,
     type
   );
 
@@ -337,9 +345,9 @@ const getSuperAdminData = catchAsync(async (req: Request, res: Response) => {
 
 // Get email settings
 const getEmailSettings = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = req.user?.userId;
+  const tenantId = (req.query.tenantId as string);
 
-  if (!merchantId) {
+  if (!tenantId) {
     return sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
@@ -348,7 +356,7 @@ const getEmailSettings = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
-  const result = await MerchantServices.getEmailSettingsFromDB(merchantId);
+  const result = await MerchantServices.getEmailSettingsFromDB(tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -360,9 +368,9 @@ const getEmailSettings = catchAsync(async (req: Request, res: Response) => {
 
 // Update email settings
 const updateEmailSettings = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = req.user?.userId;
+  const tenantId = (req.query.tenantId as string);
 
-  if (!merchantId) {
+  if (!tenantId) {
     return sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
@@ -372,7 +380,7 @@ const updateEmailSettings = catchAsync(async (req: Request, res: Response) => {
   }
 
   const result = await MerchantServices.updateEmailSettingsFromDB(
-    merchantId,
+    tenantId,
     req.body
   );
 
@@ -398,10 +406,10 @@ const testEmailSettings = catchAsync(async (req: Request, res: Response) => {
 
 // Get email templates
 const getEmailTemplates = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = req.user?.userId;
+  const tenantId = (req.query.tenantId as string);
   const event = req.query.event as string | undefined;
 
-  if (!merchantId) {
+  if (!tenantId) {
     return sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
@@ -411,7 +419,7 @@ const getEmailTemplates = catchAsync(async (req: Request, res: Response) => {
   }
 
   const result = await MerchantServices.getEmailTemplatesFromDB(
-    merchantId,
+    tenantId,
     event
   );
 
@@ -425,10 +433,10 @@ const getEmailTemplates = catchAsync(async (req: Request, res: Response) => {
 
 // Update email templates (updates a single template by event)
 const updateEmailTemplates = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = req.user?.userId;
+  const tenantId = (req.query.tenantId as string);
   const { event, ...templateData } = req.body;
 
-  if (!merchantId) {
+  if (!tenantId) {
     return sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
@@ -446,7 +454,7 @@ const updateEmailTemplates = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
-  const result = await MerchantServices.updateEmailTemplatesFromDB(merchantId, {
+  const result = await MerchantServices.updateEmailTemplatesFromDB(tenantId, {
     event,
     template: templateData,
   });
@@ -461,9 +469,9 @@ const updateEmailTemplates = catchAsync(async (req: Request, res: Response) => {
 
 // Create email template
 const createEmailTemplate = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = req.user?.userId;
+  const tenantId = (req.query.tenantId as string);
 
-  if (!merchantId) {
+  if (!tenantId) {
     return sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
@@ -473,7 +481,7 @@ const createEmailTemplate = catchAsync(async (req: Request, res: Response) => {
   }
 
   const result = await MerchantServices.createEmailTemplateFromDB(
-    merchantId,
+    tenantId,
     req.body
   );
 

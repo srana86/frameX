@@ -19,19 +19,19 @@ const getActivePlans = catchAsync(async (req: Request, res: Response) => {
 // Get current subscription
 const getCurrentSubscription = catchAsync(
   async (req: Request, res: Response) => {
-    const merchantId = req.user?.userId || req.query.merchantId;
-    if (!merchantId) {
+    const tenantId = req.user?.userId;
+    if (!tenantId) {
       return sendResponse(res, {
         statusCode: StatusCodes.BAD_REQUEST,
         success: false,
-        message: "Merchant ID is required",
+        message: "Tenant ID is required",
         data: null,
       });
     }
 
     const result =
       await SubscriptionServices.getCurrentMerchantSubscriptionFromDB(
-        merchantId as string
+        tenantId as string
       );
 
     sendResponse(res, {
@@ -46,18 +46,18 @@ const getCurrentSubscription = catchAsync(
 // Get subscription status
 const getSubscriptionStatus = catchAsync(
   async (req: Request, res: Response) => {
-    const merchantId = req.user?.userId || req.query.merchantId;
-    if (!merchantId) {
+    const tenantId = req.user?.userId;
+    if (!tenantId) {
       return sendResponse(res, {
         statusCode: StatusCodes.BAD_REQUEST,
         success: false,
-        message: "Merchant ID is required",
+        message: "Tenant ID is required",
         data: null,
       });
     }
 
     const result = await SubscriptionServices.getSubscriptionStatusFromDB(
-      merchantId as string
+      tenantId as string
     );
 
     sendResponse(res, {
@@ -71,9 +71,9 @@ const getSubscriptionStatus = catchAsync(
 
 // Create subscription
 const createSubscription = catchAsync(async (req: Request, res: Response) => {
-  const merchantId = req.user?.userId;
+  const tenantId = req.user?.userId;
 
-  if (!merchantId) {
+  if (!tenantId) {
     return sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
@@ -83,7 +83,7 @@ const createSubscription = catchAsync(async (req: Request, res: Response) => {
   }
 
   const result = await SubscriptionServices.createSubscriptionIntoDB(
-    merchantId,
+    tenantId,
     req.body
   );
 

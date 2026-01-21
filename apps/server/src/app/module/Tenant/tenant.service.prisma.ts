@@ -36,8 +36,8 @@ const getAllTenants = async (query: {
             where,
             include: {
                 domains: true,
-                settings: {
-                    select: { brandName: true, logo: true },
+                settingsList: {
+                    select: { key: true, value: true },
                 },
                 _count: {
                     select: { users: true, products: true, orders: true },
@@ -64,7 +64,7 @@ const getTenantById = async (tenantId: string) => {
         where: { id: tenantId },
         include: {
             domains: true,
-            settings: true,
+            settingsList: true,
             users: {
                 select: { id: true, email: true, name: true, role: true },
             },
@@ -124,15 +124,9 @@ const createTenant = async (data: {
                     sslStatus: SSLStatus.ACTIVE,
                 },
             },
-            settings: {
-                create: {
-                    brandName: data.name,
-                },
-            },
         },
         include: {
             domains: true,
-            settings: true,
         },
     });
 
@@ -168,7 +162,7 @@ const updateTenant = async (
     return prisma.tenant.update({
         where: { id: tenantId },
         data,
-        include: { domains: true, settings: true },
+        include: { domains: true },
     });
 };
 

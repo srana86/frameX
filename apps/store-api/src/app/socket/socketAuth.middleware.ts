@@ -61,7 +61,6 @@ export const socketAuthMiddleware = async (
     socket.userId = user.id;
     socket.userRole = userRole;
     socket.tenantId = userTenantId || expectedTenantId || undefined;
-    socket.merchantId = userTenantId; // for backward compatibility/clarity
 
     next();
   } catch (error: any) {

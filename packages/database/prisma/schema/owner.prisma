@@ -1,0 +1,68 @@
+// ============================================================
+// STORE OWNER ACCOUNT (Multi-Store Management)
+// ============================================================
+// Enables store owners to manage multiple stores from a single account
+// With Option B: Separate subscription per store
+
+model StoreOwner {
+  id          String  @id @default(uuid())
+  userId      String  @unique // Links to User table
+  displayName String?
+  companyName String?
+  phone       String?
+  address     String?
+
+  // Billing Info (owner-level, but subscriptions are per-store)
+  billingEmail   String?
+  billingAddress String?
+  vatNumber      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stores   StoreOwnerStore[]
+  invoices OwnerInvoice[]
+
+  @@map("store_owner")
+}
+
+model StoreOwnerStore {
+  id       String @id @default(uuid())
+  ownerId  String
+  tenantId String @unique // Each store can only have one owner
+
+  role StoreOwnerRole @default(OWNER)
+
+  createdAt DateTime @default(now())
+
+  owner  StoreOwner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, tenantId])
+  @@index([ownerId])
+  @@index([tenantId])
+  @@map("store_owner_store")
+}
+
+model OwnerInvoice {
+  id            String        @id @default(uuid())
+  ownerId       String
+  invoiceNumber String        @unique
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("BDT")
+  status        InvoiceStatus @default(PENDING)
+  dueDate       DateTime?
+  paidAt        DateTime?
+  description   String?
+  items         Json? // [{storeId, storeName, subscriptionId, amount}]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  owner StoreOwner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([status])
+  @@map("owner_invoice")
+}

@@ -13,22 +13,22 @@ export type ITenant = {
   updatedAt: Date;
 };
 
-// Get all tenants (was merchants)
-const getAllMerchants = async () => {
+// Get all tenants
+const getAllTenants = async () => {
   return prisma.tenant.findMany({
     orderBy: { createdAt: "desc" },
   });
 };
 
 // Get tenant by ID
-const getMerchantById = async (id: string) => {
+const getTenantById = async (id: string) => {
   return prisma.tenant.findUnique({
     where: { id },
   });
 };
 
 // Get full tenant info with subscription, deployment, database
-const getMerchantFull = async (id: string) => {
+const getTenantFull = async (id: string) => {
   const [tenant, subscription, deployment, database] = await Promise.all([
     prisma.tenant.findUnique({ where: { id } }),
     prisma.tenantSubscription.findFirst({ where: { tenantId: id } }),
@@ -49,25 +49,26 @@ const getMerchantFull = async (id: string) => {
   }
 
   return {
+    tenant, // New key name
     merchant: tenant, // Keep 'merchant' key for backward compatibility with frontend
     subscription,
     plan,
     deployment: deployment
       ? {
-          ...deployment,
-        }
+        ...deployment,
+      }
       : null,
     database: database
       ? {
-          ...database,
-          databaseUrl: database.databaseUrl ? "***encrypted***" : undefined,
-        }
+        ...database,
+        databaseUrl: database.databaseUrl ? "***encrypted***" : undefined,
+      }
       : null,
   };
 };
 
-// Create tenant (was merchant)
-const createMerchant = async (payload: Partial<ITenant>) => {
+// Create tenant
+const createTenant = async (payload: Partial<ITenant>) => {
   return prisma.tenant.create({
     data: {
       name: payload.name!,
@@ -82,7 +83,7 @@ const createMerchant = async (payload: Partial<ITenant>) => {
 };
 
 // Update tenant
-const updateMerchant = async (id: string, payload: Partial<ITenant>) => {
+const updateTenant = async (id: string, payload: Partial<ITenant>) => {
   const { id: _, ...updateData } = payload as any;
 
   const tenant = await prisma.tenant.update({
@@ -98,7 +99,7 @@ const updateMerchant = async (id: string, payload: Partial<ITenant>) => {
 };
 
 // Get tenant subscription
-const getMerchantSubscription = async (id: string) => {
+const getTenantSubscription = async (id: string) => {
   const subscription = await prisma.tenantSubscription.findFirst({
     where: { tenantId: id },
     include: { plan: true },
@@ -112,7 +113,7 @@ const getMerchantSubscription = async (id: string) => {
 };
 
 // Get tenant deployment
-const getMerchantDeployment = async (id: string) => {
+const getTenantDeployment = async (id: string) => {
   const deployment = await prisma.deployment.findFirst({
     where: { tenantId: id },
   });
@@ -125,7 +126,7 @@ const getMerchantDeployment = async (id: string) => {
 };
 
 // Get tenant database info
-const getMerchantDatabase = async (id: string) => {
+const getTenantDatabase = async (id: string) => {
   const database = await prisma.databaseInfo.findUnique({
     where: { tenantId: id },
   });
@@ -141,7 +142,7 @@ const getMerchantDatabase = async (id: string) => {
 };
 
 // Update tenant domain
-const updateMerchantDomain = async (id: string, customDomain: string) => {
+const updateTenantDomain = async (id: string, customDomain: string) => {
   return prisma.tenant.update({
     where: { id },
     data: { customDomain },
@@ -149,7 +150,7 @@ const updateMerchantDomain = async (id: string, customDomain: string) => {
 };
 
 // Delete tenant and all associated data
-const deleteMerchant = async (id: string) => {
+const deleteTenant = async (id: string) => {
   const tenant = await prisma.tenant.findUnique({ where: { id } });
 
   if (!tenant) {
@@ -170,15 +171,30 @@ const deleteMerchant = async (id: string) => {
   };
 };
 
+// Export with tenant naming
+export const TenantServices = {
+  getAllTenants,
+  getTenantById,
+  getTenantFull,
+  getTenantSubscription,
+  getTenantDeployment,
+  getTenantDatabase,
+  createTenant,
+  updateTenant,
+  updateTenantDomain,
+  deleteTenant,
+};
+
+// Backward compatibility - merchant naming aliases
 export const MerchantServices = {
-  getAllMerchants,
-  getMerchantById,
-  getMerchantFull,
-  getMerchantSubscription,
-  getMerchantDeployment,
-  getMerchantDatabase,
-  createMerchant,
-  updateMerchant,
-  updateMerchantDomain,
-  deleteMerchant,
+  getAllMerchants: getAllTenants,
+  getMerchantById: getTenantById,
+  getMerchantFull: getTenantFull,
+  getMerchantSubscription: getTenantSubscription,
+  getMerchantDeployment: getTenantDeployment,
+  getMerchantDatabase: getTenantDatabase,
+  createMerchant: createTenant,
+  updateMerchant: updateTenant,
+  updateMerchantDomain: updateTenantDomain,
+  deleteMerchant: deleteTenant,
 };
