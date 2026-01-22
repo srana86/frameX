@@ -1,5 +1,5 @@
 {
-  "name": "@framex/store-api",
+  "name": "@framex/store-server",
   "version": "1.0.0",
   "description": "",
   "main": "./dist/server.js",
