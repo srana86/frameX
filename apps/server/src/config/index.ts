@@ -40,4 +40,16 @@ export default {
   jwt_refresh_expires_in: process.env.JWT_REFRESH_EXPIRES_IN,
   encryption_key: process.env.ENCRYPTION_KEY,
   bcrypt_salt_rounds: process.env.BCRYPT_SALT_ROUNDS || 12,
+  redis_url: process.env.REDIS_URL,
+  redis_host: process.env.REDIS_HOST,
+  redis_port: process.env.REDIS_PORT,
+  redis_password: process.env.REDIS_PASSWORD,
+  socket_path: process.env.SOCKET_PATH || "/socket.io",
+  socket_ping_timeout: process.env.SOCKET_PING_TIMEOUT
+    ? parseInt(process.env.SOCKET_PING_TIMEOUT)
+    : 60000,
+  socket_ping_interval: process.env.SOCKET_PING_INTERVAL
+    ? parseInt(process.env.SOCKET_PING_INTERVAL)
+    : 25000,
+  frontend_url: process.env.FRONTEND_URL || "http://localhost:3000",
 };
