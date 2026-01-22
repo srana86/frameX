@@ -46,7 +46,7 @@ export const serverSideApiClient = (
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      "X-Tenant-ID": tenantId || process.env.NEXT_PUBLIC_TENANT_ID || "",
+      "X-Tenant-ID": tenantId || "",
       "X-Domain": domain || "",
     },
     withCredentials: true,

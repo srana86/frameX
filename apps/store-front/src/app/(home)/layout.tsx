@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import TopNav from "@/components/site/TopNav";
 import AdminAwareFooter from "@/components/site/AdminAwareFooter";
 import { FloatingCart } from "@/components/site/FloatingCart";
@@ -13,7 +14,12 @@ interface EnabledFooterPage {
   category: string;
 }
 
-async function getBrandConfig(): Promise<BrandConfig> {
+/**
+ * Fetches brand config from API.
+ * Returns null if the store is not found (STORE_NOT_FOUND error).
+ * Returns defaultBrandConfig for other errors to allow graceful degradation.
+ */
+async function getBrandConfig(): Promise<BrandConfig | null> {
   try {
     const client = await getPublicServerClient();
     const response = await client.get("/brand-config");
@@ -33,8 +39,17 @@ async function getBrandConfig(): Promise<BrandConfig> {
         currency: { ...defaultBrandConfig.currency, ...apiConfig.currency },
       } as BrandConfig;
     }
-  } catch (error) {
-    console.error("Error fetching brand config:", error);
+  } catch (error: any) {
+    // Check if this is a "store not found" error (404 with STORE_NOT_FOUND code)
+    const status = error?.response?.status;
+    const errorCode = error?.response?.data?.error;
+
+    if (status === 404 && errorCode === "STORE_NOT_FOUND") {
+      console.log("[HomeLayout] Store not found for this domain, redirecting...");
+      return null; // Signal that store doesn't exist
+    }
+
+    console.error("Error fetching brand config:", error?.message || error);
   }
   return defaultBrandConfig;
 }
@@ -51,16 +66,20 @@ async function getEnabledPages(): Promise<EnabledFooterPage[]> {
       }));
     }
   } catch (error) {
-    console.error("Error fetching enabled pages:", error);
+    // Silently fail for pages - not critical
   }
   return [];
 }
 
 async function HomeLayoutContent({ children }: { children: React.ReactNode }) {
-  const [brandConfig, enabledPages] = await Promise.all([
-    getBrandConfig(),
-    getEnabledPages(),
-  ]);
+  const brandConfig = await getBrandConfig();
+
+  // If store doesn't exist, redirect to the not found page
+  if (brandConfig === null) {
+    redirect("/store-not-found");
+  }
+
+  const enabledPages = await getEnabledPages();
 
   return (
     <>
@@ -91,3 +110,4 @@ export default function HomeLayout({
     </Suspense>
   );
 }
+

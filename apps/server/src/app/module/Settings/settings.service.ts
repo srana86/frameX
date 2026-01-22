@@ -2,10 +2,13 @@
 import { prisma } from "@framex/database";
 
 const DEFAULT_GENERAL_SETTINGS = {
-  // ... defaults
   siteName: "FrameX Super Admin",
   defaultCurrency: "BDT",
-  // ...
+  timezone: "Asia/Dhaka",
+  dateFormat: "DD/MM/YYYY",
+  darkMode: false,
+  autoRefresh: true,
+  refreshInterval: 30,
 };
 
 const getGeneralSettings = async () => {

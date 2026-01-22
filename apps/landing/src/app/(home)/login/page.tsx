@@ -49,6 +49,12 @@ export default function LoginPage() {
 
       // Role-based redirection
       const role = (data?.user as any)?.role?.toUpperCase();
+
+      // Set role hint cookie for middleware redirect optimization
+      if (role) {
+        document.cookie = `framex-user-role=${role}; path=/; max-age=${30 * 24 * 60 * 60}`;
+      }
+
       if (role === "OWNER") {
         router.push("/owner");
       } else {

@@ -39,6 +39,8 @@ app.all("/api/auth/*", toNodeHandler(auth));
 
 // Application routes
 app.use("/api/v1", router);
+app.use("/api/settings", router); // Alias for legacy/direct calls
+app.use("/api/public/settings", router); // Another common pattern
 
 app.get("/api", (req: Request, res: Response) => {
   res.send("Framex Tech API is running");

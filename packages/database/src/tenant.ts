@@ -16,20 +16,23 @@ export async function getTenantById(tenantId: string): Promise<Tenant | null> {
 export async function getTenantByDomain(
   domain: string
 ): Promise<(TenantDomain & { tenant: Tenant }) | null> {
-  // Check if it's a subdomain (e.g., "demo" from demo.localhost OR demo.framextech.com)
-  const subdomainMatch = domain.match(
-    /^([^.]+)\.(localhost|framextech\.com)(:\d+)?$/
-  );
+  // Extract hostname (strip port if present)
+  const hostname = domain.split(":")[0];
+
+  // Check if it's a system subdomain (e.g., "demo" from demo.localhost OR demo.framextech.com)
+  const subdomainMatch = hostname.match(/^([^.]+)\.(localhost|framextech\.com)$/);
   const subdomain = subdomainMatch ? subdomainMatch[1] : null;
 
   return prisma.tenantDomain.findFirst({
     where: {
       OR: [
-        { primaryDomain: domain },
+        { hostname: hostname },
+        { primaryDomain: hostname },
         { subdomain: subdomain || undefined },
-        { customDomain: domain },
+        { customDomain: hostname },
       ],
-      verified: true,
+      // Ensure the domain is active/verified
+      status: "ACTIVE",
     },
     include: {
       tenant: true,

@@ -26,6 +26,7 @@ export const tenantMiddleware = async (
 ) => {
     try {
         let tenantId: string | undefined;
+        let domainAttempted: string | undefined; // Track if a domain resolution was attempted
 
         // Helper to resolve tenant from a domain string
         const resolveTenantFromDomain = async (domain: string) => {
@@ -35,7 +36,8 @@ export const tenantMiddleware = async (
 
         // Priority 1: x-domain header (frontend sends current domain)
         const xDomain = req.headers["x-domain"] as string;
-        if (xDomain) {
+        if (xDomain && xDomain !== "localhost") {
+            domainAttempted = xDomain;
             const tenantDomain = await resolveTenantFromDomain(xDomain);
             if (tenantDomain) {
                 tenantId = tenantDomain.tenantId;
@@ -50,7 +52,8 @@ export const tenantMiddleware = async (
         // Priority 2: x-forwarded-domain header (for proxied requests)
         if (!tenantId) {
             const xForwardedDomain = req.headers["x-forwarded-domain"] as string;
-            if (xForwardedDomain) {
+            if (xForwardedDomain && xForwardedDomain !== "localhost") {
+                domainAttempted = domainAttempted || xForwardedDomain;
                 const tenantDomain = await resolveTenantFromDomain(xForwardedDomain);
                 if (tenantDomain) {
                     tenantId = tenantDomain.tenantId;
@@ -69,14 +72,17 @@ export const tenantMiddleware = async (
             if (origin) {
                 try {
                     const originUrl = new URL(origin);
-                    const tenantDomain = await resolveTenantFromDomain(originUrl.hostname);
-                    if (tenantDomain) {
-                        tenantId = tenantDomain.tenantId;
-                        req.tenant = {
-                            id: tenantDomain.tenant.id,
-                            name: tenantDomain.tenant.name,
-                            status: tenantDomain.tenant.status,
-                        };
+                    if (originUrl.hostname !== "localhost") {
+                        domainAttempted = domainAttempted || originUrl.hostname;
+                        const tenantDomain = await resolveTenantFromDomain(originUrl.hostname);
+                        if (tenantDomain) {
+                            tenantId = tenantDomain.tenantId;
+                            req.tenant = {
+                                id: tenantDomain.tenant.id,
+                                name: tenantDomain.tenant.name,
+                                status: tenantDomain.tenant.status,
+                            };
+                        }
                     }
                 } catch (e) {
                     // Invalid origin URL, continue
@@ -88,7 +94,8 @@ export const tenantMiddleware = async (
         if (!tenantId) {
             // req.hostname doesn't include port, which is good for getTenantByDomain
             const hostname = req.hostname;
-            if (hostname) {
+            if (hostname && hostname !== "localhost") {
+                domainAttempted = domainAttempted || hostname;
                 const tenantDomain = await resolveTenantFromDomain(hostname);
                 if (tenantDomain) {
                     tenantId = tenantDomain.tenantId;
@@ -101,17 +108,33 @@ export const tenantMiddleware = async (
             }
         }
 
-        // Priority 5: x-tenant-id / x-tenant-id header (direct fallback)
-        tenantId = req.headers["x-tenant-id"] as string;
-
-        console.log(`[TenantMiddleware] Resolved tenantId: ${tenantId} for URL: ${req.url}`);
-
+        // Priority 5: x-tenant-id header (direct fallback)
         if (!tenantId) {
-            console.log("[TenantMiddleware] No tenant ID found in headers or domain");
-            return res.status(400).json({
-                success: false,
-                message: "Tenant identification required. Send x-domain or x-tenant-id header.",
-            });
+            tenantId = req.headers["x-tenant-id"] as string;
+        }
+
+        console.log(`[TenantMiddleware] Resolved tenantId: ${tenantId} for URL: ${req.url}, domainAttempted: ${domainAttempted}`);
+
+        // If no tenant found, determine the appropriate error
+        if (!tenantId) {
+            if (domainAttempted) {
+                // A domain was provided but no tenant exists for it
+                console.log(`[TenantMiddleware] Store not found for domain: ${domainAttempted}`);
+                return res.status(404).json({
+                    success: false,
+                    error: "STORE_NOT_FOUND",
+                    message: `No store found for domain: ${domainAttempted}`,
+                    domain: domainAttempted,
+                });
+            } else {
+                // No identification method was provided at all
+                console.log("[TenantMiddleware] No tenant ID found in headers or domain");
+                return res.status(400).json({
+                    success: false,
+                    error: "TENANT_REQUIRED",
+                    message: "Tenant identification required. Send x-domain or x-tenant-id header.",
+                });
+            }
         }
 
         // Validate tenant exists and is active

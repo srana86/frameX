@@ -50,9 +50,18 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // 3. Authenticated users on auth pages will be redirected by the page component itself
-  // to avoid hardcoding role-based paths here (since we don't have role info in token)
+  // 3. Authenticated users on auth pages
   if (token && isAuthPage) {
+    const roleHint = request.cookies.get("framex-user-role")?.value?.toUpperCase();
+
+    if (roleHint === "OWNER") {
+      return NextResponse.redirect(new URL("/owner", request.url));
+    } else if (roleHint === "ADMIN") {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
+
+    // Fallback: If no role hint but token exists, let client-side handle it 
+    // or try to redirect to a default dashboard
     return NextResponse.next();
   }
 

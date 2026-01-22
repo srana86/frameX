@@ -124,7 +124,7 @@ function CheckoutContainerInner() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const settingsRes = await fetch("/api/settings/general");
+        const settingsRes = await fetch("/api/v1/settings/general");
         if (!settingsRes.ok) {
           return;
         }

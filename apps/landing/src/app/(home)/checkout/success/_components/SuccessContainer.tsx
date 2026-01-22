@@ -170,7 +170,7 @@ function SuccessContainerInner() {
         // Fetch session and settings in parallel
         const [sessionRes, settingsRes] = await Promise.all([
           fetch(`/api/checkout/session?tran_id=${tranId}`),
-          fetch("/api/settings/general"),
+          fetch("/api/v1/settings/general"),
         ]);
 
         if (sessionRes.ok) {

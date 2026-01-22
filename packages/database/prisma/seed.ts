@@ -60,6 +60,19 @@ async function main() {
   });
   console.log("✅ Super admin account created with password");
 
+  // Create system tenant for global settings
+  await prisma.tenant.upsert({
+    where: { id: "system" },
+    update: {},
+    create: {
+      id: "system",
+      name: "FrameX System",
+      email: "system@framex.com",
+      status: TenantStatus.ACTIVE,
+    },
+  });
+  console.log("✅ System tenant created");
+
   // Create demo tenant
   const demoTenant = await prisma.tenant.upsert({
     where: { email: "demo@framex.com" },

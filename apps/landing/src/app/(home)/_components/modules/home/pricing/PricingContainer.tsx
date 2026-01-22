@@ -51,7 +51,7 @@ export default function PricingContainer() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const settingsRes = await fetch("/api/settings/general");
+        const settingsRes = await fetch("/api/v1/settings/general");
         if (settingsRes.ok) {
           const settings = await settingsRes.json();
           if (settings.defaultCurrency) {

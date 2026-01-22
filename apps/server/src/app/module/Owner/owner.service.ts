@@ -146,19 +146,25 @@ const getOwnerStores = async (ownerId: string) => {
         },
     });
 
-    return stores.map((store) => ({
-        id: store.tenant.id,
-        name: store.tenant.name,
-        slug: store.tenant.slug,
-        email: store.tenant.email,
-        status: store.tenant.status,
-        customDomain: store.tenant.customDomain,
-        deploymentUrl: store.tenant.deploymentUrl,
-        role: store.role,
-        subscription: store.tenant.subscriptions[0] || null,
-        stats: store.tenant._count,
-        createdAt: store.tenant.createdAt,
-    }));
+    return stores.map((store) => {
+        const sub = store.tenant.subscriptions[0];
+        return {
+            id: store.tenant.id,
+            name: store.tenant.name,
+            slug: store.tenant.slug,
+            email: store.tenant.email,
+            status: store.tenant.status,
+            customDomain: store.tenant.customDomain,
+            deploymentUrl: store.tenant.deploymentUrl,
+            role: store.role,
+            subscription: sub ? {
+                ...sub,
+                planName: (sub as any).plan?.name
+            } : null,
+            stats: store.tenant._count,
+            createdAt: store.tenant.createdAt,
+        };
+    });
 };
 
 // Create a new store for the owner
@@ -168,7 +174,7 @@ const createStore = async (data: IStoreCreate) => {
 
     // Create tenant and link to owner in a transaction
     const result = await prisma.$transaction(async (tx) => {
-        // Create the tenant/store
+        // 1. Create the tenant/store
         const tenant = await tx.tenant.create({
             data: {
                 name: data.name,
@@ -179,7 +185,7 @@ const createStore = async (data: IStoreCreate) => {
             },
         });
 
-        // Create the owner-store link
+        // 2. Create the owner-store link
         const ownerStore = await tx.storeOwnerStore.create({
             data: {
                 ownerId: data.ownerId,
@@ -188,7 +194,34 @@ const createStore = async (data: IStoreCreate) => {
             },
         });
 
-        return { tenant, ownerStore };
+        // 3. Automated Subdomain Management
+        // Detect environment base domain (default to localhost for dev)
+        const baseDomain = process.env.BASE_DOMAIN || "localhost";
+        const protocol = baseDomain === "localhost" ? "http" : "https";
+        const fullDomain = `${slug}.${baseDomain}`;
+        const deploymentUrl = `${protocol}://${fullDomain}`;
+
+        // Create the system domain record
+        await tx.tenantDomain.create({
+            data: {
+                tenantId: tenant.id,
+                hostname: fullDomain,
+                subdomain: slug,
+                primaryDomain: fullDomain,
+                isPrimary: true,
+                verified: true,
+                dnsVerified: true,
+                status: "ACTIVE",
+            },
+        });
+
+        // Update tenant with deployment URL
+        const updatedTenant = await tx.tenant.update({
+            where: { id: tenant.id },
+            data: { deploymentUrl },
+        });
+
+        return { tenant: updatedTenant, ownerStore };
     });
 
     return result.tenant;
@@ -224,8 +257,16 @@ const getStoreById = async (ownerId: string, storeId: string) => {
         throw new Error("Store not found or not owned by you");
     }
 
+    const { _count, subscriptions, ...tenantData } = ownerStore.tenant;
+    const sub = subscriptions[0];
+
     return {
-        ...ownerStore.tenant,
+        ...tenantData,
+        stats: _count,
+        subscription: sub ? {
+            ...sub,
+            planName: (sub as any).plan?.name
+        } : null,
         role: ownerStore.role,
     };
 };

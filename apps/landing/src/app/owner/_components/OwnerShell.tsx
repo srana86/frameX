@@ -448,12 +448,6 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <Link href="/owner/stores/new">
-                                    <Button size="sm">
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        New Store
-                                    </Button>
-                                </Link>
                                 <Button
                                     variant="ghost"
                                     size="sm"
