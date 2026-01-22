@@ -146,6 +146,21 @@ const deleteStaff = catchAsync(async (req: Request, res: Response) => {
 });
 
 /**
+ * Get owner's stores (for staff assignment)
+ */
+const getOwnerStores = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req as any).user.id;
+  const result = await StaffServices.getOwnerStores(userId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Stores retrieved successfully",
+    data: result,
+  });
+});
+
+/**
  * Get current staff user's store access
  */
 const getMyStoreAccess = catchAsync(async (req: Request, res: Response) => {
@@ -162,6 +177,7 @@ const getMyStoreAccess = catchAsync(async (req: Request, res: Response) => {
 
 export const StaffControllers = {
   getOwnerStaff,
+  getOwnerStores,
   getStaffById,
   createStaff,
   updateStaff,

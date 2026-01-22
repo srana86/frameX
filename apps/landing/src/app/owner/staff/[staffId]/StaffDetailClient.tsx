@@ -51,7 +51,7 @@ interface StaffMember {
   email: string;
   phone?: string | null;
   status: string;
-  createdAt: Date;
+  createdAt: string | Date;
   stores: StoreAccess[];
 }
 

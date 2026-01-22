@@ -1,5 +1,4 @@
 import { ReactNode } from "react";
-import { redirect } from "next/navigation";
 import { StoreAdminShell } from "./_components/StoreAdminShell";
 import { requireStoreAccess } from "@/lib/store-auth-helpers";
 import { StoreProvider } from "@/contexts/StoreContext";

@@ -514,6 +514,40 @@ const deleteStaff = async (userId: string, staffId: string) => {
 };
 
 /**
+ * Get owner's stores (for staff assignment UI)
+ */
+const getOwnerStores = async (userId: string) => {
+  const owner = await prisma.storeOwner.findUnique({
+    where: { userId },
+    include: {
+      stores: {
+        include: {
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              status: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!owner) {
+    return [];
+  }
+
+  return owner.stores.map((s) => ({
+    id: s.tenant.id,
+    name: s.tenant.name,
+    slug: s.tenant.slug,
+    status: s.tenant.status,
+  }));
+};
+
+/**
  * Get staff access for current user (for staff users)
  */
 const getMyStoreAccess = async (userId: string) => {
@@ -542,6 +576,7 @@ const getMyStoreAccess = async (userId: string) => {
 
 export const StaffServices = {
   getOwnerStaff,
+  getOwnerStores,
   getStaffById,
   createStaff,
   updateStaff,

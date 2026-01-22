@@ -24,6 +24,9 @@ router.use(auth("OWNER", "ADMIN", "SUPER_ADMIN"));
 // Get all staff members
 router.get("/", StaffControllers.getOwnerStaff);
 
+// Get owner's stores (for staff assignment UI)
+router.get("/stores", StaffControllers.getOwnerStores);
+
 // Get current user's store access (for staff users)
 router.get("/access", StaffControllers.getMyStoreAccess);
 

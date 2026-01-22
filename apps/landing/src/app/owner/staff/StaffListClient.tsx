@@ -43,7 +43,7 @@ interface StaffMember {
   name: string;
   email: string;
   status: string;
-  createdAt: Date;
+  createdAt: string | Date;
   stores: StoreAccess[];
 }
 

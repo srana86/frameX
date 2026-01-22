@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { requireAuth } from "@/lib/store-auth-helpers";
 import { CreateStaffClient } from "./CreateStaffClient";
-import { prisma } from "@framex/database";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -9,47 +8,47 @@ export const metadata: Metadata = {
   description: "Create a new staff account",
 };
 
-/**
- * Fetch owner's stores for assignment
- */
-async function getOwnerStores(userId: string) {
-  const owner = await prisma.storeOwner.findUnique({
-    where: { userId },
-    include: {
-      stores: {
-        include: {
-          tenant: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              status: true,
-            },
-          },
-        },
-      },
-    },
-  });
+interface Store {
+  id: string;
+  name: string;
+  slug: string | null;
+  status: string;
+}
 
-  if (!owner) {
+/**
+ * Fetch owner's stores from backend API
+ */
+async function getOwnerStores(): Promise<Store[]> {
+  try {
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.toString();
+
+    const response = await fetch(
+      `${process.env.INTERNAL_API_URL || "http://localhost:8081/api/v1"}/owner/staff/stores`,
+      {
+        headers: { Cookie: cookieHeader },
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      console.error("Failed to fetch stores");
+      return [];
+    }
+
+    const json = await response.json();
+    return json.data || [];
+  } catch (error) {
+    console.error("Error fetching stores:", error);
     return [];
   }
-
-  return owner.stores.map((s) => ({
-    id: s.tenant.id,
-    name: s.tenant.name,
-    slug: s.tenant.slug,
-    status: s.tenant.status,
-  }));
 }
 
 /**
  * Create Staff Page
  */
 export default async function CreateStaffPage() {
-  const user = await requireAuth("owner");
-
-  const stores = await getOwnerStores(user.id);
+  const stores = await getOwnerStores();
 
   return <CreateStaffClient stores={stores} />;
 }

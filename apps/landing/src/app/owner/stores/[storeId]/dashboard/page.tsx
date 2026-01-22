@@ -42,10 +42,10 @@ export default async function StoreDashboardPage({
 
   try {
     const storeApi = createStoreApiClient(storeId);
-    dashboardData = await storeApi.get("dashboard/stats");
+    dashboardData = await storeApi.get("statistics");
   } catch (error) {
     console.error("Failed to fetch dashboard data:", error);
-    // Continue with empty data
+    // Continue with empty data - store-server may not be running or user not authorized
   }
 
   return <DashboardClient initialData={dashboardData} storeId={storeId} />;

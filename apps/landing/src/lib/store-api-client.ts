@@ -1,63 +1,162 @@
 /**
  * Store-Scoped API Client
- * Provides tenant-scoped API calls for store management
+ * Calls the unified server for store data (products, orders, etc.)
  * All requests automatically include the store/tenant ID
+ * 
+ * NOTE: After server merge, store data is on the same server as platform data.
+ * This client adds the x-tenant-id header for tenant-scoped endpoints.
  */
 
-import { api } from "./api-client";
+import { cookies } from "next/headers";
+
+/**
+ * API Error class
+ */
+export class StoreApiError extends Error {
+  constructor(
+    message: string,
+    public statusCode?: number,
+    public data?: any
+  ) {
+    super(message);
+    this.name = "StoreApiError";
+  }
+}
+
+/**
+ * Get the API server URL (unified server)
+ */
+function getApiServerUrl(): string {
+  if (typeof window === "undefined") {
+    // Server-side: use internal URL
+    return process.env.INTERNAL_API_URL || "http://localhost:8081/api/v1";
+  }
+  // Client-side: use relative URL (nginx proxies)
+  return "/api/v1";
+}
 
 /**
  * Store-scoped API client
- * Automatically prefixes all requests with store ID
+ * Calls unified server with tenant context
  */
 export class StoreApiClient {
+  private baseUrl: string;
+
   constructor(private storeId: string) {
     if (!storeId) {
       throw new Error("Store ID is required for StoreApiClient");
     }
+    this.baseUrl = getApiServerUrl();
   }
 
   /**
-   * Build a store-scoped API path
+   * Build a clean URL
    */
-  private buildPath(path: string): string {
+  private buildUrl(path: string): string {
     const cleanPath = path.startsWith("/") ? path.slice(1) : path;
-    return `/owner/stores/${this.storeId}/${cleanPath}`;
+    return `${this.baseUrl}/${cleanPath}`;
+  }
+
+  /**
+   * Get auth headers with cookies and tenant ID
+   */
+  private async getHeaders(): Promise<HeadersInit> {
+    const cookieStore = await cookies();
+    return {
+      "Content-Type": "application/json",
+      Cookie: cookieStore.toString(),
+      "x-tenant-id": this.storeId,
+    };
+  }
+
+  /**
+   * Make an API request
+   */
+  private async request<T>(
+    path: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = this.buildUrl(path);
+    const headers = await this.getHeaders();
+
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...headers,
+        ...options.headers,
+      },
+      cache: "no-store",
+    });
+
+    const json = await response.json();
+
+    if (!response.ok) {
+      throw new StoreApiError(
+        json.message || json.error || "Request failed",
+        response.status,
+        json
+      );
+    }
+
+    if (json.success !== undefined) {
+      if (!json.success) {
+        throw new StoreApiError(
+          json.message || "Request failed",
+          response.status,
+          json
+        );
+      }
+      return json.data as T;
+    }
+
+    return json as T;
   }
 
   /**
    * GET request
    */
   async get<T>(path: string, options?: RequestInit): Promise<T> {
-    return api.get<T>(this.buildPath(path), options);
+    return this.request<T>(path, { ...options, method: "GET" });
   }
 
   /**
    * POST request
    */
   async post<T>(path: string, body?: any, options?: RequestInit): Promise<T> {
-    return api.post<T>(this.buildPath(path), body, options);
+    return this.request<T>(path, {
+      ...options,
+      method: "POST",
+      body: body ? JSON.stringify(body) : undefined,
+    });
   }
 
   /**
    * PUT request
    */
   async put<T>(path: string, body?: any, options?: RequestInit): Promise<T> {
-    return api.put<T>(this.buildPath(path), body, options);
+    return this.request<T>(path, {
+      ...options,
+      method: "PUT",
+      body: body ? JSON.stringify(body) : undefined,
+    });
   }
 
   /**
    * PATCH request
    */
   async patch<T>(path: string, body?: any, options?: RequestInit): Promise<T> {
-    return api.patch<T>(this.buildPath(path), body, options);
+    return this.request<T>(path, {
+      ...options,
+      method: "PATCH",
+      body: body ? JSON.stringify(body) : undefined,
+    });
   }
 
   /**
    * DELETE request
    */
   async delete<T>(path: string, options?: RequestInit): Promise<T> {
-    return api.delete<T>(this.buildPath(path), options);
+    return this.request<T>(path, { ...options, method: "DELETE" });
   }
 
   /**
@@ -67,8 +166,44 @@ export class StoreApiClient {
     path: string,
     options?: RequestInit
   ): Promise<{ data: T; meta?: any }> {
-    const { apiRequestWithMeta } = await import("./api-client");
-    return apiRequestWithMeta<T>(this.buildPath(path), options);
+    const url = this.buildUrl(path);
+    const headers = await this.getHeaders();
+
+    const response = await fetch(url, {
+      ...options,
+      method: "GET",
+      headers: {
+        ...headers,
+        ...options?.headers,
+      },
+      cache: "no-store",
+    });
+
+    const json = await response.json();
+
+    if (!response.ok) {
+      throw new StoreApiError(
+        json.message || json.error || "Request failed",
+        response.status,
+        json
+      );
+    }
+
+    if (json.success !== undefined) {
+      if (!json.success) {
+        throw new StoreApiError(
+          json.message || "Request failed",
+          response.status,
+          json
+        );
+      }
+      return {
+        data: json.data as T,
+        meta: json.meta,
+      };
+    }
+
+    return { data: json as T };
   }
 }
 
@@ -112,7 +247,7 @@ export const storeApi = {
    */
   getDashboardStats: (storeId: string) => {
     const client = createStoreApiClient(storeId);
-    return client.get("dashboard/stats");
+    return client.get("statistics");
   },
 
   /**
