@@ -200,8 +200,12 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
         }
 
         const role = user.role?.toUpperCase();
-        if (role !== "TENANT" && role !== "SUPER_ADMIN" && role !== "ADMIN") {
-            // Redirect other roles
+        if (role === "OWNER" || role === "SUPER_ADMIN" || role === "ADMIN") {
+            // Authorized
+        } else if (role === "TENANT") {
+            window.location.href = process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3000/tenant";
+        } else {
+            // Other roles (CUSTOMER, STAFF) - redirect to store home
             window.location.href = process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3000";
         }
     }, [user, authLoading, router]);

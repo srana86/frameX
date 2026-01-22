@@ -1,4 +1,5 @@
 import express from "express";
+import auth from "../../middlewares/auth";
 import validateRequest from "../../middlewares/validateRequest";
 import { OwnerControllers } from "./owner.controller";
 import {
@@ -10,6 +11,9 @@ import {
 } from "./owner.validation";
 
 const router = express.Router();
+
+// All owner routes require authentication
+router.use(auth("OWNER", "SUPER_ADMIN", "ADMIN"));
 
 // Owner Profile Routes
 router.get("/profile", OwnerControllers.getMyOwnerProfile);
@@ -55,5 +59,8 @@ router.delete(
 
 // Owner Invoices Route
 router.get("/invoices", OwnerControllers.getMyInvoices);
+
+// Delete Owner Account (soft delete)
+router.delete("/account", OwnerControllers.deleteMyAccount);
 
 export const OwnerRoutes = router;

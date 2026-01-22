@@ -7,18 +7,24 @@ import { OwnerServices } from "./owner.service";
 const getMyOwnerProfile = catchAsync(async (req, res) => {
     const userId = (req as any).user?.id;
 
-    if (!userId) {
-        return sendResponse(res, {
-            statusCode: httpStatus.UNAUTHORIZED,
-            success: false,
-            message: "Unauthorized",
-            data: null,
-        });
-    }
-
     const owner = await OwnerServices.getOwnerByUserId(userId);
 
     if (!owner) {
+        // Fallback: If user is an OWNER but profile is missing, create it automatically
+        const user = (req as any).user;
+        if (user?.role === "OWNER") {
+            const newOwner = await OwnerServices.createOwner({
+                userId,
+                displayName: user.name || user.email?.split("@")[0],
+            });
+            return sendResponse(res, {
+                statusCode: httpStatus.OK,
+                success: true,
+                message: "Owner profile created automatically",
+                data: newOwner,
+            });
+        }
+
         return sendResponse(res, {
             statusCode: httpStatus.NOT_FOUND,
             success: false,
@@ -39,15 +45,6 @@ const getMyOwnerProfile = catchAsync(async (req, res) => {
 const createOwnerProfile = catchAsync(async (req, res) => {
     const userId = (req as any).user?.id;
 
-    if (!userId) {
-        return sendResponse(res, {
-            statusCode: httpStatus.UNAUTHORIZED,
-            success: false,
-            message: "Unauthorized",
-            data: null,
-        });
-    }
-
     const result = await OwnerServices.createOwner({
         userId,
         ...req.body,
@@ -64,15 +61,6 @@ const createOwnerProfile = catchAsync(async (req, res) => {
 // Update store owner profile
 const updateOwnerProfile = catchAsync(async (req, res) => {
     const userId = (req as any).user?.id;
-
-    if (!userId) {
-        return sendResponse(res, {
-            statusCode: httpStatus.UNAUTHORIZED,
-            success: false,
-            message: "Unauthorized",
-            data: null,
-        });
-    }
 
     const owner = await OwnerServices.getOwnerByUserId(userId);
 
@@ -98,15 +86,6 @@ const updateOwnerProfile = catchAsync(async (req, res) => {
 // Get all stores for current owner
 const getMyStores = catchAsync(async (req, res) => {
     const userId = (req as any).user?.id;
-
-    if (!userId) {
-        return sendResponse(res, {
-            statusCode: httpStatus.UNAUTHORIZED,
-            success: false,
-            message: "Unauthorized",
-            data: null,
-        });
-    }
 
     const owner = await OwnerServices.getOwnerByUserId(userId);
 
@@ -275,15 +254,6 @@ const deleteStore = catchAsync(async (req, res) => {
 const getMyInvoices = catchAsync(async (req, res) => {
     const userId = (req as any).user?.id;
 
-    if (!userId) {
-        return sendResponse(res, {
-            statusCode: httpStatus.UNAUTHORIZED,
-            success: false,
-            message: "Unauthorized",
-            data: null,
-        });
-    }
-
     const owner = await OwnerServices.getOwnerByUserId(userId);
 
     if (!owner) {
@@ -305,6 +275,20 @@ const getMyInvoices = catchAsync(async (req, res) => {
     });
 });
 
+// Soft delete owner account
+const deleteMyAccount = catchAsync(async (req, res) => {
+    const userId = (req as any).user?.id;
+
+    const result = await OwnerServices.softDeleteOwnerAccount(userId);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: result.message,
+        data: null,
+    });
+});
+
 export const OwnerControllers = {
     getMyOwnerProfile,
     createOwnerProfile,
@@ -315,4 +299,5 @@ export const OwnerControllers = {
     updateStore,
     deleteStore,
     getMyInvoices,
+    deleteMyAccount,
 };

@@ -9,6 +9,26 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          if (user.role === "OWNER") {
+            try {
+              await prisma.storeOwner.create({
+                data: {
+                  userId: user.id,
+                  displayName: user.name,
+                },
+              });
+            } catch (error) {
+              console.error(`[BetterAuth Hook] Failed to create StoreOwner for user ${user.id}:`, error);
+            }
+          }
+        },
+      },
+    },
+  },
   emailAndPassword: {
     enabled: true,
   },

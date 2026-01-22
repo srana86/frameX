@@ -295,6 +295,40 @@ const getOwnerInvoices = async (ownerId: string) => {
     });
 };
 
+// Soft delete owner account (marks user as deleted, doesn't remove data)
+const softDeleteOwnerAccount = async (userId: string) => {
+    // Verify the owner exists
+    const owner = await prisma.storeOwner.findUnique({
+        where: { userId },
+        include: { stores: true },
+    });
+
+    if (!owner) {
+        throw new Error("Store owner profile not found");
+    }
+
+    // Soft delete the user account by setting deletedAt and status
+    await prisma.user.update({
+        where: { id: userId },
+        data: {
+            deletedAt: new Date(),
+            status: "BLOCKED",
+        },
+    });
+
+    // Invalidate all sessions for this user (ignore errors if none exist)
+    try {
+        await prisma.session.deleteMany({
+            where: { userId },
+        });
+    } catch (error) {
+        // Sessions may already be deleted, that's fine
+        console.log(`[softDeleteOwnerAccount] Sessions cleanup: ${error}`);
+    }
+
+    return { success: true, message: "Account has been deactivated successfully" };
+};
+
 export const OwnerServices = {
     getOwnerByUserId,
     getOwnerById,
@@ -306,4 +340,5 @@ export const OwnerServices = {
     updateStore,
     deleteStore,
     getOwnerInvoices,
+    softDeleteOwnerAccount,
 };

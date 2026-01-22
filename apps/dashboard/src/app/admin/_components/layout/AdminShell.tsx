@@ -213,8 +213,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     }
 
     const role = user.role?.toUpperCase();
-    if (role === "ADMIN" || role === "SUPER_ADMIN" || role === "OWNER") {
+    if (role === "ADMIN" || role === "SUPER_ADMIN") {
       setIsAuthorized(true);
+    } else if (role === "OWNER") {
+      router.push("/owner");
     } else if (role === "TENANT") {
       // Redirect TENANT to store app's tenant panel
       window.location.href = process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3000/tenant";

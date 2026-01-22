@@ -14,10 +14,11 @@ model User {
   updatedAt     DateTime
 
   // Custom fields for multi-tenant e-commerce
-  tenantId String? // NULL for super admin
-  phone    String?
-  role     UserRole   @default(CUSTOMER)
-  status   UserStatus @default(ACTIVE)
+  tenantId  String? // NULL for super admin
+  phone     String?
+  role      UserRole   @default(CUSTOMER)
+  status    UserStatus @default(ACTIVE)
+  deletedAt DateTime? // Soft delete timestamp
 
   // BetterAuth relations
   sessions  Session[]

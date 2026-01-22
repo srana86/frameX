@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AuthShell from "../_components/modules/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn } from "@/lib/auth-client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -16,6 +17,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      const role = user.role?.toUpperCase();
+      if (role === "OWNER") {
+        router.push("/owner");
+      } else {
+        router.push("/admin");
+      }
+    }
+  }, [user, authLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +46,14 @@ export default function LoginPage() {
       }
 
       toast.success("Logged in successfully!");
-      router.push("/admin");
+
+      // Role-based redirection
+      const role = (data?.user as any)?.role?.toUpperCase();
+      if (role === "OWNER") {
+        router.push("/owner");
+      } else {
+        router.push("/admin");
+      }
     } catch (error: any) {
       toast.error(
         error.message || "Login failed. Please check your credentials."

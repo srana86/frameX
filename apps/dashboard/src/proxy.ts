@@ -50,9 +50,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // 3. Redirect authenticated users away from the login page
+  // 3. Authenticated users on auth pages will be redirected by the page component itself
+  // to avoid hardcoding role-based paths here (since we don't have role info in token)
   if (token && isAuthPage) {
-    return NextResponse.redirect(new URL("/admin", request.url));
+    return NextResponse.next();
   }
 
   return NextResponse.next();

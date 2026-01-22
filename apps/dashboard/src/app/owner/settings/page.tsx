@@ -13,6 +13,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
     User,
     Building,
     Phone,
@@ -20,9 +31,13 @@ import {
     Mail,
     Loader2,
     Save,
+    Trash2,
+    AlertTriangle,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface OwnerProfile {
     id: string;
@@ -53,6 +68,10 @@ export default function SettingsPage() {
         billingAddress: "",
         vatNumber: "",
     });
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteConfirmation, setDeleteConfirmation] = useState("");
+    const router = useRouter();
+    const { logout } = useAuth();
 
     useEffect(() => {
         const loadProfile = async () => {
@@ -96,6 +115,27 @@ export default function SettingsPage() {
             toast.error(error?.message || "Failed to save profile");
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        setIsDeleting(true);
+        try {
+            await api.delete("/owner/account");
+            toast.success("Account deleted successfully. Redirecting...");
+
+            // Sessions are already deleted on the backend
+            // Clear auth cookies manually to prevent stale auth state
+            document.cookie = "better-auth.session_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.cookie = "better-auth.session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+            // Use hard redirect to clear all React state and force fresh page load
+            setTimeout(() => {
+                window.location.href = "/";
+            }, 1500);
+        } catch (error: any) {
+            toast.error(error?.message || "Failed to delete account");
+            setIsDeleting(false);
         }
     };
 
@@ -288,6 +328,118 @@ export default function SettingsPage() {
                     )}
                 </Button>
             </div>
+
+            <Separator className="my-8" />
+
+            {/* Danger Zone */}
+            <Card className="border-destructive/50">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="h-5 w-5" />
+                        Danger Zone
+                    </CardTitle>
+                    <CardDescription>
+                        Irreversible actions that affect your account
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="font-medium">Delete Account</p>
+                            <p className="text-sm text-muted-foreground">
+                                Permanently deactivate your account and all associated data
+                            </p>
+                        </div>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" disabled={isDeleting}>
+                                    {isDeleting ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Deleting...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Delete Account
+                                        </>
+                                    )}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="sm:max-w-md border-0 shadow-2xl">
+                                {/* Warning Banner */}
+                                <div className="absolute -top-10 left-1/2 -translate-x-1/2">
+                                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-rose-600 shadow-lg shadow-red-500/25 ring-4 ring-background">
+                                        <AlertTriangle className="h-10 w-10 text-white" strokeWidth={2.5} />
+                                    </div>
+                                </div>
+
+                                <AlertDialogHeader className="pt-12 text-center">
+                                    <AlertDialogTitle className="text-xl font-bold text-foreground">
+                                        Delete Your Account?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription asChild>
+                                        <div className="space-y-4 pt-2">
+                                            <p className="text-muted-foreground">
+                                                This action is <span className="font-semibold text-rose-600 dark:text-rose-400">permanent</span> and cannot be undone.
+                                                You will lose access to all your stores, data, and settings.
+                                            </p>
+
+                                            {/* Warning Box */}
+                                            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/30">
+                                                <div className="flex items-start gap-3">
+                                                    <div className="flex-shrink-0">
+                                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
+                                                            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-left text-sm text-amber-800 dark:text-amber-200">
+                                                        <p className="font-medium">What will be deleted:</p>
+                                                        <ul className="mt-1 list-inside list-disc space-y-0.5 text-amber-700 dark:text-amber-300">
+                                                            <li>All stores and their configurations</li>
+                                                            <li>Customer and order data</li>
+                                                            <li>Payment and billing history</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Confirmation Input */}
+                                            <div className="space-y-2 pt-2">
+                                                <p className="text-sm text-foreground">
+                                                    Type <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm font-semibold text-rose-600 dark:text-rose-400">delete my account</code> to confirm:
+                                                </p>
+                                                <Input
+                                                    value={deleteConfirmation}
+                                                    onChange={(e) => setDeleteConfirmation(e.target.value)}
+                                                    placeholder="delete my account"
+                                                    className="border-muted-foreground/25 bg-muted/50 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 transition-colors focus-visible:border-rose-500 focus-visible:ring-rose-500/20"
+                                                />
+                                            </div>
+                                        </div>
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter className="mt-6 gap-2 sm:gap-2">
+                                    <AlertDialogCancel
+                                        onClick={() => setDeleteConfirmation("")}
+                                        className="flex-1 border-muted-foreground/25 bg-transparent hover:bg-muted"
+                                    >
+                                        Cancel
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={handleDeleteAccount}
+                                        disabled={deleteConfirmation !== "delete my account"}
+                                        className="flex-1 bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-500/25 transition-all hover:from-red-700 hover:to-rose-700 hover:shadow-red-500/40 disabled:from-muted disabled:to-muted disabled:text-muted-foreground disabled:shadow-none"
+                                    >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete Account
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }
