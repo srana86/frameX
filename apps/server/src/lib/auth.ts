@@ -47,7 +47,18 @@ export const auth = betterAuth({
       },
     },
   },
-  trustedOrigins: ["http://localhost", process.env.DASHBOARD_URL].filter(
-    (x): x is string => Boolean(x)
-  ),
+  trustedOrigins: [
+    // Local development
+    "http://localhost",
+    "http://localhost:3000",  // Store frontend
+    "http://localhost:3001",  // Landing/Owner panel
+    "http://localhost:3002",  // Admin panel
+    // Local domains (via nginx)
+    "http://admin.localhost",
+    "http://framextech.local",
+    // Environment URLs
+    process.env.DASHBOARD_URL,
+    process.env.ADMIN_URL,
+    process.env.STORE_URL,
+  ].filter((x): x is string => Boolean(x)),
 });

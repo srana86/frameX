@@ -20,6 +20,7 @@ import { SimulateRoutes } from "../module/Simulate/simulate.route";
 import { AuthRoutes } from '../module/Auth/auth.route';
 import { TenantSubscriptionRoutes } from "../module/TenantSubscription/tenantSubscription.route";
 import { OwnerRoutes } from "../module/Owner/owner.route";
+import { StaffRoutes } from "../module/Staff/staff.route";
 
 const router = Router();
 
@@ -107,6 +108,10 @@ const moduleRoutes = [
   {
     path: "/owner",
     route: OwnerRoutes,
+  },
+  {
+    path: "/owner/staff",
+    route: StaffRoutes,
   },
 ];
 

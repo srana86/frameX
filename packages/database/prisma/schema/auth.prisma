@@ -28,6 +28,9 @@ model User {
   // Store Owner relation (for multi-store management)
   storeOwner StoreOwner?
 
+  // Staff Store Access relation (for staff accounts)
+  staffStoreAccess StaffStoreAccess[] @relation("StaffStoreAccess")
+
   tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([email])

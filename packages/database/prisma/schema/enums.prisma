@@ -87,6 +87,13 @@ enum StoreOwnerRole {
   MANAGER // Can manage store but not delete
 }
 
+// Staff Permissions
+enum StaffPermission {
+  VIEW // Read-only access
+  EDIT // Can create/edit but not delete critical items
+  FULL // Full access (except store deletion)
+}
+
 // Products
 enum ProductStatus {
   ACTIVE

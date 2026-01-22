@@ -1,7 +1,19 @@
 import { cookies, headers } from "next/headers";
 import { authClient } from "./auth-client";
 
-export async function getCurrentUser() {
+/**
+ * Current user type from BetterAuth session
+ */
+export interface CurrentUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  image?: string;
+  emailVerified?: boolean;
+}
+
+export async function getCurrentUser(): Promise<CurrentUser | null> {
     try {
         const cookieStore = await cookies();
         const headersList = await headers();

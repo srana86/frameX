@@ -1,0 +1,23 @@
+// ============================================================
+// STAFF STORE ACCESS (Staff Account Management)
+// ============================================================
+// Enables store owners to create staff accounts and assign them
+// to specific stores with granular permission levels
+
+model StaffStoreAccess {
+  id        String         @id @default(uuid())
+  staffId   String         // User with role=STAFF
+  storeId   String         // Tenant ID
+  permission StaffPermission @default(VIEW)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  // Relations
+  staff User   @relation("StaffStoreAccess", fields: [staffId], references: [id], onDelete: Cascade)
+  store Tenant @relation("StaffStoreAccess", fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, storeId])
+  @@index([staffId])
+  @@index([storeId])
+  @@map("staff_store_access")
+}

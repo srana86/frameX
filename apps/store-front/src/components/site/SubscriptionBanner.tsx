@@ -133,7 +133,14 @@ export function SubscriptionBanner({ className }: SubscriptionBannerProps) {
     if (status.requiresPayment) {
       setShowPaymentModal(true);
     } else {
-      window.location.href = "/tenant/billing";
+      // Redirect to owner panel subscription page
+      const landingUrl = process.env.NEXT_PUBLIC_LANDING_URL || 
+                         process.env.NEXT_PUBLIC_DASHBOARD_URL || 
+                         "http://localhost:3001";
+      const tenantId = process.env.TENANT_ID || "";
+      window.location.href = tenantId 
+        ? `${landingUrl}/owner/stores/${tenantId}/subscription`
+        : `${landingUrl}/owner`;
     }
   };
 

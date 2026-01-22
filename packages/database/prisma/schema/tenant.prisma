@@ -56,6 +56,9 @@ model Tenant {
   // Store Owner relation (for multi-store management)
   ownerAssignment StoreOwnerStore?
 
+  // Staff Store Access relation (for staff accounts)
+  staffStoreAccess StaffStoreAccess[] @relation("StaffStoreAccess")
+
   @@index([status])
   @@index([createdAt(sort: Desc)])
 }

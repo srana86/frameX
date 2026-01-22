@@ -71,12 +71,25 @@ Add:
 
 ## Domain Routing
 
-| URL                              | Routes To  | Service        |
-| -------------------------------- | ---------- | -------------- |
-| `http://framextech.local/`       | Dashboard  | localhost:3001 |
-| `http://framextech.local/api/`   | Server API | localhost:8081 |
-| `http://*.framextech.local/`     | Store      | localhost:3000 |
-| `http://*.framextech.local/api/` | Store API  | localhost:8080 |
+| URL                               | Routes To    | Service        |
+| --------------------------------- | ------------ | -------------- |
+| `http://localhost/`               | Landing      | localhost:3001 |
+| `http://localhost/api/`           | Platform API | localhost:8081 |
+| `http://admin.localhost/`         | Super Admin  | localhost:3002 |
+| `http://admin.localhost/api/`     | Platform API | localhost:8081 |
+| `http://*.localhost/`             | Store        | localhost:3000 |
+| `http://*.localhost/api/`         | Store API    | localhost:8080 |
+
+### Production Domains
+
+| URL                                | Routes To    | Service        |
+| ---------------------------------- | ------------ | -------------- |
+| `https://framextech.com/`          | Landing      | landing:3001   |
+| `https://framextech.com/api/`      | Platform API | server:8081    |
+| `https://admin.framextech.com/`    | Super Admin  | admin:3002     |
+| `https://admin.framextech.com/api/`| Platform API | server:8081    |
+| `https://*.framextech.com/`        | Store        | store:3000     |
+| `https://*.framextech.com/api/`    | Store API    | store-server:8080 |
 
 ---
 

@@ -16,6 +16,7 @@ import {
     Plus,
     ChevronDown,
     Check,
+    Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/cn";
@@ -57,6 +58,12 @@ const NAV_GROUPS: NavGroup[] = [
                 href: "/owner/stores",
                 icon: Store,
                 description: "Manage your stores",
+            },
+            {
+                title: "Staff",
+                href: "/owner/staff",
+                icon: Users,
+                description: "Manage staff accounts",
             },
         ],
     },
@@ -200,12 +207,12 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
         }
 
         const role = user.role?.toUpperCase();
-        if (role === "OWNER" || role === "SUPER_ADMIN" || role === "ADMIN") {
-            // Authorized
-        } else if (role === "TENANT") {
-            window.location.href = process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3000/tenant";
+        // OWNER, TENANT (store admin), STAFF, SUPER_ADMIN, and ADMIN can all access the owner panel
+        // They will see different stores based on their permissions
+        if (role === "OWNER" || role === "TENANT" || role === "STAFF" || role === "SUPER_ADMIN" || role === "ADMIN") {
+            // Authorized - continue to render
         } else {
-            // Other roles (CUSTOMER, STAFF) - redirect to store home
+            // CUSTOMER and other roles - redirect to store home
             window.location.href = process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3000";
         }
     }, [user, authLoading, router]);
