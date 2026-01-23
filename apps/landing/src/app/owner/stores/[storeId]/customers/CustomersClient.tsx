@@ -70,7 +70,7 @@ interface CustomersClientProps {
 }
 
 const CUSTOMER_STATUSES = [
-  { value: "", label: "All Statuses" },
+  { value: "all", label: "All Statuses" },
   { value: "ACTIVE", label: "Active" },
   { value: "BLOCKED", label: "Blocked" },
 ];
@@ -85,17 +85,19 @@ export function CustomersClient({
   permission,
 }: CustomersClientProps) {
   const router = useRouter();
-  const [customers, setCustomers] = useState<Customer[]>(initialData.customers);
+  const [customers, setCustomers] = useState<Customer[]>(
+    Array.isArray(initialData.customers) ? initialData.customers : []
+  );
   const [pagination, setPagination] = useState(initialData.pagination);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // Permission checks
   const canEdit = permission === null || permission === "EDIT" || permission === "FULL";
 
   // Filter customers by search query
-  const filteredCustomers = customers.filter((c) => {
+  const filteredCustomers = (Array.isArray(customers) ? customers : []).filter((c) => {
     const matchesSearch =
       c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -116,7 +118,7 @@ export function CustomersClient({
           query.set("status", status);
         }
         const result = await storeApi.getWithMeta(`customers?${query.toString()}`);
-        setCustomers(result.data as Customer[]);
+        setCustomers((result.data as any).customers || []);
         if (result.meta) {
           setPagination(result.meta as PaginationData);
         }
@@ -137,11 +139,11 @@ export function CustomersClient({
     }
 
     const newStatus = currentStatus === "ACTIVE" ? "BLOCKED" : "ACTIVE";
-    
+
     try {
       const storeApi = createStoreApiClient(storeId);
       await storeApi.patch(`customers/${customerId}`, { status: newStatus });
-      
+
       setCustomers(
         customers.map((c) =>
           c.id === customerId ? { ...c, status: newStatus } : c
@@ -156,7 +158,9 @@ export function CustomersClient({
   // Handle status filter change
   const handleStatusChange = (value: string) => {
     setStatusFilter(value);
-    refreshCustomers(value);
+    // Convert "all" to empty string for API
+    const apiValue = value === "all" ? "" : value;
+    refreshCustomers(apiValue);
   };
 
   // Format date

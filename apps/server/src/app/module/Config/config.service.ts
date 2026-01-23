@@ -15,62 +15,37 @@ const getBrandConfigFromDB = async (tenantId: string) => {
     });
   }
 
-  // If theme.brandConfig exists (stored by updateBrandConfigIntoDB), return it
-  // This preserves the full frontend config structure
-  const themeData = config.theme as any;
-  if (themeData?.brandConfig) {
-    return {
-      ...themeData.brandConfig,
-      id: config.id,
-      tenantId: config.tenantId,
-    };
-  }
+  const theme = (config.theme as any) || {};
 
-  // Otherwise, construct a basic config from DB fields for backward compatibility
   return {
     id: config.id,
     tenantId: config.tenantId,
     brandName: config.name,
-    brandTagline: "",
+    tagline: theme.tagline || "",
     logo: {
-      type: "text" as const,
-      style: "default",
-      text: { primary: config.name, secondary: "" },
-      imagePath: config.logo || "",
-      altText: `${config.name} Logo`,
+      light: config.logo || "",
+      dark: theme.logoDark || config.logo || ""
     },
     favicon: {
-      path: config.favicon || "/favicon.ico",
-      appleTouchIcon: "/apple-touch-icon.png",
-      manifestIcon: "/manifest-icon.png",
+      url: config.favicon || "/favicon.ico"
     },
-    meta: {
-      title: { default: config.name, template: `%s – ${config.name}` },
+    meta: theme.meta || {
+      title: config.name,
       description: "",
-      keywords: [],
-      metadataBase: "",
-      socialShareImage: "",
-      openGraph: { title: config.name, description: "", type: "website", locale: "en_US", siteName: config.name, image: "" },
-      twitter: { card: "summary_large_image", title: config.name, description: "", image: "" },
+      keywords: "",
     },
     contact: (config.contactInfo as any) || { email: "", phone: "", address: "" },
     social: (config.socialLinks as any) || { facebook: "", twitter: "", instagram: "", youtube: "" },
-    footer: { description: "", copyrightText: "All rights reserved." },
-    theme: { primaryColor: config.primaryColor || "#000000" },
-    currency: { iso: config.currencyIso },
-    // Include raw DB fields for reference
-    name: config.name,
-    primaryColor: config.primaryColor,
-    secondaryColor: config.secondaryColor,
-    currencyIso: config.currencyIso,
-    currencySymbol: config.currencySymbol,
-    timezone: config.timezone,
-    language: config.language,
-    socialLinks: config.socialLinks,
-    contactInfo: config.contactInfo,
-    orderEnabled: config.orderEnabled,
-    createdAt: config.createdAt,
-    updatedAt: config.updatedAt,
+    footer: theme.footer || { copyright: "All rights reserved." },
+    theme: {
+      primaryColor: config.primaryColor || "#000000",
+      secondaryColor: config.secondaryColor || "#ffffff"
+    },
+    currency: {
+      code: config.currencyIso || "BDT",
+      symbol: config.currencySymbol || "৳",
+      position: theme.currencyPosition || "before"
+    },
   };
 };
 
@@ -103,8 +78,8 @@ const updateBrandConfigIntoDB = async (tenantId: string, payload: any) => {
   }
 
   // Store favicon path
-  if (payload.favicon?.path !== undefined) {
-    transformedData.favicon = payload.favicon.path;
+  if (payload.favicon?.url !== undefined) {
+    transformedData.favicon = payload.favicon.url;
   }
 
   // Map theme.primaryColor to primaryColor
@@ -112,14 +87,19 @@ const updateBrandConfigIntoDB = async (tenantId: string, payload: any) => {
     transformedData.primaryColor = payload.theme.primaryColor;
   }
 
-  // Map currency.iso to currencyIso
-  if (payload.currency?.iso !== undefined) {
-    transformedData.currencyIso = payload.currency.iso;
-    // Get symbol for common currencies
+  // Map theme.secondaryColor to secondaryColor
+  if (payload.theme?.secondaryColor !== undefined) {
+    transformedData.secondaryColor = payload.theme.secondaryColor;
+  }
+
+  // Map currency.code to currencyIso
+  if (payload.currency?.code !== undefined) {
+    transformedData.currencyIso = payload.currency.code;
+    // Get symbol for common currencies if symbol not provided
     const symbols: Record<string, string> = {
       USD: '$', EUR: '€', GBP: '£', JPY: '¥', BDT: '৳', INR: '₹',
     };
-    transformedData.currencySymbol = symbols[payload.currency.iso] || payload.currency.iso;
+    transformedData.currencySymbol = payload.currency.symbol || symbols[payload.currency.code] || payload.currency.code;
   }
 
   // Store social media links
@@ -132,13 +112,15 @@ const updateBrandConfigIntoDB = async (tenantId: string, payload: any) => {
     transformedData.contactInfo = payload.contact;
   }
 
-  // Store extended brand config in theme JSON (for all the extra fields)
-  // This preserves the full frontend config for retrieval
+  // Store extended brand config in theme JSON (for fields without columns)
   transformedData.theme = {
     primaryColor: payload.theme?.primaryColor,
     secondaryColor: payload.theme?.secondaryColor,
-    // Store the complete frontend config for retrieval
-    brandConfig: payload,
+    tagline: payload.tagline,
+    meta: payload.meta,
+    footer: payload.footer,
+    logoDark: payload.logo?.dark,
+    currencyPosition: payload.currency?.position,
   };
 
   // ... (previous transformation code remains)
@@ -155,20 +137,18 @@ const updateBrandConfigIntoDB = async (tenantId: string, payload: any) => {
     const oldConfig = oldTheme?.brandConfig || {};
 
     const oldUrls = {
-      'logo': oldConfig.logo?.type === 'image' ? oldConfig.logo.imagePath : null,
-      'favicon': oldConfig.favicon?.path,
+      'logo.light': oldConfig.logo?.light,
+      'logo.dark': oldConfig.logo?.dark,
+      'favicon': oldConfig.favicon?.url,
       'meta.socialShareImage': oldConfig.meta?.socialShareImage,
-      'meta.openGraph.image': oldConfig.meta?.openGraph?.image,
-      'meta.twitter.image': oldConfig.meta?.twitter?.image,
     };
 
     // 3. Extract new URLs from payload
     const newUrls = {
-      'logo': payload.logo?.type === 'image' ? payload.logo.imagePath : null,
-      'favicon': payload.favicon?.path,
+      'logo.light': payload.logo?.light,
+      'logo.dark': payload.logo?.dark,
+      'favicon': payload.favicon?.url,
       'meta.socialShareImage': payload.meta?.socialShareImage,
-      'meta.openGraph.image': payload.meta?.openGraph?.image,
-      'meta.twitter.image': payload.meta?.twitter?.image,
     };
 
     // 4. Sync references
@@ -237,6 +217,55 @@ const getDeliveryConfigFromDB = async (tenantId: string, type?: string) => {
   return config;
 };
 
+const getDeliverySupportConfigFromDB = async (tenantId: string) => {
+  const deliveryConfig = await getDeliveryConfigFromDB(tenantId);
+  const courierConfig = await getDeliveryConfigFromDB(tenantId, "courier");
+
+  return {
+    flatRate: Number((deliveryConfig as any).defaultDeliveryCharge || 0),
+    freeShippingThreshold: Number((deliveryConfig as any).freeShippingThreshold || 0),
+    providers: (courierConfig as any).services || [],
+    defaultProvider: (courierConfig as any).defaultProvider || "",
+  };
+};
+
+const updateDeliverySupportConfigIntoDB = async (
+  tenantId: string,
+  payload: any
+) => {
+  const { flatRate, freeShippingThreshold, providers, defaultProvider } = payload;
+
+  // Update DeliveryServiceConfig
+  await prisma.deliveryServiceConfig.upsert({
+    where: { tenantId },
+    update: {
+      defaultDeliveryCharge: new Decimal(flatRate || 0),
+      freeShippingThreshold: new Decimal(freeShippingThreshold || 0),
+    },
+    create: {
+      tenantId,
+      defaultDeliveryCharge: new Decimal(flatRate || 0),
+      freeShippingThreshold: new Decimal(freeShippingThreshold || 0),
+    },
+  });
+
+  // Update CourierServicesConfig
+  await prisma.courierServicesConfig.upsert({
+    where: { tenantId },
+    update: {
+      services: providers || [],
+      defaultProvider: defaultProvider || "",
+    },
+    create: {
+      tenantId,
+      services: providers || [],
+      defaultProvider: defaultProvider || "",
+    },
+  });
+
+  return getDeliverySupportConfigFromDB(tenantId);
+};
+
 const updateDeliveryConfigIntoDB = async (
   tenantId: string,
   payload: any,
@@ -252,6 +281,10 @@ const updateDeliveryConfigIntoDB = async (
 
   if (payload.defaultDeliveryCharge) {
     payload.defaultDeliveryCharge = new Decimal(payload.defaultDeliveryCharge);
+  }
+
+  if (payload.freeShippingThreshold) {
+    payload.freeShippingThreshold = new Decimal(payload.freeShippingThreshold);
   }
 
   return prisma.deliveryServiceConfig.upsert({
@@ -332,6 +365,8 @@ export const ConfigServices = {
   updateBrandConfigIntoDB,
   getDeliveryConfigFromDB,
   updateDeliveryConfigIntoDB,
+  getDeliverySupportConfigFromDB,
+  updateDeliverySupportConfigIntoDB,
   getSSLCommerzConfigFromDB,
   updateSSLCommerzConfigIntoDB,
   getOAuthConfigFromDB,

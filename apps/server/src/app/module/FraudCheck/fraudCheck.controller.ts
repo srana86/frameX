@@ -104,7 +104,56 @@ const checkCustomerFraud = catchAsync(async (req, res) => {
   }
 });
 
+// Get fraud check settings
+const getFraudCheckSettings = catchAsync(async (req, res) => {
+  const tenantId = req.tenantId || (req.user as any)?.tenantId || req.headers['x-tenant-id'] as string;
+
+  if (!tenantId) {
+    return sendResponse(res, {
+      statusCode: httpStatus.BAD_REQUEST,
+      success: false,
+      message: "Tenant ID is required",
+      data: null,
+    });
+  }
+
+  const result = await FraudCheckServices.getFraudCheckSettingsFromDB(tenantId);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Fraud check settings retrieved successfully",
+    data: result,
+  });
+});
+
+// Update fraud check settings
+const updateFraudCheckSettings = catchAsync(async (req, res) => {
+  const tenantId = req.tenantId || (req.user as any)?.tenantId || req.headers['x-tenant-id'] as string;
+
+  if (!tenantId) {
+    return sendResponse(res, {
+      statusCode: httpStatus.BAD_REQUEST,
+      success: false,
+      message: "Tenant ID is required",
+      data: null,
+    });
+  }
+
+  const result = await FraudCheckServices.updateFraudCheckSettingsIntoDB(
+    tenantId,
+    req.body
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Fraud check settings updated successfully",
+    data: result,
+  });
+});
+
 export const FraudCheckControllers = {
   getFraudCheckStats,
   checkCustomerFraud,
+  getFraudCheckSettings,
+  updateFraudCheckSettings,
 };

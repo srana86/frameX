@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requireStoreAccess } from "@/lib/store-auth-helpers";
-import { createStoreApiClient } from "@/lib/store-api-client";
+import { createServerStoreApiClient } from "@/lib/store-api-client.server";
 import { DashboardClient } from "./DashboardClient";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +41,7 @@ export default async function StoreDashboardPage({
   };
 
   try {
-    const storeApi = createStoreApiClient(storeId);
+    const storeApi = createServerStoreApiClient(storeId);
     dashboardData = await storeApi.get("statistics");
   } catch (error) {
     console.error("Failed to fetch dashboard data:", error);

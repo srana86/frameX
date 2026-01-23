@@ -67,7 +67,7 @@ interface PaymentsClientProps {
 }
 
 const PAYMENT_STATUSES = [
-  { value: "", label: "All Statuses" },
+  { value: "all", label: "All Statuses" },
   { value: "COMPLETED", label: "Completed" },
   { value: "PENDING", label: "Pending" },
   { value: "FAILED", label: "Failed" },
@@ -94,7 +94,7 @@ export function PaymentsClient({
   const [payments, setPayments] = useState<Payment[]>(initialData.payments);
   const [pagination, setPagination] = useState(initialData.pagination);
   const [loading, setLoading] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // Refresh payments
   const refreshPayments = useCallback(
@@ -124,7 +124,9 @@ export function PaymentsClient({
   // Handle status filter change
   const handleStatusChange = (value: string) => {
     setStatusFilter(value);
-    refreshPayments(value);
+    // Convert "all" to empty string for API
+    const apiValue = value === "all" ? "" : value;
+    refreshPayments(apiValue);
   };
 
   // Format currency

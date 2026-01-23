@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireStoreAccess } from "@/lib/store-auth-helpers";
-import { createStoreApiClient } from "@/lib/store-api-client";
+import { createServerStoreApiClient } from "@/lib/store-api-client.server";
 import { StatisticsClient } from "./StatisticsClient";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +37,7 @@ export default async function StatisticsPage({ params }: StatisticsPageProps) {
   };
 
   try {
-    const storeApi = createStoreApiClient(storeId);
+    const storeApi = createServerStoreApiClient(storeId);
     const result = await storeApi.get("statistics");
     initialStats = { ...initialStats, ...(result as any) };
   } catch (error) {

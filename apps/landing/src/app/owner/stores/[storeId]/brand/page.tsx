@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireStoreAccess } from "@/lib/store-auth-helpers";
-import { createStoreApiClient } from "@/lib/store-api-client";
+import { createServerStoreApiClient } from "@/lib/store-api-client.server";
 import { BrandConfigClient } from "./BrandConfigClient";
 
 export const dynamic = "force-dynamic";
@@ -32,13 +32,13 @@ export default async function BrandPage({ params }: BrandPageProps) {
     meta: { title: "", description: "", keywords: "" },
     contact: { email: "", phone: "", address: "" },
     social: {},
-    footer: { copyright: "" },
+    footer: { copyright: `© ${new Date().getFullYear()} Store. All rights reserved.` },
     theme: { primaryColor: "#000000", secondaryColor: "#ffffff" },
     currency: { code: "USD", symbol: "$", position: "before" },
   };
 
   try {
-    const storeApi = createStoreApiClient(storeId);
+    const storeApi = createServerStoreApiClient(storeId);
     const result = await storeApi.get("brand-config");
     initialConfig = { ...initialConfig, ...(result as any) };
   } catch (error) {

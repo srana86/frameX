@@ -24,6 +24,13 @@ router.post(
 );
 
 // Update page
+router.patch(
+  "/:slug",
+  auth("admin", "tenant", "owner"),
+  validateRequest(PageValidation.updatePageValidationSchema),
+  PageControllers.updatePage
+);
+
 router.put(
   "/:slug",
   auth("admin", "tenant", "owner"),
@@ -46,6 +53,13 @@ router.post(
 );
 
 // Update page category
+router.patch(
+  "/categories/:id",
+  auth("admin", "tenant", "owner"),
+  validateRequest(PageValidation.updatePageCategoryValidationSchema),
+  PageControllers.updatePageCategory
+);
+
 router.put(
   "/categories/:id",
   auth("admin", "tenant", "owner"),

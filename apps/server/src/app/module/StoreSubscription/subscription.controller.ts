@@ -95,9 +95,33 @@ const createSubscription = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Get store subscription (frontend format)
+const getStoreSubscription = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = req.tenantId || (req.user as any)?.tenantId || req.headers["x-tenant-id"] as string;
+
+  if (!tenantId) {
+    return sendResponse(res, {
+      statusCode: StatusCodes.BAD_REQUEST,
+      success: false,
+      message: "Tenant ID is required",
+      data: null,
+    });
+  }
+
+  const result = await SubscriptionServices.getStoreSubscriptionFromDB(tenantId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Subscription retrieved successfully",
+    data: result,
+  });
+});
+
 export const SubscriptionControllers = {
   getActivePlans,
   getCurrentSubscription,
   getSubscriptionStatus,
   createSubscription,
+  getStoreSubscription,
 };

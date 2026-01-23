@@ -39,10 +39,10 @@ import type { StaffPermission } from "@/contexts/StoreContext";
 interface EmailTemplate {
   id: string;
   name: string;
-  type: string;
+  event: string;
   subject: string;
-  body: string;
-  isActive: boolean;
+  html: string;
+  enabled: boolean;
 }
 
 interface EmailTemplatesClientProps {
@@ -55,16 +55,16 @@ const TEMPLATE_ICONS: Record<string, any> = {
   ORDER_CONFIRMATION: ShoppingCart,
   ORDER_SHIPPED: Truck,
   ORDER_DELIVERED: Truck,
-  WELCOME: UserPlus,
+  ACCOUNT_WELCOME: UserPlus,
   PASSWORD_RESET: Mail,
 };
 
 const DEFAULT_TEMPLATES = [
-  { type: "ORDER_CONFIRMATION", name: "Order Confirmation", description: "Sent when an order is placed" },
-  { type: "ORDER_SHIPPED", name: "Order Shipped", description: "Sent when an order is shipped" },
-  { type: "ORDER_DELIVERED", name: "Order Delivered", description: "Sent when an order is delivered" },
-  { type: "WELCOME", name: "Welcome Email", description: "Sent when a customer registers" },
-  { type: "PASSWORD_RESET", name: "Password Reset", description: "Sent for password reset requests" },
+  { event: "ORDER_CONFIRMATION", name: "Order Confirmation", description: "Sent when an order is placed" },
+  { event: "ORDER_SHIPPED", name: "Order Shipped", description: "Sent when an order is shipped" },
+  { event: "ORDER_DELIVERED", name: "Order Delivered", description: "Sent when an order is delivered" },
+  { event: "ACCOUNT_WELCOME", name: "Welcome Email", description: "Sent when a customer registers" },
+  { event: "PASSWORD_RESET", name: "Password Reset", description: "Sent for password reset requests" },
 ];
 
 /**
@@ -75,46 +75,47 @@ export function EmailTemplatesClient({
   storeId,
   permission,
 }: EmailTemplatesClientProps) {
-  const [templates, setTemplates] = useState<EmailTemplate[]>(initialTemplates);
+  const [templates, setTemplates] = useState<EmailTemplate[]>(Array.isArray(initialTemplates) ? initialTemplates : []);
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     subject: "",
-    body: "",
-    isActive: true,
+    html: "",
+    enabled: true,
   });
 
   // Permission check
   const canEdit = permission === null || permission === "EDIT" || permission === "FULL";
 
   // Get template by type
-  const getTemplate = (type: string) => templates.find((t) => t.type === type);
+  const getTemplate = (event: string) =>
+    Array.isArray(templates) ? templates.find((t) => t.event === event) : undefined;
 
   // Open edit dialog
-  const openEditDialog = (templateType: string) => {
-    const template = getTemplate(templateType);
+  const openEditDialog = (templateEvent: string) => {
+    const template = getTemplate(templateEvent);
     if (template) {
       setEditingTemplate(template);
       setFormData({
         subject: template.subject,
-        body: template.body,
-        isActive: template.isActive,
+        html: template.html || "",
+        enabled: template.enabled,
       });
     } else {
       // Create new template
       setEditingTemplate({
         id: "",
-        name: DEFAULT_TEMPLATES.find((t) => t.type === templateType)?.name || "",
-        type: templateType,
+        name: DEFAULT_TEMPLATES.find((t) => t.event === templateEvent)?.name || "",
+        event: templateEvent,
         subject: "",
-        body: "",
-        isActive: true,
+        html: "",
+        enabled: true,
       });
       setFormData({
         subject: "",
-        body: "",
-        isActive: true,
+        html: "",
+        enabled: true,
       });
     }
     setDialogOpen(true);
@@ -131,23 +132,21 @@ export function EmailTemplatesClient({
     try {
       const storeApi = createStoreApiClient(storeId);
 
+      // Backend uses PUT /email-templates with event in body for both create and update (upsert)
+      const result: any = await storeApi.put("email-templates", {
+        ...formData,
+        event: editingTemplate?.event,
+      });
+
       if (editingTemplate?.id) {
-        // Update existing
-        const result: any = await storeApi.put(
-          `email-templates/${editingTemplate.id}`,
-          formData
-        );
+        // Update local state
         setTemplates(
           templates.map((t) =>
-            t.id === editingTemplate.id ? { ...t, ...result } : t
+            t.id === result.id ? result : t
           )
         );
       } else {
-        // Create new
-        const result = await storeApi.post("email-templates", {
-          ...formData,
-          type: editingTemplate?.type,
-        });
+        // Add to local state
         setTemplates([...templates, result as EmailTemplate]);
       }
 
@@ -186,24 +185,24 @@ export function EmailTemplatesClient({
       {/* Templates Grid */}
       <div className="grid gap-4 md:grid-cols-2">
         {DEFAULT_TEMPLATES.map((templateInfo) => {
-          const template = getTemplate(templateInfo.type);
-          const Icon = TEMPLATE_ICONS[templateInfo.type] || Mail;
+          const template = getTemplate(templateInfo.event);
+          const Icon = TEMPLATE_ICONS[templateInfo.event] || Mail;
 
           return (
-            <Card key={templateInfo.type}>
+            <Card key={templateInfo.event}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div
                       className={cn(
                         "flex h-10 w-10 items-center justify-center rounded-lg",
-                        template?.isActive ? "bg-primary/10" : "bg-muted"
+                        template?.enabled ? "bg-primary/10" : "bg-muted"
                       )}
                     >
                       <Icon
                         className={cn(
                           "h-5 w-5",
-                          template?.isActive
+                          template?.enabled
                             ? "text-primary"
                             : "text-muted-foreground"
                         )}
@@ -214,7 +213,7 @@ export function EmailTemplatesClient({
                       <CardDescription>{templateInfo.description}</CardDescription>
                     </div>
                   </div>
-                  {template?.isActive ? (
+                  {template?.enabled ? (
                     <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
                       Active
                     </span>
@@ -243,7 +242,7 @@ export function EmailTemplatesClient({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => openEditDialog(templateInfo.type)}
+                      onClick={() => openEditDialog(templateInfo.event)}
                     >
                       <Pencil className="mr-2 h-4 w-4" />
                       {template ? "Edit" : "Customize"}
@@ -278,12 +277,12 @@ export function EmailTemplatesClient({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="body">Email Body (HTML supported)</Label>
+              <Label htmlFor="html">Email Body (HTML supported)</Label>
               <Textarea
-                id="body"
-                value={formData.body}
+                id="html"
+                value={formData.html}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, body: e.target.value }))
+                  setFormData((prev) => ({ ...prev, html: e.target.value }))
                 }
                 rows={12}
                 placeholder="<p>Hi {{customer_name}},</p>&#10;<p>Thank you for your order!</p>"
@@ -293,14 +292,14 @@ export function EmailTemplatesClient({
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
-                id="isActive"
-                checked={formData.isActive}
+                id="enabled"
+                checked={formData.enabled}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, isActive: e.target.checked }))
+                  setFormData((prev) => ({ ...prev, enabled: e.target.checked }))
                 }
                 className="h-4 w-4 rounded border-gray-300"
               />
-              <Label htmlFor="isActive" className="cursor-pointer">
+              <Label htmlFor="enabled" className="cursor-pointer">
                 Enable this template
               </Label>
             </div>

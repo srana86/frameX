@@ -110,8 +110,8 @@ export function CategoriesClient({
 
       if (editingCategory) {
         // Update existing
-        const result = await storeApi.patch(
-          `product-categories/${editingCategory.id}`,
+        const result = await storeApi.patch<Category>(
+          `products/categories/${editingCategory.id}`,
           formData
         );
         setCategories(
@@ -122,8 +122,8 @@ export function CategoriesClient({
         toast.success("Category updated");
       } else {
         // Create new
-        const result = await storeApi.post("product-categories", formData);
-        setCategories([result as Category, ...categories]);
+        const result = await storeApi.post<Category>("products/categories", formData);
+        setCategories([result, ...categories]);
         toast.success("Category created");
       }
 
@@ -143,7 +143,7 @@ export function CategoriesClient({
 
     try {
       const storeApi = createStoreApiClient(storeId);
-      await storeApi.delete(`product-categories/${categoryId}`);
+      await storeApi.delete(`products/categories/${categoryId}`);
       setCategories(categories.filter((c) => c.id !== categoryId));
       toast.success("Category deleted");
     } catch (error: any) {

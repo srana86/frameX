@@ -36,9 +36,9 @@ const updateEmailTemplate = catchAsync(async (req: Request, res: Response) => {
 
   const tenantId = req.tenantId;
   const result = await EmailTemplateServices.updateEmailTemplateFromDB(
+    tenantId,
     event,
-    templateData,
-    tenantId
+    templateData
   );
 
   sendResponse(res, {

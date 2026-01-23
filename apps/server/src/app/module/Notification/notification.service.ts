@@ -57,7 +57,66 @@ const markNotificationAsReadFromDB = async (
   }
 };
 
+// Get notification settings for a tenant
+const getNotificationSettingsFromDB = async (tenantId: string) => {
+  const settings = await prisma.settings.findUnique({
+    where: {
+      tenantId_key: {
+        tenantId,
+        key: "notification_settings",
+      },
+    },
+  });
+
+  // Return default settings if none exist
+  if (!settings) {
+    return {
+      email: {
+        newOrder: true,
+        orderStatusChange: true,
+        lowStock: true,
+        newCustomer: false,
+        review: false,
+      },
+      push: {
+        newOrder: true,
+        orderStatusChange: false,
+        lowStock: true,
+      },
+    };
+  }
+
+  return settings.value;
+};
+
+// Update notification settings for a tenant
+const updateNotificationSettingsIntoDB = async (
+  tenantId: string,
+  payload: any
+) => {
+  const result = await prisma.settings.upsert({
+    where: {
+      tenantId_key: {
+        tenantId,
+        key: "notification_settings",
+      },
+    },
+    update: {
+      value: payload,
+    },
+    create: {
+      tenantId,
+      key: "notification_settings",
+      value: payload,
+    },
+  });
+
+  return result.value;
+};
+
 export const NotificationServices = {
   getUserNotificationsFromDB,
   markNotificationAsReadFromDB,
+  getNotificationSettingsFromDB,
+  updateNotificationSettingsIntoDB,
 };

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireStoreAccess } from "@/lib/store-auth-helpers";
-import { createStoreApiClient } from "@/lib/store-api-client";
+import { createServerStoreApiClient } from "@/lib/store-api-client.server";
 import { ProductCreateClient } from "./ProductCreateClient";
 
 export const dynamic = "force-dynamic";
@@ -26,9 +26,9 @@ export default async function ProductCreatePage({ params }: ProductCreatePagePro
   let categories: any[] = [];
 
   try {
-    const storeApi = createStoreApiClient(storeId);
-    const result = await storeApi.get("product-categories");
-    categories = (result as any) || [];
+    const storeApi = createServerStoreApiClient(storeId);
+    const result = await storeApi.get("products/categories");
+    categories = (result as any).categories || [];
   } catch (error) {
     console.error("Failed to fetch categories:", error);
   }

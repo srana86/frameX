@@ -20,6 +20,7 @@ const getAllProductsFromDB = async (
     .filter()
     .sort()
     .paginate()
+    .include({ inventory: true })
     .execute();
 
   // Fetch categories for the response
@@ -56,11 +57,19 @@ const createProductIntoDB = async (
     slug?: string;
     description?: string;
     price: number;
+    costPrice?: number;
     comparePrice?: number;
     images?: string[];
     categoryId?: string;
     featured?: boolean;
     stock?: number;
+    brand?: string;
+    weight?: string;
+    sku?: string;
+    barcode?: string;
+    metaTitle?: string;
+    metaDescription?: string;
+    dimensions?: any;
   }
 ) => {
   const slug =
@@ -77,15 +86,23 @@ const createProductIntoDB = async (
       slug,
       description: payload.description,
       price: new Decimal(payload.price),
+      costPrice: payload.costPrice ? new Decimal(payload.costPrice) : null,
       comparePrice: payload.comparePrice
         ? new Decimal(payload.comparePrice)
         : null,
       images: payload.images || [],
-      categoryId: payload.categoryId,
+      categoryId: payload.categoryId || (payload as any).category,
       featured: payload.featured || false,
       status: "ACTIVE",
+      brand: payload.brand,
+      weight: payload.weight,
+      sku: payload.sku,
+      barcode: payload.barcode,
+      metaTitle: payload.metaTitle,
+      metaDescription: payload.metaDescription,
+      dimensions: payload.dimensions,
     },
-    include: { category: true },
+    include: { category: true, inventory: true },
   });
 
   // Create inventory if stock provided
@@ -110,11 +127,22 @@ const updateProductIntoDB = async (
     name: string;
     description: string;
     price: number;
+    costPrice: number;
     comparePrice: number;
     images: string[];
     categoryId: string;
     featured: boolean;
     status: string;
+    brand: string;
+    weight: string;
+    sku: string;
+    barcode: string;
+    stock: number;
+    lowStockThreshold: number;
+    category: string;
+    metaTitle: string;
+    metaDescription: string;
+    dimensions: any;
   }>
 ) => {
   const existing = await prisma.product.findFirst({
@@ -125,19 +153,54 @@ const updateProductIntoDB = async (
     throw new AppError(StatusCodes.NOT_FOUND, "Product not found");
   }
 
-  const updateData: any = { ...payload };
+  const {
+    stock,
+    lowStockThreshold,
+    category,
+    metaTitle,
+    metaDescription,
+    dimensions,
+    ...rest
+  } = payload;
+  const updateData: any = { ...rest };
+
   if (payload.price !== undefined) {
     updateData.price = new Decimal(payload.price);
   }
   if (payload.comparePrice !== undefined) {
     updateData.comparePrice = new Decimal(payload.comparePrice);
   }
+  if (payload.costPrice !== undefined) {
+    updateData.costPrice = new Decimal(payload.costPrice);
+  }
 
+  if (metaTitle !== undefined) updateData.metaTitle = metaTitle;
+  if (metaDescription !== undefined)
+    updateData.metaDescription = metaDescription;
+  if (dimensions !== undefined) updateData.dimensions = dimensions;
+
+  // Map category to categoryId
+  if (category) {
+    updateData.categoryId = category;
+  }
+
+  // Update product
   const result = await prisma.product.update({
     where: { id: existing.id },
     data: updateData,
     include: { category: true, inventory: true },
   });
+
+  // Update inventory if stock or lowStockThreshold provided
+  if (stock !== undefined || lowStockThreshold !== undefined) {
+    await prisma.inventory.update({
+      where: { productId: existing.id },
+      data: {
+        quantity: stock,
+        lowStock: lowStockThreshold,
+      },
+    });
+  }
 
   return result;
 };
@@ -193,7 +256,7 @@ const createCategoryIntoDB = async (
       slug,
       description: payload.description,
       image: payload.image,
-      sortOrder: payload.sortOrder || 0,
+      sortOrder: payload.sortOrder || (payload as any).order || 0,
     },
   });
 };
@@ -218,9 +281,15 @@ const updateCategoryIntoDB = async (
     throw new AppError(StatusCodes.NOT_FOUND, "Category not found");
   }
 
+  const { order, sortOrder, ...updateData } = payload as any;
+  const finalSortOrder = sortOrder !== undefined ? sortOrder : order;
+
   return prisma.category.update({
     where: { id: existing.id },
-    data: payload,
+    data: {
+      ...updateData,
+      ...(finalSortOrder !== undefined && { sortOrder: finalSortOrder }),
+    },
   });
 };
 
@@ -259,6 +328,7 @@ const searchProductsFromDB = async (
     .filter()
     .sort()
     .paginate()
+    .include({ inventory: true })
     .execute();
 
   return result;
@@ -308,7 +378,14 @@ const getCategoriesFromDB = async (
     .filter()
     .sort()
     .paginate()
+    .include({ _count: { select: { products: true } } })
     .execute();
+
+  // Map _count to productCount for the frontend
+  result.data = (result.data as any[]).map((cat) => ({
+    ...cat,
+    productCount: cat._count?.products || 0,
+  }));
 
   return result;
 };
@@ -335,6 +412,7 @@ const getMostLovedProductsFromDB = async (tenantId: string, limit: number) => {
     where: { tenantId, status: "ACTIVE" },
     include: {
       category: true,
+      inventory: true,
       reviews: {
         where: { approved: true },
         select: { rating: true },

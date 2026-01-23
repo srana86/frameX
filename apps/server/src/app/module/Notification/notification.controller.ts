@@ -63,7 +63,64 @@ const markNotificationAsRead = catchAsync(
   }
 );
 
+// Get notification settings
+const getNotificationSettings = catchAsync(
+  async (req: Request, res: Response) => {
+    const tenantId = req.tenantId || (req.user as any)?.tenantId || req.headers['x-tenant-id'] as string;
+
+    if (!tenantId) {
+      return sendResponse(res, {
+        statusCode: StatusCodes.BAD_REQUEST,
+        success: false,
+        message: "Tenant ID is required",
+        data: null,
+      });
+    }
+
+    const result = await NotificationServices.getNotificationSettingsFromDB(
+      tenantId
+    );
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Notification settings retrieved successfully",
+      data: result,
+    });
+  }
+);
+
+// Update notification settings
+const updateNotificationSettings = catchAsync(
+  async (req: Request, res: Response) => {
+    const tenantId = req.tenantId || (req.user as any)?.tenantId || req.headers['x-tenant-id'] as string;
+
+    if (!tenantId) {
+      return sendResponse(res, {
+        statusCode: StatusCodes.BAD_REQUEST,
+        success: false,
+        message: "Tenant ID is required",
+        data: null,
+      });
+    }
+
+    const result = await NotificationServices.updateNotificationSettingsIntoDB(
+      tenantId,
+      req.body
+    );
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Notification settings updated successfully",
+      data: result,
+    });
+  }
+);
+
 export const NotificationControllers = {
   getNotifications,
   markNotificationAsRead,
+  getNotificationSettings,
+  updateNotificationSettings,
 };

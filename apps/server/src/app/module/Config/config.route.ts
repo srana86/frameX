@@ -54,3 +54,13 @@ adsRouter.put(
   ConfigControllers.updateAdsConfig
 );
 export const AdsConfigRoutes = adsRouter;
+
+// Delivery Support routes (combined delivery config + courier services)
+const deliverySupportRouter = express.Router();
+deliverySupportRouter.get("/", tenantMiddleware, ConfigControllers.getDeliverySupportConfig);
+deliverySupportRouter.put(
+  "/",
+  auth("admin", "tenant", "owner"),
+  ConfigControllers.updateDeliverySupportConfig
+);
+export const DeliverySupportRoutes = deliverySupportRouter;

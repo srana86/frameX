@@ -42,11 +42,12 @@ const getAllCustomersFromDB = async (tenantId: string, query: Record<string, unk
 
     return {
       id: c.id,
-      fullName: c.name,
+      name: c.name,
       email: c.email,
       phone: c.phone,
       addressLine1: c.address,
       city: c.city,
+      status: c.blocked ? "BLOCKED" : "ACTIVE",
       totalOrders,
       totalSpent,
       firstOrderDate,
@@ -87,6 +88,33 @@ const getAllCustomersFromDB = async (tenantId: string, query: Record<string, unk
   };
 };
 
+const updateCustomerFromDB = async (
+  tenantId: string,
+  id: string,
+  data: any
+) => {
+  // Map "status" from frontend to "blocked" boolean if present
+  const updateData = { ...data };
+  if (updateData.status === "BLOCKED") {
+    updateData.blocked = true;
+    delete updateData.status;
+  } else if (updateData.status === "ACTIVE") {
+    updateData.blocked = false;
+    delete updateData.status;
+  }
+
+  const result = await prisma.customer.update({
+    where: {
+      id,
+      tenantId,
+    },
+    data: updateData,
+  });
+
+  return result;
+};
+
 export const CustomerServices = {
   getAllCustomersFromDB,
+  updateCustomerFromDB,
 };

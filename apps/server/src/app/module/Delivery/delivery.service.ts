@@ -129,13 +129,11 @@ const calculateShippingFromDB = async (tenantId: string, payload: {
   }
 
   // Check free shipping threshold
-  // Assuming freeShippingThreshold is stored in the root Json or extra field (not in schema explicitly but might be accessible)
-  // Schema lines 791-801 don't showing freeShippingThreshold column.
-  // It might be missing or handled differently. Assuming missing for now or stored in specificDeliveryCharges JSON? 
-  // Code accessed `(config as any).freeShippingThreshold`. I'll assume it's lost in migration or I need to add it to schema.
-  // I will skip free shipping threshold logic if field is missing, or return default.
-  // Actually, Mongoose code used `(config as any).freeShippingThreshold`.
-  const freeShipping = false; // Placeholder
+  let freeShipping = false;
+  const threshold = Number(config.freeShippingThreshold || 0);
+  if (threshold > 0 && payload.total && payload.total >= threshold) {
+    freeShipping = true;
+  }
 
   return {
     methods: [

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireStoreAccess } from "@/lib/store-auth-helpers";
-import { createStoreApiClient } from "@/lib/store-api-client";
+import { createServerStoreApiClient } from "@/lib/store-api-client.server";
 import { IpAnalyticsClient } from "./IpAnalyticsClient";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +36,7 @@ export default async function IpAnalyticsPage({ params }: IpAnalyticsPageProps) 
   };
 
   try {
-    const storeApi = createStoreApiClient(storeId);
+    const storeApi = createServerStoreApiClient(storeId);
     const result = await storeApi.get("ip-analytics");
     initialData = { ...initialData, ...(result as any) };
   } catch (error) {

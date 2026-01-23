@@ -11,6 +11,7 @@ model SubscriptionPlan {
   billingCycle       BillingCycle
   billingCycleMonths Int
   features           Json?
+  limits             Json?
   featuresList       String[]
   isActive           Boolean      @default(true)
   isPopular          Boolean      @default(false)

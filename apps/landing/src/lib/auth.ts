@@ -5,12 +5,12 @@ import { authClient } from "./auth-client";
  * Current user type from BetterAuth session
  */
 export interface CurrentUser {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  image?: string;
-  emailVerified?: boolean;
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    image?: string;
+    emailVerified?: boolean;
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
@@ -30,7 +30,16 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
             return null;
         }
 
-        return sessionData.user;
+        // Map BetterAuth user to CurrentUser with role
+        const user = sessionData.user as any;
+        return {
+            id: user.id,
+            email: user.email,
+            name: user.name || '',
+            role: user.role || 'CUSTOMER',
+            image: user.image,
+            emailVerified: user.emailVerified,
+        };
     } catch (error) {
         console.error("Error getting current user from BetterAuth:", error);
         return null;

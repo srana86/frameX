@@ -3,11 +3,12 @@
  * Calls the unified server for store data (products, orders, etc.)
  * All requests automatically include the store/tenant ID
  * 
- * NOTE: After server merge, store data is on the same server as platform data.
- * This client adds the x-tenant-id header for tenant-scoped endpoints.
+ * NOTE: This client works in both Server and Client Components.
+ * It does NOT use next/headers - uses credentials: 'include' for cookies.
+ * 
+ * For Server Components that need explicit cookie access, 
+ * use store-api-client.server.ts instead.
  */
-
-import { cookies } from "next/headers";
 
 /**
  * API Error class
@@ -58,13 +59,12 @@ export class StoreApiClient {
   }
 
   /**
-   * Get auth headers with cookies and tenant ID
+   * Get headers with tenant ID
+   * Uses credentials: 'include' for cookie auth (browser handles cookies)
    */
-  private async getHeaders(): Promise<HeadersInit> {
-    const cookieStore = await cookies();
+  private getHeaders(): HeadersInit {
     return {
       "Content-Type": "application/json",
-      Cookie: cookieStore.toString(),
       "x-tenant-id": this.storeId,
     };
   }
@@ -77,7 +77,7 @@ export class StoreApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = this.buildUrl(path);
-    const headers = await this.getHeaders();
+    const headers = this.getHeaders();
 
     const response = await fetch(url, {
       ...options,
@@ -85,6 +85,7 @@ export class StoreApiClient {
         ...headers,
         ...options.headers,
       },
+      credentials: "include", // Include cookies automatically
       cache: "no-store",
     });
 
@@ -167,7 +168,7 @@ export class StoreApiClient {
     options?: RequestInit
   ): Promise<{ data: T; meta?: any }> {
     const url = this.buildUrl(path);
-    const headers = await this.getHeaders();
+    const headers = this.getHeaders();
 
     const response = await fetch(url, {
       ...options,
@@ -176,6 +177,7 @@ export class StoreApiClient {
         ...headers,
         ...options?.headers,
       },
+      credentials: "include",
       cache: "no-store",
     });
 

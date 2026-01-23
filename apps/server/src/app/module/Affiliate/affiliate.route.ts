@@ -42,6 +42,13 @@ router.post(
 
 // Get all affiliates (admin/tenant only)
 router.get(
+  "/",
+  tenantMiddleware,
+  auth("admin", "tenant", "owner"),
+  AffiliateControllers.getAllAffiliates
+);
+
+router.get(
   "/list",
   tenantMiddleware,
   auth("admin", "tenant", "owner"),
@@ -89,13 +96,44 @@ router.get(
   AffiliateControllers.getSettings
 );
 
+// Get affiliate stats (admin/tenant only)
+router.get(
+  "/stats",
+  tenantMiddleware,
+  auth("admin", "tenant", "owner"),
+  AffiliateControllers.getStats
+);
+
 // Update affiliate settings (admin/tenant only)
+router.patch(
+  "/settings",
+  tenantMiddleware,
+  auth("admin", "tenant", "owner"),
+  validateRequest(AffiliateValidation.updateSettingsValidationSchema),
+  AffiliateControllers.updateSettings
+);
+
 router.put(
   "/settings",
   tenantMiddleware,
   auth("admin", "tenant", "owner"),
   validateRequest(AffiliateValidation.updateSettingsValidationSchema),
   AffiliateControllers.updateSettings
+);
+
+// Update affiliate (admin/tenant only)
+router.patch(
+  "/:id",
+  tenantMiddleware,
+  auth("admin", "tenant", "owner"),
+  AffiliateControllers.updateAffiliate
+);
+
+router.put(
+  "/:id",
+  tenantMiddleware,
+  auth("admin", "tenant", "owner"),
+  AffiliateControllers.updateAffiliate
 );
 
 // Assign coupon to affiliate (admin/tenant only)

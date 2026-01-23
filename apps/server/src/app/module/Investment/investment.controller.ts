@@ -6,7 +6,17 @@ import { InvestmentServices } from "./investment.service";
 
 // Get all investments
 const getAllInvestments = catchAsync(async (req: Request, res: Response) => {
-  const tenantId = req.headers["x-tenant-id"] as string;
+  const tenantId = req.tenantId || (req.user as any)?.tenantId || req.headers["x-tenant-id"] as string;
+
+  if (!tenantId) {
+    return sendResponse(res, {
+      statusCode: StatusCodes.BAD_REQUEST,
+      success: false,
+      message: "Tenant ID is required",
+      data: null,
+    });
+  }
+
   const result = await InvestmentServices.getAllInvestmentsFromDB(tenantId, req.query);
 
   sendResponse(res, {
@@ -16,6 +26,7 @@ const getAllInvestments = catchAsync(async (req: Request, res: Response) => {
     meta: result.meta,
     data: {
       investments: result.data,
+      summary: result.summary,
     },
   });
 });

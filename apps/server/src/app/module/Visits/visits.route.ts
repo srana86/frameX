@@ -18,4 +18,7 @@ router.post(
 // Get visits (admin/tenant)
 router.get("/", auth("admin", "tenant", "owner"), VisitsControllers.getVisits);
 
+// Get IP analytics (admin/tenant/owner)
+router.get("/analytics", auth("admin", "tenant", "owner"), VisitsControllers.getIpAnalytics);
+
 export const VisitsRoutes = router;

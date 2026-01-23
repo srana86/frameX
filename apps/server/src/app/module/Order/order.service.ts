@@ -64,29 +64,27 @@ const getAllOrdersFromDB = async (
   tenantId: string,
   query: Record<string, unknown>
 ) => {
-  const orders = await prisma.order.findMany({
-    where: { tenantId },
-    include: {
-      items: true,
-      customer: true,
-      payment: true,
-    },
-    orderBy: { createdAt: "desc" },
-    take: Number(query.limit) || 100,
-    skip: ((Number(query.page) || 1) - 1) * (Number(query.limit) || 100),
+  const builder = new PrismaQueryBuilder({
+    model: prisma.order,
+    query: query,
+    searchFields: [
+      "orderNumber",
+      "customer.name",
+      "customer.phone",
+      "customer.email",
+    ],
   });
 
-  const total = await prisma.order.count({ where: { tenantId } });
+  const result = await builder
+    .addBaseWhere({ tenantId })
+    .search()
+    .filter()
+    .sort()
+    .paginate()
+    .include({ items: true, customer: true, payment: true })
+    .execute();
 
-  return {
-    meta: {
-      page: Number(query.page) || 1,
-      limit: Number(query.limit) || 100,
-      total,
-      totalPage: Math.ceil(total / (Number(query.limit) || 100)),
-    },
-    data: orders,
-  };
+  return result;
 };
 
 // Get single order by ID
@@ -454,7 +452,7 @@ const syncCourierStatusFromDB = async () => {
     take: 50,
   });
 
-  const results = [];
+  const results: any[] = [];
   const { DeliveryServices } = await import("../Delivery/delivery.service");
 
   for (const order of orders) {

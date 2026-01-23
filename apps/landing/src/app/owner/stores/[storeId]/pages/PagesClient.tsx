@@ -69,7 +69,9 @@ export function PagesClient({
   permission,
 }: PagesClientProps) {
   const router = useRouter();
-  const [pages, setPages] = useState<ContentPage[]>(initialPages);
+  const [pages, setPages] = useState<ContentPage[]>(
+    Array.isArray(initialPages) ? initialPages : []
+  );
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -85,7 +87,7 @@ export function PagesClient({
   const canEdit = permission === null || permission === "EDIT" || permission === "FULL";
 
   // Filter pages
-  const filteredPages = pages.filter((p) =>
+  const filteredPages = (Array.isArray(pages) ? pages : []).filter((p) =>
     p.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -130,7 +132,7 @@ export function PagesClient({
       const storeApi = createStoreApiClient(storeId);
 
       if (editingPage) {
-        const result = await storeApi.patch(`pages/${editingPage.id}`, {
+        const result = await storeApi.patch<ContentPage>(`pages/${editingPage.id}`, {
           ...formData,
           slug,
         });
@@ -141,8 +143,8 @@ export function PagesClient({
         );
         toast.success("Page updated");
       } else {
-        const result = await storeApi.post("pages", { ...formData, slug });
-        setPages([result as ContentPage, ...pages]);
+        const result = await storeApi.post<ContentPage>("pages", { ...formData, slug });
+        setPages([result, ...pages]);
         toast.success("Page created");
       }
 

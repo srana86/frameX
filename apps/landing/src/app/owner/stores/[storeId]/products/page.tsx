@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireStoreAccess } from "@/lib/store-auth-helpers";
-import { createStoreApiClient } from "@/lib/store-api-client";
+import { createServerStoreApiClient } from "@/lib/store-api-client.server";
 import { ProductsClient } from "./ProductsClient";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +29,11 @@ export default async function ProductsPage({
   const access = await requireStoreAccess(storeId);
 
   // Fetch initial products
-  let initialData = {
+  let initialData: {
+    products: any[];
+    pagination: { page: number; limit: number; total: number; totalPages: number };
+    categories: any[];
+  } = {
     products: [],
     pagination: {
       page: 1,
@@ -41,10 +45,10 @@ export default async function ProductsPage({
   };
 
   try {
-    const storeApi = createStoreApiClient(storeId);
+    const storeApi = createServerStoreApiClient(storeId);
     const page = parseInt(search.page || "1", 10);
     const category = search.category || "all";
-    
+
     const query = new URLSearchParams();
     query.set("page", page.toString());
     query.set("limit", "30");
@@ -54,9 +58,12 @@ export default async function ProductsPage({
 
     const result = await storeApi.getWithMeta(`products?${query.toString()}`);
     initialData = {
-      products: result.data as any[],
+      products: ((result.data as any).products || []).map((p: any) => ({
+        ...p,
+        stock: p.inventory?.quantity ?? 0,
+      })),
       pagination: result.meta || { page: 1, limit: 30, total: 0, totalPages: 0 },
-      categories: [],
+      categories: (result.data as any).categories || [],
     };
   } catch (error) {
     console.error("Failed to fetch products:", error);

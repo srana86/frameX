@@ -31,7 +31,15 @@ const getAllInventory = async (
       where: { tenantId },
       include: {
         product: {
-          select: { id: true, name: true, slug: true, images: true, status: true },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            images: true,
+            status: true,
+            sku: true,
+            category: { select: { name: true } },
+          },
         },
       },
       orderBy: { quantity: "asc" },
@@ -75,11 +83,11 @@ const getProductInventory = async (tenantId: string, productId: string) => {
  */
 const updateInventory = async (
   tenantId: string,
-  productId: string,
+  id: string,
   data: { quantity?: number; lowStock?: number }
 ) => {
   const existing = await prisma.inventory.findFirst({
-    where: { tenantId, productId },
+    where: { tenantId, id },
   });
 
   if (!existing) {
@@ -154,7 +162,7 @@ const getLowStockAlerts = async (tenantId: string) => {
     where: { tenantId },
     include: {
       product: {
-        select: { id: true, name: true, slug: true, images: true },
+        select: { id: true, name: true, slug: true, images: true, sku: true },
       },
     },
   });

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireStoreAccess } from "@/lib/store-auth-helpers";
-import { createStoreApiClient } from "@/lib/store-api-client";
+import { createServerStoreApiClient } from "@/lib/store-api-client.server";
 import { OrderDetailClient } from "./OrderDetailClient";
 import { notFound } from "next/navigation";
 
@@ -27,7 +27,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   let order = null;
 
   try {
-    const storeApi = createStoreApiClient(storeId);
+    const storeApi = createServerStoreApiClient(storeId);
     order = await storeApi.get(`orders/${orderId}`);
   } catch (error) {
     console.error("Failed to fetch order:", error);

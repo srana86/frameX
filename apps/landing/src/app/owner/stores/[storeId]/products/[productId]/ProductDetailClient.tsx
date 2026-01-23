@@ -61,6 +61,7 @@ interface Product {
   metaDescription?: string;
   createdAt: string;
   updatedAt: string;
+  brand?: string;
 }
 
 interface Category {
@@ -119,10 +120,11 @@ export function ProductDetailClient({
         barcode: product.barcode,
         stock: product.stock,
         lowStockThreshold: product.lowStockThreshold,
-        categoryId: product.categoryId,
+        category: product.categoryId,
+        brand: product.brand,
         isActive: product.isActive,
         isFeatured: product.isFeatured,
-        weight: product.weight,
+        weight: product.weight ? String(product.weight) : undefined,
         dimensions: product.dimensions,
         metaTitle: product.metaTitle,
         metaDescription: product.metaDescription,
@@ -239,6 +241,16 @@ export function ProductDetailClient({
                   id="name"
                   value={product.name}
                   onChange={(e) => updateField("name", e.target.value)}
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="brand">Brand</Label>
+                <Input
+                  id="brand"
+                  value={product.brand || ""}
+                  onChange={(e) => updateField("brand", e.target.value)}
+                  placeholder="Enter brand name"
                   disabled={!canEdit}
                 />
               </div>
@@ -441,14 +453,14 @@ export function ProductDetailClient({
             <CardContent>
               <Select
                 value={product.categoryId || ""}
-                onValueChange={(value) => updateField("categoryId", value || undefined)}
+                onValueChange={(value) => updateField("categoryId", value === "none" ? undefined : value)}
                 disabled={!canEdit}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No category</SelectItem>
+                  <SelectItem value="none">No category</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name}

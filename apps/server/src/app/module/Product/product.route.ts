@@ -56,6 +56,13 @@ router.put(
   validateRequest(ProductValidation.updateCategoryOrderValidationSchema),
   ProductControllers.updateCategoryOrder
 );
+router.patch(
+  "/categories/:id",
+  tenantMiddleware,
+  auth("admin", "tenant", "owner"),
+  validateRequest(ProductValidation.updateCategoryValidationSchema),
+  ProductControllers.updateCategory
+);
 router.put(
   "/categories/:id",
   tenantMiddleware,
@@ -79,7 +86,7 @@ router.post(
   validateRequest(ProductValidation.createProductValidationSchema),
   ProductControllers.createProduct
 );
-router.put(
+router.patch(
   "/:id",
   tenantMiddleware,
   auth("admin", "tenant", "owner"),

@@ -104,7 +104,96 @@ const getVisitsFromDB = async (tenantId: string, query: Record<string, unknown>)
   };
 };
 
+// Get IP analytics data
+const getIpAnalyticsFromDB = async (tenantId: string) => {
+  const visits = await prisma.visit.findMany({
+    where: { tenantId },
+    orderBy: { createdAt: "desc" },
+    take: 500, // Limit for performance
+  });
+
+  // Calculate summary
+  const uniqueIps = new Set(visits.map(v => v.ipAddress));
+  const totalPageViews = visits.reduce((sum, v) => sum + v.visitCount, 0);
+
+  // Group by country (from geolocation if available)
+  const countryStats = new Map<string, number>();
+  const deviceStats = new Map<string, number>();
+
+  visits.forEach((visit) => {
+    const geo = (visit as any).ipGeolocation as any;
+    const country = geo?.country || "Unknown";
+    countryStats.set(country, (countryStats.get(country) || 0) + visit.visitCount);
+
+    // Parse user agent for device type
+    const ua = visit.userAgent?.toLowerCase() || "";
+    let device = "Desktop";
+    if (ua.includes("mobile") || ua.includes("android") || ua.includes("iphone")) {
+      device = "Mobile";
+    } else if (ua.includes("tablet") || ua.includes("ipad")) {
+      device = "Tablet";
+    }
+    deviceStats.set(device, (deviceStats.get(device) || 0) + 1);
+  });
+
+  // Calculate totals for percentages
+  const totalCountryVisitors = Array.from(countryStats.values()).reduce((a, b) => a + b, 0) || 1;
+  const totalDeviceVisitors = Array.from(deviceStats.values()).reduce((a, b) => a + b, 0) || 1;
+
+  // Format byCountry with visitors and percentage
+  const byCountry = Array.from(countryStats.entries())
+    .map(([country, visitors]) => ({
+      country,
+      visitors,
+      percentage: (visitors / totalCountryVisitors) * 100,
+    }))
+    .sort((a, b) => b.visitors - a.visitors)
+    .slice(0, 10);
+
+  // Format byDevice with percentage
+  const byDevice = Array.from(deviceStats.entries())
+    .map(([device, count]) => ({
+      device,
+      count,
+      percentage: (count / totalDeviceVisitors) * 100,
+    }));
+
+  // Recent visitors with all required fields
+  const recentVisitors = visits.slice(0, 20).map((v, index) => {
+    const geo = (v as any).ipGeolocation as any;
+    const ua = v.userAgent?.toLowerCase() || "";
+    let device = "Desktop";
+    if (ua.includes("mobile") || ua.includes("android") || ua.includes("iphone")) {
+      device = "Mobile";
+    } else if (ua.includes("tablet") || ua.includes("ipad")) {
+      device = "Tablet";
+    }
+
+    return {
+      id: v.id || `visitor-${index}`,
+      ip: v.ipAddress,
+      country: geo?.country || "Unknown",
+      device,
+      lastVisit: (v.lastVisitedAt || v.createdAt).toISOString(),
+      pageViews: v.visitCount,
+    };
+  });
+
+  return {
+    summary: {
+      totalVisitors: visits.length,
+      uniqueVisitors: uniqueIps.size,
+      pageViews: totalPageViews,
+      bounceRate: visits.length > 0 ? Math.round((visits.filter(v => v.visitCount === 1).length / visits.length) * 100) : 0,
+    },
+    byCountry,
+    byDevice,
+    recentVisitors,
+  };
+};
+
 export const VisitsServices = {
   trackVisitFromDB,
   getVisitsFromDB,
+  getIpAnalyticsFromDB,
 };

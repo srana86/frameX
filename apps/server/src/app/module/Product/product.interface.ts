@@ -6,6 +6,7 @@ export interface TProduct {
   category: string;
   description: string;
   price: number;
+  costPrice?: number;
   buyPrice?: number;
   images: string[];
   sizes?: string[];
@@ -14,6 +15,7 @@ export interface TProduct {
   weight?: string;
   dimensions?: string;
   sku?: string;
+  barcode?: string;
   condition?: string;
   warranty?: string;
   tags?: string[];

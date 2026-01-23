@@ -6,6 +6,12 @@ import { NotificationValidation } from "./notification.validation";
 
 const router = express.Router();
 
+// Get notification settings (protected)
+router.get("/settings", auth(), NotificationControllers.getNotificationSettings);
+
+// Update notification settings (protected)
+router.put("/settings", auth(), NotificationControllers.updateNotificationSettings);
+
 // Get notifications (protected)
 router.get("/", auth(), NotificationControllers.getNotifications);
 

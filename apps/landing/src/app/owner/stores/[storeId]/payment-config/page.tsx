@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireStoreAccess } from "@/lib/store-auth-helpers";
-import { createStoreApiClient } from "@/lib/store-api-client";
+import { createServerStoreApiClient } from "@/lib/store-api-client.server";
 import { PaymentConfigClient } from "./PaymentConfigClient";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +35,7 @@ export default async function PaymentConfigPage({ params }: PaymentConfigPagePro
   };
 
   try {
-    const storeApi = createStoreApiClient(storeId);
+    const storeApi = createServerStoreApiClient(storeId);
     const result = await storeApi.get("payment-config");
     initialConfig = { ...initialConfig, ...(result as any) };
   } catch (error) {

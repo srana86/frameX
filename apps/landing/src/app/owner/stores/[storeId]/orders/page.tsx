@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireStoreAccess } from "@/lib/store-auth-helpers";
-import { createStoreApiClient } from "@/lib/store-api-client";
+import { createServerStoreApiClient } from "@/lib/store-api-client.server";
 import { OrdersClient } from "./OrdersClient";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +29,10 @@ export default async function OrdersPage({
   const access = await requireStoreAccess(storeId);
 
   // Fetch initial orders
-  let initialData = {
+  let initialData: {
+    orders: any[];
+    pagination: { page: number; limit: number; total: number; totalPages: number };
+  } = {
     orders: [],
     pagination: {
       page: 1,
@@ -40,10 +43,10 @@ export default async function OrdersPage({
   };
 
   try {
-    const storeApi = createStoreApiClient(storeId);
+    const storeApi = createServerStoreApiClient(storeId);
     const page = parseInt(search.page || "1", 10);
     const status = search.status || "";
-    
+
     const query = new URLSearchParams();
     query.set("page", page.toString());
     query.set("limit", "20");
@@ -53,7 +56,7 @@ export default async function OrdersPage({
 
     const result = await storeApi.getWithMeta(`orders?${query.toString()}`);
     initialData = {
-      orders: result.data as any[],
+      orders: Array.isArray(result.data) ? result.data : [],
       pagination: result.meta || { page: 1, limit: 20, total: 0, totalPages: 0 },
     };
   } catch (error) {

@@ -112,17 +112,21 @@ export function AffiliatesClient({
     setProcessingId(withdrawalId);
     try {
       const storeApi = createStoreApiClient(storeId);
-      await storeApi.post(`affiliates/withdrawals/${withdrawalId}/${action}`);
-      
+      await storeApi.post(`affiliates/withdrawals`, {
+        action: "update",
+        withdrawalId,
+        status: action === "approve" ? "COMPLETED" : "REJECTED"
+      });
+
       setWithdrawals(withdrawals.filter((w) => w.id !== withdrawalId));
-      
+
       if (action === "approve") {
         setStats((prev) => ({
           ...prev,
           pendingPayouts: prev.pendingPayouts - (withdrawals.find((w) => w.id === withdrawalId)?.amount || 0),
         }));
       }
-      
+
       toast.success(`Withdrawal ${action === "approve" ? "approved" : "rejected"}`);
     } catch (error: any) {
       toast.error(error.message || "Failed to process withdrawal");
@@ -139,17 +143,17 @@ export function AffiliatesClient({
     }
 
     const newStatus = currentStatus === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
-    
+
     try {
       const storeApi = createStoreApiClient(storeId);
       await storeApi.patch(`affiliates/${affiliateId}`, { status: newStatus });
-      
+
       setAffiliates(
         affiliates.map((a) =>
           a.id === affiliateId ? { ...a, status: newStatus } : a
         )
       );
-      
+
       toast.success(`Affiliate ${newStatus === "SUSPENDED" ? "suspended" : "activated"}`);
     } catch (error: any) {
       toast.error(error.message || "Failed to update affiliate");

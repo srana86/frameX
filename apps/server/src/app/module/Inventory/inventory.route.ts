@@ -20,6 +20,13 @@ router.get(
   InventoryControllers.getInventoryOverview
 );
 
+// Get all inventory products
+router.get(
+  "/products",
+  auth("admin", "tenant", "owner"),
+  InventoryControllers.getAllInventory
+);
+
 // Create inventory transaction
 router.post(
   "/",
@@ -28,6 +35,15 @@ router.post(
     InventoryValidation.createInventoryTransactionValidationSchema
   ),
   InventoryControllers.createInventoryTransaction
+);
+
+
+
+// Update inventory
+router.patch(
+  "/:id",
+  auth("admin", "tenant", "owner"),
+  InventoryControllers.updateInventory
 );
 
 export const InventoryRoutes = router;

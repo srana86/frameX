@@ -29,28 +29,15 @@ const conditionsSchema = z.object({
 // Create coupon validation schema
 const createCouponValidationSchema = z.object({
   body: z.object({
-    id: z.string().optional(),
     code: z.string({ message: "Coupon code is required" }),
-    name: z.string({ message: "Coupon name is required" }),
-    description: z.string().optional(),
-    type: z.enum(
-      [
-        "percentage",
-        "fixed_amount",
-        "free_shipping",
-        "buy_x_get_y",
-        "first_order",
-      ],
-      { message: "Coupon type is required" }
-    ),
-    status: z.enum(["active", "inactive", "expired", "scheduled"]).optional(),
+    discountType: z.enum(["PERCENTAGE", "FIXED"], {
+      message: "Discount type is required",
+    }),
     discountValue: z.number({ message: "Discount value is required" }),
-    maxDiscountAmount: z.number().optional(),
-    buyXGetY: buyXGetYConfigSchema.optional(),
-    startDate: z.string({ message: "Start date is required" }),
-    endDate: z.string({ message: "End date is required" }),
-    usageLimit: usageLimitSchema.optional(),
-    conditions: conditionsSchema.optional(),
+    minOrderValue: z.number().optional(),
+    maxUses: z.number().optional(),
+    expiresAt: z.string().optional(),
+    isActive: z.boolean().optional(),
   }),
 });
 
@@ -58,25 +45,12 @@ const createCouponValidationSchema = z.object({
 const updateCouponValidationSchema = z.object({
   body: z.object({
     code: z.string().optional(),
-    name: z.string().optional(),
-    description: z.string().optional(),
-    type: z
-      .enum([
-        "percentage",
-        "fixed_amount",
-        "free_shipping",
-        "buy_x_get_y",
-        "first_order",
-      ])
-      .optional(),
-    status: z.enum(["active", "inactive", "expired", "scheduled"]).optional(),
+    discountType: z.enum(["PERCENTAGE", "FIXED"]).optional(),
     discountValue: z.number().optional(),
-    maxDiscountAmount: z.number().optional(),
-    buyXGetY: buyXGetYConfigSchema.optional(),
-    startDate: z.string().optional(),
-    endDate: z.string().optional(),
-    usageLimit: usageLimitSchema.optional(),
-    conditions: conditionsSchema.optional(),
+    minOrderValue: z.number().optional(),
+    maxUses: z.number().optional(),
+    expiresAt: z.string().optional(),
+    isActive: z.boolean().optional(),
   }),
 });
 

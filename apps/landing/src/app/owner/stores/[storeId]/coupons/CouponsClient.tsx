@@ -52,13 +52,12 @@ import type { StaffPermission } from "@/contexts/StoreContext";
 interface Coupon {
   id: string;
   code: string;
-  type: "PERCENTAGE" | "FIXED";
-  value: number;
-  minPurchase?: number;
+  discountType: "PERCENTAGE" | "FIXED";
+  discountValue: number;
+  minOrderValue?: number;
   maxUses?: number;
   usedCount: number;
-  startDate?: string;
-  endDate?: string;
+  expiresAt?: string;
   isActive: boolean;
   createdAt: string;
 }
@@ -78,24 +77,33 @@ export function CouponsClient({
   storeId,
   permission,
 }: CouponsClientProps) {
-  const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons);
+  const [coupons, setCoupons] = useState<Coupon[]>(
+    Array.isArray(initialCoupons) ? initialCoupons : []
+  );
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [newCoupon, setNewCoupon] = useState({
+  const [newCoupon, setNewCoupon] = useState<{
+    code: string;
+    discountType: "PERCENTAGE" | "FIXED";
+    discountValue: number;
+    minOrderValue: number;
+    maxUses: number;
+    expiresAt: string;
+  }>({
     code: "",
-    type: "PERCENTAGE" as const,
-    value: 10,
-    minPurchase: 0,
+    discountType: "PERCENTAGE",
+    discountValue: 10,
+    minOrderValue: 0,
     maxUses: 0,
-    endDate: "",
+    expiresAt: "",
   });
 
   // Permission checks
   const canEdit = permission === null || permission === "EDIT" || permission === "FULL";
 
   // Filter coupons
-  const filteredCoupons = coupons.filter((c) =>
+  const filteredCoupons = (Array.isArray(coupons) ? coupons : []).filter((c) =>
     c.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -160,11 +168,11 @@ export function CouponsClient({
       setCreateDialogOpen(false);
       setNewCoupon({
         code: "",
-        type: "PERCENTAGE",
-        value: 10,
-        minPurchase: 0,
+        discountType: "PERCENTAGE",
+        discountValue: 10,
+        minOrderValue: 0,
         maxUses: 0,
-        endDate: "",
+        expiresAt: "",
       });
       toast.success("Coupon created successfully");
     } catch (error: any) {
@@ -285,12 +293,12 @@ export function CouponsClient({
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">
-                      {coupon.type === "PERCENTAGE"
-                        ? `${coupon.value}%`
-                        : `$${coupon.value}`}
+                      {coupon.discountType === "PERCENTAGE"
+                        ? `${coupon.discountValue}%`
+                        : `$${coupon.discountValue}`}
                     </TableCell>
                     <TableCell>
-                      {coupon.minPurchase ? `$${coupon.minPurchase}` : "-"}
+                      {coupon.minOrderValue ? `$${coupon.minOrderValue}` : "-"}
                     </TableCell>
                     <TableCell>
                       {coupon.maxUses
@@ -298,7 +306,7 @@ export function CouponsClient({
                         : `${coupon.usedCount} uses`}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {formatDate(coupon.endDate)}
+                      {formatDate(coupon.expiresAt)}
                     </TableCell>
                     <TableCell>
                       <span
@@ -380,9 +388,9 @@ export function CouponsClient({
               <div className="space-y-2">
                 <Label htmlFor="type">Discount Type</Label>
                 <Select
-                  value={newCoupon.type}
+                  value={newCoupon.discountType}
                   onValueChange={(value: "PERCENTAGE" | "FIXED") =>
-                    setNewCoupon((prev) => ({ ...prev, type: value }))
+                    setNewCoupon((prev) => ({ ...prev, discountType: value }))
                   }
                 >
                   <SelectTrigger>
@@ -396,18 +404,18 @@ export function CouponsClient({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="value">
-                  {newCoupon.type === "PERCENTAGE" ? "Discount %" : "Amount $"}
+                  {newCoupon.discountType === "PERCENTAGE" ? "Discount %" : "Amount $"}
                 </Label>
                 <Input
                   id="value"
                   type="number"
                   min="1"
-                  max={newCoupon.type === "PERCENTAGE" ? "100" : undefined}
-                  value={newCoupon.value}
+                  max={newCoupon.discountType === "PERCENTAGE" ? "100" : undefined}
+                  value={newCoupon.discountValue}
                   onChange={(e) =>
                     setNewCoupon((prev) => ({
                       ...prev,
-                      value: parseInt(e.target.value, 10),
+                      discountValue: parseInt(e.target.value, 10),
                     }))
                   }
                 />
@@ -421,11 +429,11 @@ export function CouponsClient({
                   id="minPurchase"
                   type="number"
                   min="0"
-                  value={newCoupon.minPurchase}
+                  value={newCoupon.minOrderValue}
                   onChange={(e) =>
                     setNewCoupon((prev) => ({
                       ...prev,
-                      minPurchase: parseInt(e.target.value, 10),
+                      minOrderValue: parseInt(e.target.value, 10),
                     }))
                   }
                   placeholder="0 = No minimum"
@@ -454,9 +462,9 @@ export function CouponsClient({
               <Input
                 id="endDate"
                 type="date"
-                value={newCoupon.endDate}
+                value={newCoupon.expiresAt}
                 onChange={(e) =>
-                  setNewCoupon((prev) => ({ ...prev, endDate: e.target.value }))
+                  setNewCoupon((prev) => ({ ...prev, expiresAt: e.target.value }))
                 }
               />
             </div>

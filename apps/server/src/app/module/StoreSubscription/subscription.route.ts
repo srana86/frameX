@@ -6,6 +6,9 @@ import { SubscriptionValidation } from "./subscription.validation";
 
 const router = express.Router();
 
+// Get store subscription (frontend format) - protected
+router.get("/", auth(), SubscriptionControllers.getStoreSubscription);
+
 // Get active subscription plans (public)
 router.get("/plans", SubscriptionControllers.getActivePlans);
 

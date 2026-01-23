@@ -35,6 +35,14 @@ router.post(
 router.get("/:id", tenantMiddleware, auth(), OrderControllers.getSingleOrder);
 
 // Update order (admin/tenant only)
+router.patch(
+  "/:id",
+  tenantMiddleware,
+  auth("admin", "tenant", "owner"),
+  validateRequest(OrderValidation.updateOrderValidationSchema),
+  OrderControllers.updateOrder
+);
+
 router.put(
   "/:id",
   tenantMiddleware,

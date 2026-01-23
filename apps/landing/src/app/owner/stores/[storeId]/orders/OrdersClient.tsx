@@ -79,7 +79,7 @@ interface OrdersClientProps {
 }
 
 const ORDER_STATUSES = [
-  { value: "", label: "All Statuses" },
+  { value: "all", label: "All Statuses" },
   { value: "PENDING", label: "Pending" },
   { value: "CONFIRMED", label: "Confirmed" },
   { value: "PROCESSING", label: "Processing" },
@@ -115,19 +115,22 @@ export function OrdersClient({
   permission,
 }: OrdersClientProps) {
   const router = useRouter();
-  const [orders, setOrders] = useState<Order[]>(initialData.orders);
-  const [pagination, setPagination] = useState(initialData.pagination);
+  // Ensure orders is always an array
+  const [orders, setOrders] = useState<Order[]>(
+    Array.isArray(initialData.orders) ? initialData.orders : []
+  );
+  const [pagination, setPagination] = useState(initialData.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // Permission checks
   const canEdit = permission === null || permission === "EDIT" || permission === "FULL";
 
-  // Filter orders by search query
-  const filteredOrders = orders.filter((o) => {
+  // Filter orders by search query (with safety check)
+  const filteredOrders = (Array.isArray(orders) ? orders : []).filter((o) => {
     const matchesSearch =
-      o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       o.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       o.customer?.email?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
@@ -162,12 +165,14 @@ export function OrdersClient({
   // Handle status filter change
   const handleStatusChange = (value: string) => {
     setStatusFilter(value);
-    refreshOrders(value);
-    
+    // Convert "all" to empty string for API
+    const apiValue = value === "all" ? "" : value;
+    refreshOrders(apiValue);
+
     // Update URL
     const params = new URLSearchParams();
-    if (value) {
-      params.set("status", value);
+    if (apiValue) {
+      params.set("status", apiValue);
     }
     router.push(`/owner/stores/${storeId}/orders?${params.toString()}`);
   };
@@ -308,8 +313,8 @@ export function OrdersClient({
                             order.paymentStatus === "COMPLETED"
                               ? "bg-green-100 text-green-700"
                               : order.paymentStatus === "FAILED"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-yellow-100 text-yellow-700"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-yellow-100 text-yellow-700"
                           )}
                         >
                           {order.paymentStatus}

@@ -58,8 +58,45 @@ const getInventoryOverview = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Get all inventory (products with stock)
+const getAllInventory = catchAsync(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const result = await InventoryServices.getAllInventory(user.tenantId, req.query);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Inventory retrieved successfully",
+    meta: result.meta,
+    data: {
+      products: result.data,
+    },
+  });
+});
+
+// Update inventory
+const updateInventory = catchAsync(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const { id } = req.params;
+  const { stock, lowStockThreshold } = req.body;
+
+  const result = await InventoryServices.updateInventory(user.tenantId, id, {
+    quantity: stock,
+    lowStock: lowStockThreshold,
+  });
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Inventory updated successfully",
+    data: result,
+  });
+});
+
 export const InventoryControllers = {
   getAllInventoryTransactions,
   createInventoryTransaction,
   getInventoryOverview,
+  getAllInventory,
+  updateInventory,
 };

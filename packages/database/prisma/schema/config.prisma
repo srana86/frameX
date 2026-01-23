@@ -28,6 +28,7 @@ model DeliveryServiceConfig {
   id                          String   @id @default(uuid())
   tenantId                    String   @unique
   defaultDeliveryCharge       Decimal  @db.Decimal(10, 2)
+  freeShippingThreshold       Decimal? @db.Decimal(10, 2)
   enableCODForDefault         Boolean  @default(true)
   deliveryChargeNotRefundable Boolean  @default(false)
   weightBasedCharges          Json? // [{weight, extraCharge}]
@@ -38,11 +39,12 @@ model DeliveryServiceConfig {
 }
 
 model CourierServicesConfig {
-  id        String   @id @default(uuid())
-  tenantId  String   @unique
-  services  Json? // [{id, name, enabled, logo, credentials}]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(uuid())
+  tenantId        String   @unique
+  defaultProvider String?
+  services        Json? // [{id, name, enabled, logo, credentials}]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model SSLCommerzConfig {

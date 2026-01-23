@@ -14,4 +14,19 @@ router.get(
   CustomerControllers.getAllCustomers
 );
 
+// Update customer (admin/tenant only)
+router.patch(
+  "/:id",
+  tenantMiddleware,
+  auth("admin", "tenant", "owner"),
+  CustomerControllers.updateCustomer
+);
+
+router.put(
+  "/:id",
+  tenantMiddleware,
+  auth("admin", "tenant", "owner"),
+  CustomerControllers.updateCustomer
+);
+
 export const CustomerRoutes = router;

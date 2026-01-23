@@ -3,17 +3,17 @@ import { TCoupon } from "./coupon.interface";
 
 export function isCouponActive(coupon: TCoupon): boolean {
   const now = new Date();
-  const startDate = new Date(coupon.startDate);
-  const endDate = new Date(coupon.endDate);
+  const createdAt = coupon.createdAt ? new Date(coupon.createdAt) : new Date(0);
+  const expiresAt = coupon.expiresAt ? new Date(coupon.expiresAt) : null;
 
-  if (coupon.status !== "active") return false;
-  if (now < startDate) return false;
-  if (now > endDate) return false;
+  if (!coupon.isActive) return false;
+  if (now < createdAt) return false;
+  if (expiresAt && now > expiresAt) return false;
 
   // Check usage limits
   if (
-    coupon.usageLimit.totalUses &&
-    (coupon.usageLimit.currentUses || 0) >= coupon.usageLimit.totalUses
+    coupon.maxUses &&
+    (coupon.usedCount || 0) >= coupon.maxUses
   ) {
     return false;
   }
@@ -28,37 +28,15 @@ export function calculateDiscount(
   shippingCost: number
 ): { discount: number; freeShipping: boolean } {
   let discount = 0;
-  let freeShipping = false;
+  const freeShipping = false;
 
-  switch (coupon.type) {
-    case "percentage":
+  switch (coupon.discountType) {
+    case "PERCENTAGE":
       discount = (applicableSubtotal * coupon.discountValue) / 100;
-      // Apply max discount cap if set
-      if (coupon.maxDiscountAmount && discount > coupon.maxDiscountAmount) {
-        discount = coupon.maxDiscountAmount;
-      }
       break;
 
-    case "fixed_amount":
+    case "FIXED":
       discount = Math.min(coupon.discountValue, applicableSubtotal);
-      break;
-
-    case "free_shipping":
-      freeShipping = true;
-      discount = shippingCost;
-      break;
-
-    case "first_order":
-      // First order discount is typically percentage
-      discount = (applicableSubtotal * coupon.discountValue) / 100;
-      if (coupon.maxDiscountAmount && discount > coupon.maxDiscountAmount) {
-        discount = coupon.maxDiscountAmount;
-      }
-      break;
-
-    case "buy_x_get_y":
-      // Discount calculated separately based on free items
-      // This is handled in the checkout logic
       break;
   }
 

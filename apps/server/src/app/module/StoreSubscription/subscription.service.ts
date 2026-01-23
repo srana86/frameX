@@ -103,9 +103,73 @@ const createSubscriptionIntoDB = async (
   return subscription;
 };
 
+// Get store subscription in frontend format
+const getStoreSubscriptionFromDB = async (tenantId: string) => {
+  const subscription = await prisma.tenantSubscription.findFirst({
+    where: {
+      tenantId,
+      status: { in: ["ACTIVE", "TRIAL", "GRACE_PERIOD"] }
+    },
+    include: {
+      plan: true,
+    },
+    orderBy: { createdAt: "desc" }
+  });
+
+  // Get product and order counts for usage
+  const [productCount, orderCount] = await Promise.all([
+    prisma.product.count({ where: { tenantId } }),
+    prisma.order.count({ where: { tenantId } }),
+  ]);
+
+  // Default free tier if no subscription
+  if (!subscription) {
+    return {
+      plan: "FREE",
+      status: "ACTIVE",
+      features: ["Basic Store", "10 Products", "100 Orders/month"],
+      limits: {
+        products: 10,
+        orders: 100,
+        storage: "100MB",
+      },
+      usage: {
+        products: productCount,
+        orders: orderCount,
+        storage: "0MB",
+      },
+      billingCycle: null,
+      nextBillingDate: null,
+      price: 0,
+    };
+  }
+
+  const plan = subscription.plan;
+  const features = (plan?.features as string[]) || [];
+  const limits = (plan?.limits as any) || { products: 100, orders: 1000, storage: "1GB" };
+
+  return {
+    plan: plan?.name || "PREMIUM",
+    status: subscription.status,
+    features,
+    limits,
+    usage: {
+      products: productCount,
+      orders: orderCount,
+      storage: "0MB",
+    },
+    billingCycle: subscription.billingCycle,
+    nextBillingDate: subscription.currentPeriodEnd?.toISOString() || null,
+    price: Number(subscription.amount) || 0,
+  };
+};
+
 export const SubscriptionServices = {
   getActiveSubscriptionPlansFromDB,
   getTenantSubscriptionFromDB,
   getSubscriptionStatusFromDB,
   createSubscriptionIntoDB,
+  getStoreSubscriptionFromDB,
+  // Alias for controller
+  getCurrentTenantSubscriptionFromDB: getTenantSubscriptionFromDB,
 };

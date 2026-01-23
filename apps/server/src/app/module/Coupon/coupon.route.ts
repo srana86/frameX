@@ -66,6 +66,14 @@ router.post(
 );
 
 // Update coupon (admin/tenant only)
+router.patch(
+  "/:id",
+  tenantMiddleware,
+  auth("admin", "tenant", "owner"),
+  validateRequest(CouponValidation.updateCouponValidationSchema),
+  CouponControllers.updateCoupon
+);
+
 router.put(
   "/:id",
   tenantMiddleware,

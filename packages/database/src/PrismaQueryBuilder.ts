@@ -58,6 +58,7 @@ export class PrismaQueryBuilder<T = any> {
   private skip = 0;
   private take = 10;
   private selectFields: Record<string, boolean> | undefined;
+  private includeFields: Record<string, any> | undefined;
 
   constructor(options: QueryBuilderOptions<T>) {
     this.model = options.model;
@@ -215,6 +216,13 @@ export class PrismaQueryBuilder<T = any> {
 
     return this;
   }
+  /**
+   * Include related fields/models
+   */
+  include(includes: Record<string, any>): this {
+    this.includeFields = { ...this.includeFields, ...includes };
+    return this;
+  }
 
   /**
    * Get the built where conditions
@@ -236,6 +244,10 @@ export class PrismaQueryBuilder<T = any> {
 
     if (this.selectFields && Object.keys(this.selectFields).length > 0) {
       findArgs.select = this.selectFields;
+    }
+
+    if (this.includeFields && Object.keys(this.includeFields).length > 0) {
+      findArgs.include = this.includeFields;
     }
 
     const [data, total] = await Promise.all([
@@ -284,6 +296,7 @@ export class PrismaQueryBuilder<T = any> {
     skip: number;
     take: number;
     select?: Record<string, boolean>;
+    include?: Record<string, any>;
   } {
     return {
       where: this.whereConditions,
@@ -291,6 +304,7 @@ export class PrismaQueryBuilder<T = any> {
       skip: this.skip,
       take: this.take,
       select: this.selectFields,
+      include: this.includeFields,
     };
   }
 }

@@ -182,12 +182,18 @@ export default function StoresListPage() {
                     {filteredStores.map((store) => (
                         <Card
                             key={store.id}
-                            className="group hover:shadow-lg transition-all duration-200"
+                            className="group hover:shadow-lg transition-all duration-200 cursor-pointer relative"
                         >
+                            {/* Clickable overlay for entire card */}
+                            <Link
+                                href={`/owner/stores/${store.id}/dashboard`}
+                                className="absolute inset-0 z-10"
+                                aria-label={`Open ${store.name} dashboard`}
+                            />
                             <CardHeader className="pb-3">
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1 min-w-0">
-                                        <CardTitle className="text-lg truncate">
+                                        <CardTitle className="text-lg truncate group-hover:text-primary transition-colors">
                                             {store.name}
                                         </CardTitle>
                                         <CardDescription className="truncate">
@@ -248,36 +254,44 @@ export default function StoresListPage() {
                                     )}
                                 </div>
 
-                                {/* Actions */}
-                                <div className="flex items-center gap-2 pt-2 border-t">
+                                {/* Actions - z-20 to be above clickable overlay */}
+                                <div className="flex items-center gap-2 pt-2 border-t relative z-20">
+                                    <Link href={`/owner/stores/${store.id}/dashboard`} className="flex-1">
+                                        <Button size="sm" className="w-full">
+                                            Open Dashboard
+                                        </Button>
+                                    </Link>
                                     {store.deploymentUrl && (
                                         <Button
                                             size="sm"
                                             variant="outline"
                                             asChild
-                                            className="flex-1"
                                         >
                                             <a
                                                 href={store.deploymentUrl}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                             >
-                                                <ExternalLink className="mr-2 h-3 w-3" />
-                                                Visit
+                                                <ExternalLink className="h-3 w-3" />
                                             </a>
                                         </Button>
                                     )}
-                                    <Link href={`/owner/stores/${store.id}`} className="flex-1">
-                                        <Button size="sm" variant="outline" className="w-full">
-                                            <Settings className="mr-2 h-3 w-3" />
-                                            Manage
-                                        </Button>
-                                    </Link>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        asChild
+                                    >
+                                        <Link href={`/owner/stores/${store.id}/settings`}>
+                                            <Settings className="h-3 w-3" />
+                                        </Link>
+                                    </Button>
                                     <Button
                                         size="sm"
                                         variant="ghost"
                                         className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                        onClick={() => {
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
                                             setStoreToDelete(store);
                                             setDeleteDialogOpen(true);
                                         }}

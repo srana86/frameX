@@ -45,6 +45,12 @@ router.get(
 );
 
 // Update a staff member
+router.patch(
+  "/:staffId",
+  validateRequest(updateStaffValidationSchema),
+  StaffControllers.updateStaff
+);
+
 router.put(
   "/:staffId",
   validateRequest(updateStaffValidationSchema),
@@ -59,6 +65,12 @@ router.delete(
 );
 
 // Update staff store access (replace all)
+router.patch(
+  "/:staffId/access",
+  validateRequest(updateStaffAccessValidationSchema),
+  StaffControllers.updateStaffAccess
+);
+
 router.put(
   "/:staffId/access",
   validateRequest(updateStaffAccessValidationSchema),

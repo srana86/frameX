@@ -56,6 +56,7 @@ interface ProductFormData {
   barcode: string;
   stock: number;
   lowStockThreshold: number | undefined;
+  brand: string;
   categoryId: string | undefined;
   isActive: boolean;
   isFeatured: boolean;
@@ -84,6 +85,7 @@ export function ProductCreateClient({
     barcode: "",
     stock: 0,
     lowStockThreshold: undefined,
+    brand: "",
     categoryId: undefined,
     isActive: true,
     isFeatured: false,
@@ -107,6 +109,11 @@ export function ProductCreateClient({
       return;
     }
 
+    if (!product.brand.trim()) {
+      toast.error("Please enter a brand name");
+      return;
+    }
+
     if (product.price <= 0) {
       toast.error("Please enter a valid price");
       return;
@@ -114,8 +121,14 @@ export function ProductCreateClient({
 
     setSaving(true);
     try {
+      const payload = {
+        ...product,
+        category: product.categoryId,
+        weight: product.weight ? String(product.weight) : undefined,
+      };
+
       const storeApi = createStoreApiClient(storeId);
-      const result = await storeApi.post("products", product);
+      const result = await storeApi.post("products", payload);
       toast.success("Product created successfully");
       router.push(`/owner/stores/${storeId}/products/${(result as any).id}`);
     } catch (error: any) {
@@ -175,6 +188,15 @@ export function ProductCreateClient({
                   value={product.name}
                   onChange={(e) => updateField("name", e.target.value)}
                   placeholder="Enter product name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="brand">Brand *</Label>
+                <Input
+                  id="brand"
+                  value={product.brand}
+                  onChange={(e) => updateField("brand", e.target.value)}
+                  placeholder="Enter brand name"
                 />
               </div>
               <div className="space-y-2">
@@ -384,14 +406,14 @@ export function ProductCreateClient({
               <Select
                 value={product.categoryId || ""}
                 onValueChange={(value) =>
-                  updateField("categoryId", value || undefined)
+                  updateField("categoryId", value === "none" ? undefined : value)
                 }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No category</SelectItem>
+                  <SelectItem value="none">No category</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name}

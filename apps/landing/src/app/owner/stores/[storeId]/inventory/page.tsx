@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireStoreAccess } from "@/lib/store-auth-helpers";
-import { createStoreApiClient } from "@/lib/store-api-client";
+import { createServerStoreApiClient } from "@/lib/store-api-client.server";
 import { InventoryClient } from "./InventoryClient";
 
 export const dynamic = "force-dynamic";
@@ -24,16 +24,42 @@ export default async function InventoryPage({ params }: InventoryPageProps) {
   const access = await requireStoreAccess(storeId, "EDIT");
 
   // Fetch initial inventory data
-  let initialData = {
+  let initialData: {
+    products: any[];
+    lowStockCount: number;
+    outOfStockCount: number;
+  } = {
     products: [],
     lowStockCount: 0,
     outOfStockCount: 0,
   };
 
   try {
-    const storeApi = createStoreApiClient(storeId);
-    const result = await storeApi.get("inventory");
-    initialData = result as any;
+    const storeApi = createServerStoreApiClient(storeId);
+    const result = await storeApi.getWithMeta("inventory/products");
+
+    // Calculate stats from the fetched products
+    // Api returns Inventory[], map to InventoryProduct[] (flattening product details)
+    const rawInventory = (result.data as any).products || [];
+    const products = rawInventory.map((inv: any) => ({
+      id: inv.id, // Use Inventory ID for patching
+      name: inv.product?.name || "Unknown Product",
+      sku: inv.product?.sku,
+      category: inv.product?.category?.name || "Uncategorized",
+      stock: inv.quantity,
+      lowStockThreshold: inv.lowStock,
+    }));
+
+    const lowStockCount = products.filter(
+      (p: any) => p.stock > 0 && p.stock <= (p.lowStockThreshold || 10)
+    ).length;
+    const outOfStockCount = products.filter((p: any) => p.stock === 0).length;
+
+    initialData = {
+      products,
+      lowStockCount,
+      outOfStockCount,
+    };
   } catch (error) {
     console.error("Failed to fetch inventory:", error);
   }

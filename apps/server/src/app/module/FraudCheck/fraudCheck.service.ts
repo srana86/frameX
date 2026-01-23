@@ -1,5 +1,6 @@
 import { createFraudShieldClient } from "./services/fraudshield.service";
 import config from "../../../config/index";
+import { prisma } from "@framex/database";
 
 const BD_PHONE_REGEX = /^(\+?880|0)?1[3-9]\d{8}$/;
 
@@ -70,7 +71,59 @@ const checkCustomerFraud = async (
   return result;
 };
 
+// Get fraud check settings for a tenant
+const getFraudCheckSettingsFromDB = async (tenantId: string) => {
+  const settings = await prisma.settings.findUnique({
+    where: {
+      tenantId_key: {
+        tenantId,
+        key: "fraud_check_settings",
+      },
+    },
+  });
+
+  // Return default settings if none exist
+  if (!settings) {
+    return {
+      enabled: false,
+      apiKey: "",
+      autoBlock: false,
+      riskThreshold: "high",
+      notifyOnHighRisk: true,
+    };
+  }
+
+  return settings.value;
+};
+
+// Update fraud check settings for a tenant
+const updateFraudCheckSettingsIntoDB = async (
+  tenantId: string,
+  payload: any
+) => {
+  const result = await prisma.settings.upsert({
+    where: {
+      tenantId_key: {
+        tenantId,
+        key: "fraud_check_settings",
+      },
+    },
+    update: {
+      value: payload,
+    },
+    create: {
+      tenantId,
+      key: "fraud_check_settings",
+      value: payload,
+    },
+  });
+
+  return result.value;
+};
+
 export const FraudCheckServices = {
   getFraudCheckStats,
   checkCustomerFraud,
+  getFraudCheckSettingsFromDB,
+  updateFraudCheckSettingsIntoDB,
 };

@@ -222,7 +222,45 @@ const getAllAffiliatesFromDB = async (
     })
   );
 
-  return { meta, data: enrichedAffiliates };
+  return {
+    meta,
+    affiliates: enrichedAffiliates.map((a) => ({
+      id: a.id,
+      name: a.user?.name || "Unknown",
+      email: a.user?.email || "N/A",
+      code: a.promoCode,
+      referrals: a.totalOrders || 0,
+      totalEarnings: Number(a.totalEarnings || 0),
+      pendingEarnings: a.pendingCommissions * 10, // Placeholder OR calculate from actual pending commissions
+      status: a.status,
+      createdAt: a.createdAt,
+    })),
+  };
+};
+
+const getAffiliateStatsFromDB = async (tenantId: string) => {
+  const totalAffiliates = await prisma.affiliate.count({
+    where: { tenantId },
+  });
+
+  const statsAggregate = await prisma.affiliate.aggregate({
+    where: { tenantId },
+    _sum: {
+      totalEarnings: true,
+      availableBalance: true,
+    },
+  });
+
+  const pendingPayoutsAggregate = await prisma.affiliateWithdrawal.aggregate({
+    where: { tenantId, status: "PENDING" },
+    _sum: { amount: true },
+  });
+
+  return {
+    totalAffiliates,
+    totalEarnings: Number(statsAggregate._sum.totalEarnings || 0),
+    pendingPayouts: Number(pendingPayoutsAggregate._sum.amount || 0),
+  };
 };
 
 // Get affiliate commissions
@@ -271,12 +309,12 @@ const getCommissionsFromDB = async (
         ...commission,
         order: order
           ? {
-              id: order.id,
-              total: order.total,
-              status: order.status,
-              createdAt: order.createdAt,
-              customer: order.customer,
-            }
+            id: order.id,
+            total: order.total,
+            status: order.status,
+            createdAt: order.createdAt,
+            customer: order.customer,
+          }
           : null,
       };
     })
@@ -355,9 +393,9 @@ const getWithdrawalsFromDB = async (
   // Using BetterAuth User model
   return Promise.all(
     withdrawals.map(async (w) => {
-      let user = null;
+      let affiliateUser: any = null;
       if (w.affiliate) {
-        user = await prisma.user.findUnique({
+        affiliateUser = await prisma.user.findUnique({
           where: { id: w.affiliate.userId },
           select: { name: true, email: true, phone: true },
         });
@@ -367,7 +405,7 @@ const getWithdrawalsFromDB = async (
         ...w,
         affiliate: {
           ...w.affiliate,
-          user,
+          user: affiliateUser,
         },
       };
     })
@@ -544,6 +582,17 @@ const getAffiliateByPromoCodeFromDB = async (promoCode: string) => {
   });
 };
 
+const updateAffiliateFromDB = async (
+  tenantId: string,
+  id: string,
+  payload: any
+) => {
+  return prisma.affiliate.update({
+    where: { id, tenantId },
+    data: payload,
+  });
+};
+
 export const AffiliateServices = {
   getAffiliateSettingsFromDB,
   getMyAffiliateFromDB,
@@ -557,4 +606,6 @@ export const AffiliateServices = {
   updateAffiliateSettingsFromDB,
   assignCouponToAffiliateFromDB,
   getAffiliateByPromoCodeFromDB,
+  getAffiliateStatsFromDB,
+  updateAffiliateFromDB,
 };

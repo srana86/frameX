@@ -157,11 +157,38 @@ const updateAdsConfig = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getDeliverySupportConfig = catchAsync(async (req: Request, res: Response) => {
+  const result = await ConfigServices.getDeliverySupportConfigFromDB(req.tenantId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Delivery support config retrieved successfully",
+    data: result,
+  });
+});
+
+const updateDeliverySupportConfig = catchAsync(async (req: Request, res: Response) => {
+  const result = await ConfigServices.updateDeliverySupportConfigIntoDB(
+    req.tenantId as string,
+    req.body
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Delivery support config updated successfully",
+    data: result,
+  });
+});
+
 export const ConfigControllers = {
   getBrandConfig,
   updateBrandConfig,
   getDeliveryConfig,
   updateDeliveryConfig,
+  getDeliverySupportConfig,
+  updateDeliverySupportConfig,
   getSSLCommerzConfig,
   updateSSLCommerzConfig,
   getOAuthConfig,

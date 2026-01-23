@@ -35,6 +35,15 @@ router.get(
   BlockedCustomerControllers.getSingleBlockedCustomer
 );
 
+router.patch(
+  "/:id",
+  auth("admin", "tenant", "owner"),
+  validateRequest(
+    BlockedCustomerValidation.updateBlockedCustomerValidationSchema
+  ),
+  BlockedCustomerControllers.updateBlockedCustomer
+);
+
 router.put(
   "/:id",
   auth("admin", "tenant", "owner"),

@@ -37,6 +37,7 @@ import { StatisticsRoutes } from "../module/Statistics/statistics.route";
 import {
   BrandConfigRoutes,
   DeliveryConfigRoutes,
+  DeliverySupportRoutes,
   SSLCommerzConfigRoutes,
   OAuthConfigRoutes,
   AdsConfigRoutes,
@@ -50,6 +51,7 @@ import { PathaoRoutes } from "../module/Delivery/pathao.route";
 import { TrackingRoutes } from "../module/Tracking/tracking.route";
 import { SuperAdminRoutes } from "../module/SuperAdmin/superAdmin.route";
 import { VisitsRoutes } from "../module/Visits/visits.route";
+import { IpAnalyticsRoutes } from "../module/Visits/ipAnalytics.route";
 import { ProductViewersRoutes } from "../module/ProductViewers/productViewers.route";
 import { CronRoutes } from "../module/Cron/cron.route";
 import { AffiliateRoutes } from "../module/Affiliate/affiliate.route";
@@ -232,6 +234,10 @@ const moduleRoutes = [
     route: AdsConfigRoutes,
   },
   {
+    path: "/delivery-support",
+    route: DeliverySupportRoutes,
+  },
+  {
     path: "/promotional-banner",
     route: PromotionalBannerRoutes,
   },
@@ -280,6 +286,10 @@ const moduleRoutes = [
     route: VisitsRoutes,
   },
   {
+    path: "/ip-analytics",
+    route: IpAnalyticsRoutes,
+  },
+  {
     path: "/product-viewers",
     route: ProductViewersRoutes,
   },
@@ -288,7 +298,7 @@ const moduleRoutes = [
     route: CronRoutes,
   },
   {
-    path: "/affiliate",
+    path: "/affiliates",
     route: AffiliateRoutes,
   },
   {

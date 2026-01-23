@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireStoreAccess } from "@/lib/store-auth-helpers";
-import { createStoreApiClient } from "@/lib/store-api-client";
+import { createServerStoreApiClient } from "@/lib/store-api-client.server";
 import { EmailTemplatesClient } from "./EmailTemplatesClient";
 
 export const dynamic = "force-dynamic";
@@ -26,9 +26,9 @@ export default async function EmailTemplatesPage({ params }: EmailTemplatesPageP
   let initialTemplates: any[] = [];
 
   try {
-    const storeApi = createStoreApiClient(storeId);
+    const storeApi = createServerStoreApiClient(storeId);
     const result = await storeApi.get("email-templates");
-    initialTemplates = (result as any) || [];
+    initialTemplates = (result as any)?.templates || [];
   } catch (error) {
     console.error("Failed to fetch email templates:", error);
   }

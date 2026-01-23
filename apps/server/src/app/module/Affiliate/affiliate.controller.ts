@@ -40,7 +40,7 @@ const getAllAffiliates = catchAsync(async (req: Request, res: Response) => {
     statusCode: StatusCodes.OK,
     success: true,
     message: "Affiliates retrieved successfully",
-    data: result.data,
+    data: result.affiliates,
     meta: result.meta,
   });
 });
@@ -324,6 +324,35 @@ const assignCoupon = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Update affiliate (admin)
+const updateAffiliate = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await AffiliateServices.updateAffiliateFromDB(
+    req.tenantId,
+    id,
+    req.body
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Affiliate updated successfully",
+    data: result,
+  });
+});
+
+// Get affiliate stats
+const getStats = catchAsync(async (req: Request, res: Response) => {
+  const result = await AffiliateServices.getAffiliateStatsFromDB(req.tenantId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Affiliate statistics retrieved successfully",
+    data: result,
+  });
+});
+
 export const AffiliateControllers = {
   getMyAffiliate,
   createMyAffiliate,
@@ -336,4 +365,6 @@ export const AffiliateControllers = {
   updateSettings,
   setCookie,
   assignCoupon,
+  getStats,
+  updateAffiliate,
 };

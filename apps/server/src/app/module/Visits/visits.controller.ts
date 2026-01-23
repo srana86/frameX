@@ -46,7 +46,31 @@ const getVisits = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Get IP analytics
+const getIpAnalytics = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = req.tenantId || (req.user as any)?.tenantId || req.headers['x-tenant-id'] as string;
+
+  if (!tenantId) {
+    return sendResponse(res, {
+      statusCode: StatusCodes.BAD_REQUEST,
+      success: false,
+      message: "Tenant ID is required",
+      data: null,
+    });
+  }
+
+  const result = await VisitsServices.getIpAnalyticsFromDB(tenantId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "IP analytics retrieved successfully",
+    data: result,
+  });
+});
+
 export const VisitsControllers = {
   trackVisit,
   getVisits,
+  getIpAnalytics,
 };

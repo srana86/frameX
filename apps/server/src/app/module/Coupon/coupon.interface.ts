@@ -1,51 +1,15 @@
-export type CouponType =
-  | "percentage"
-  | "fixed_amount"
-  | "free_shipping"
-  | "buy_x_get_y"
-  | "first_order";
-
-export type CouponStatus = "active" | "inactive" | "expired" | "scheduled";
-
-export interface BuyXGetYConfig {
-  buyQuantity: number;
-  getQuantity: number;
-  productId?: string;
-  categoryId?: string;
-}
-
-export interface CouponUsageLimit {
-  totalUses?: number;
-  usesPerCustomer?: number;
-  currentUses?: number;
-}
-
-export interface CouponConditions {
-  minPurchaseAmount?: number;
-  maxPurchaseAmount?: number;
-  applicableCategories?: string[];
-  excludedCategories?: string[];
-  applicableProducts?: string[];
-  excludedProducts?: string[];
-  firstOrderOnly?: boolean;
-}
+export type CouponType = "PERCENTAGE" | "FIXED";
 
 export interface TCoupon {
   id: string;
   code: string;
-  name: string;
-  description?: string;
-  type: CouponType;
-  status: CouponStatus;
+  discountType: CouponType;
   discountValue: number;
-  maxDiscountAmount?: number;
-  buyXGetY?: BuyXGetYConfig;
-  startDate: string;
-  endDate: string;
-  usageLimit: CouponUsageLimit;
-  conditions: CouponConditions;
-  totalRevenue?: number;
-  averageOrderValue?: number;
+  minOrderValue?: number;
+  maxUses?: number;
+  usedCount: number;
+  expiresAt?: string | Date;
+  isActive: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }

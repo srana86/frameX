@@ -116,8 +116,17 @@ export function InventoryClient({
     setLoading(true);
     try {
       const storeApi = createStoreApiClient(storeId);
-      const result = await storeApi.get("inventory");
-      setProducts((result as any).products || []);
+      const result = await storeApi.getWithMeta("inventory/products");
+      const rawInventory = (result.data as any).products || [];
+      const mappedProducts = rawInventory.map((inv: any) => ({
+        id: inv.id,
+        name: inv.product?.name || "Unknown Product",
+        sku: inv.product?.sku,
+        category: inv.product?.category?.name || "Uncategorized",
+        stock: inv.quantity,
+        lowStockThreshold: inv.lowStock,
+      }));
+      setProducts(mappedProducts);
     } catch (error) {
       toast.error("Failed to refresh inventory");
     } finally {
@@ -308,8 +317,8 @@ export function InventoryClient({
                             isOutOfStock
                               ? "text-red-600"
                               : isLowStock
-                              ? "text-yellow-600"
-                              : "text-green-600"
+                                ? "text-yellow-600"
+                                : "text-green-600"
                           )}
                         >
                           {product.stock}
@@ -322,15 +331,15 @@ export function InventoryClient({
                             isOutOfStock
                               ? "bg-red-100 text-red-700"
                               : isLowStock
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-green-100 text-green-700"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-green-100 text-green-700"
                           )}
                         >
                           {isOutOfStock
                             ? "Out of Stock"
                             : isLowStock
-                            ? "Low Stock"
-                            : "In Stock"}
+                              ? "Low Stock"
+                              : "In Stock"}
                         </span>
                       </TableCell>
                       {canEdit && (
@@ -395,9 +404,9 @@ export function InventoryClient({
                   {adjustmentType === "add"
                     ? selectedProduct.stock + parseInt(adjustmentAmount || "0", 10)
                     : Math.max(
-                        0,
-                        selectedProduct.stock - parseInt(adjustmentAmount || "0", 10)
-                      )}
+                      0,
+                      selectedProduct.stock - parseInt(adjustmentAmount || "0", 10)
+                    )}
                 </span>
               </p>
             )}

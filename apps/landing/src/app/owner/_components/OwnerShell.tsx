@@ -14,8 +14,6 @@ import {
     LogOut,
     Loader2,
     Plus,
-    ChevronDown,
-    Check,
     Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -144,9 +142,7 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const { logout, user, isLoading: authLoading } = useAuth();
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
-    const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
     const [stores, setStores] = useState<StoreInfo[]>([]);
-    const [selectedStore, setSelectedStore] = useState<StoreInfo | null>(null);
     const [isLoadingStores, setIsLoadingStores] = useState(true);
     const [hasOwnerProfile, setHasOwnerProfile] = useState<boolean | null>(null);
 
@@ -178,11 +174,6 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
                 })) || [];
 
                 setStores(storesList);
-
-                // Select first store by default
-                if (storesList.length > 0 && !selectedStore) {
-                    setSelectedStore(storesList[0]);
-                }
             } catch (error: any) {
                 if (error?.statusCode === 404) {
                     setHasOwnerProfile(false);
@@ -195,7 +186,7 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
         if (!authLoading && user) {
             loadOwnerData();
         }
-    }, [user, authLoading, selectedStore]);
+    }, [user, authLoading]);
 
     // Authorization check
     useEffect(() => {
@@ -216,12 +207,6 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
             window.location.href = process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3000";
         }
     }, [user, authLoading, router]);
-
-    const handleStoreSelect = (store: StoreInfo) => {
-        setSelectedStore(store);
-        setStoreDropdownOpen(false);
-        // Could store in localStorage or context for persistence
-    };
 
     // Show loading state
     if (authLoading || isLoadingStores) {
@@ -269,67 +254,60 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
                         </Button>
                     </div>
 
-                    {/* Store Selector */}
+                    {/* Quick-Access Stores */}
                     <div className="border-b px-4 py-3">
-                        <div className="relative">
-                            <button
-                                onClick={() => setStoreDropdownOpen(!storeDropdownOpen)}
-                                className="flex w-full items-center justify-between rounded-lg border bg-muted/50 px-3 py-2 text-sm hover:bg-muted"
-                            >
-                                <div className="flex items-center gap-2 truncate">
-                                    <Store className="h-4 w-4 text-primary" />
-                                    <span className="truncate font-medium">
-                                        {selectedStore?.name || "Select a store"}
-                                    </span>
-                                </div>
-                                <ChevronDown
-                                    className={cn(
-                                        "h-4 w-4 text-muted-foreground transition-transform",
-                                        storeDropdownOpen && "rotate-180"
-                                    )}
-                                />
-                            </button>
-
-                            {storeDropdownOpen && (
-                                <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-lg border bg-background shadow-lg">
-                                    {stores.map((store) => (
-                                        <button
-                                            key={store.id}
-                                            onClick={() => handleStoreSelect(store)}
-                                            className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
-                                        >
-                                            {selectedStore?.id === store.id ? (
-                                                <Check className="h-4 w-4 text-primary" />
-                                            ) : (
-                                                <div className="h-4 w-4" />
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                                My Stores
+                            </h3>
+                            <Link href="/owner/stores/new">
+                                <Button size="icon" variant="ghost" className="h-6 w-6">
+                                    <Plus className="h-4 w-4" />
+                                </Button>
+                            </Link>
+                        </div>
+                        <div className="space-y-1">
+                            {stores.slice(0, 5).map((store) => {
+                                const storeActive = pathname?.startsWith(`/owner/stores/${store.id}`);
+                                return (
+                                    <Link
+                                        key={store.id}
+                                        href={`/owner/stores/${store.id}/dashboard`}
+                                        className={cn(
+                                            "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all duration-200",
+                                            storeActive
+                                                ? "bg-primary text-primary-foreground"
+                                                : "hover:bg-muted"
+                                        )}
+                                        onClick={() => setMobileNavOpen(false)}
+                                    >
+                                        <span
+                                            className={cn(
+                                                "h-2 w-2 rounded-full shrink-0",
+                                                store.status === "ACTIVE"
+                                                    ? "bg-green-500"
+                                                    : store.status === "TRIAL"
+                                                        ? "bg-blue-500"
+                                                        : "bg-gray-400"
                                             )}
-                                            <span className="truncate">{store.name}</span>
-                                            <span
-                                                className={cn(
-                                                    "ml-auto rounded-full px-2 py-0.5 text-xs",
-                                                    store.status === "ACTIVE"
-                                                        ? "bg-green-100 text-green-700"
-                                                        : "bg-yellow-100 text-yellow-700"
-                                                )}
-                                            >
-                                                {store.status}
-                                            </span>
-                                        </button>
-                                    ))}
-                                    <div className="border-t p-2">
-                                        <Link href="/owner/stores/new">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                className="w-full"
-                                                onClick={() => setStoreDropdownOpen(false)}
-                                            >
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Create New Store
-                                            </Button>
-                                        </Link>
-                                    </div>
+                                        />
+                                        <span className="truncate font-medium">{store.name}</span>
+                                    </Link>
+                                );
+                            })}
+                            {stores.length === 0 && (
+                                <div className="px-3 py-2 text-sm text-muted-foreground">
+                                    No stores yet
                                 </div>
+                            )}
+                            {stores.length > 5 && (
+                                <Link
+                                    href="/owner/stores"
+                                    className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                    onClick={() => setMobileNavOpen(false)}
+                                >
+                                    View all {stores.length} stores →
+                                </Link>
                             )}
                         </div>
                     </div>

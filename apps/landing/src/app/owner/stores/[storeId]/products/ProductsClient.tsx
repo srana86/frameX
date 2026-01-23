@@ -44,15 +44,25 @@ import { createStoreApiClient } from "@/lib/store-api-client";
 import { cn } from "@/utils/cn";
 import type { StaffPermission } from "@/contexts/StoreContext";
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 interface Product {
   id: string;
   name: string;
   slug: string;
-  category?: string;
+  category?: string; // Keep for safety if backend changes back
+  categoryId?: string;
   price: number;
   stock?: number;
   images?: string[];
   featured?: boolean;
+  inventory?: {
+    quantity: number;
+    lowStock?: number;
+  };
 }
 
 interface PaginationData {
@@ -65,7 +75,7 @@ interface PaginationData {
 interface InitialData {
   products: Product[];
   pagination: PaginationData;
-  categories: string[];
+  categories: Category[];
 }
 
 interface ProductsClientProps {
@@ -84,8 +94,11 @@ export function ProductsClient({
   permission,
 }: ProductsClientProps) {
   const router = useRouter();
-  const [products, setProducts] = useState<Product[]>(initialData.products);
-  const [pagination, setPagination] = useState(initialData.pagination);
+  // Ensure products is always an array
+  const [products, setProducts] = useState<Product[]>(
+    Array.isArray(initialData.products) ? initialData.products : []
+  );
+  const [pagination, setPagination] = useState(initialData.pagination || { page: 1, limit: 30, total: 0, totalPages: 0 });
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -94,11 +107,19 @@ export function ProductsClient({
   const canEdit = permission === null || permission === "EDIT" || permission === "FULL";
   const canDelete = permission === null || permission === "FULL";
 
-  // Filter products by search query
-  const filteredProducts = products.filter(
+  // Get category name
+  const getCategoryName = (product: Product) => {
+    if (product.category) return product.category; // Fallback
+    if (!product.categoryId) return "Uncategorized";
+    const cat = initialData.categories.find((c) => c.id === product.categoryId);
+    return cat ? cat.name : "Uncategorized";
+  };
+
+  // Filter products by search query (with safety check)
+  const filteredProducts = (Array.isArray(products) ? products : []).filter(
     (p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.category?.toLowerCase().includes(searchQuery.toLowerCase())
+      p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      getCategoryName(p).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Refresh products
@@ -107,7 +128,13 @@ export function ProductsClient({
     try {
       const storeApi = createStoreApiClient(storeId);
       const result = await storeApi.getWithMeta("products");
-      setProducts(result.data as Product[]);
+      const productsData = (result.data as any).products || [];
+      setProducts(
+        productsData.map((p: any) => ({
+          ...p,
+          stock: p.inventory?.quantity ?? 0,
+        }))
+      );
       if (result.meta) {
         setPagination(result.meta as PaginationData);
       }
@@ -256,11 +283,11 @@ export function ProductsClient({
                     </TableCell>
                     <TableCell>
                       <span className="rounded-full bg-muted px-2 py-1 text-xs">
-                        {product.category || "Uncategorized"}
+                        {getCategoryName(product)}
                       </span>
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      ${product.price.toFixed(2)}
+                      ${Number(product.price).toFixed(2)}
                     </TableCell>
                     <TableCell className="text-right">
                       <span
@@ -269,8 +296,8 @@ export function ProductsClient({
                           (product.stock || 0) > 10
                             ? "bg-green-100 text-green-700"
                             : (product.stock || 0) > 0
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-red-100 text-red-700"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-red-100 text-red-700"
                         )}
                       >
                         {product.stock ?? "N/A"}
@@ -281,7 +308,7 @@ export function ProductsClient({
                         <div className="flex items-center justify-end gap-2">
                           {canEdit && (
                             <Link
-                              href={`/owner/stores/${storeId}/products/${product.id}/edit`}
+                              href={`/owner/stores/${storeId}/products/${product.id}`}
                             >
                               <Button variant="ghost" size="icon">
                                 <Edit className="h-4 w-4" />

@@ -20,6 +20,24 @@ const getAllCustomers = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Update customer
+const updateCustomer = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await CustomerServices.updateCustomerFromDB(
+    req.tenantId,
+    id,
+    req.body
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Customer updated successfully",
+    data: result,
+  });
+});
+
 export const CustomerControllers = {
   getAllCustomers,
+  updateCustomer,
 };
