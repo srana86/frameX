@@ -257,8 +257,9 @@ export function CompactStoreSwitcher({
     }
   };
 
+  // Don't show switcher if only one store - but render after hooks to avoid hook count mismatch
   if (stores.length <= 1) {
-    return null; // Don't show switcher if only one store
+    return null;
   }
 
   return (

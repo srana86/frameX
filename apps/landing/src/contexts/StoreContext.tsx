@@ -52,19 +52,19 @@ interface StoreContextType {
   // Current store
   currentStoreId: string | null;
   currentStore: Store | null;
-  
+
   // All stores user has access to
   stores: Store[];
   accessibleStores: Store[]; // Stores user can access (for staff)
-  
+
   // Loading states
   loading: boolean;
   error: string | null;
-  
+
   // Actions
   switchStore: (storeId: string) => void;
   refreshStores: () => Promise<void>;
-  
+
   // Access control
   hasAccess: (storeId: string) => boolean;
   getPermission: (storeId: string) => StaffPermission | null;
@@ -113,13 +113,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setStores(ownerStores);
 
       // Fetch staff access if user is staff
+      let accessMap = new Map<string, StaffPermission | null>();
+      let accessible: Store[] = [];
+
       try {
         const staffAccess = await api.get<
           Array<{ storeId: string; permission: StaffPermission }>
         >("/owner/staff/access");
-        
-        const accessMap = new Map<string, StaffPermission | null>();
-        const accessible: Store[] = [];
 
         ownerStores.forEach((store) => {
           const access = staffAccess.find((a) => a.storeId === store.id);
@@ -132,31 +132,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             accessible.push(store);
           }
         });
-
-        setStoreAccessMap(accessMap);
-        setAccessibleStores(accessible);
       } catch (err) {
         // User is owner, all stores are accessible
-        const accessMap = new Map<string, StaffPermission | null>();
         ownerStores.forEach((store) => {
           accessMap.set(store.id, null); // null = owner (full access)
         });
-        setStoreAccessMap(accessMap);
-        setAccessibleStores(ownerStores);
+        accessible = ownerStores;
       }
+
+      setStoreAccessMap(accessMap);
+      setAccessibleStores(accessible);
 
       // Set current store from URL if available
       const urlStoreId = extractStoreIdFromPath();
       if (urlStoreId) {
         const store = ownerStores.find((s) => s.id === urlStoreId);
-        if (store && accessibleStores.some((s) => s.id === urlStoreId)) {
+        // Use local accessible array, not stale state
+        if (store && accessible.some((s) => s.id === urlStoreId)) {
           setCurrentStoreId(urlStoreId);
           setCurrentStore(store);
         }
-      } else if (accessibleStores.length > 0) {
+      } else if (accessible.length > 0) {
         // Auto-select first store if none selected
-        setCurrentStoreId(accessibleStores[0].id);
-        setCurrentStore(accessibleStores[0]);
+        setCurrentStoreId(accessible[0].id);
+        setCurrentStore(accessible[0]);
       }
     } catch (err: any) {
       console.error("Failed to fetch stores:", err);

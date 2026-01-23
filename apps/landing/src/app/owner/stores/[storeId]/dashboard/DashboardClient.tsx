@@ -38,33 +38,41 @@ export function DashboardClient({
   initialData,
   storeId,
 }: DashboardClientProps) {
-  const { stats } = initialData;
+  // Provide safe defaults if stats is undefined
+  const stats: DashboardStats = initialData?.stats ?? {
+    totalOrders: 0,
+    totalRevenue: 0,
+    totalProducts: 0,
+    totalCustomers: 0,
+    pendingOrders: 0,
+    lowStockItems: 0,
+  };
 
   const statCards = [
     {
       title: "Total Orders",
-      value: stats.totalOrders,
+      value: stats.totalOrders ?? 0,
       icon: ShoppingCart,
-      description: `${stats.pendingOrders} pending`,
+      description: `${stats.pendingOrders ?? 0} pending`,
       trend: "+12%",
     },
     {
       title: "Total Revenue",
-      value: `$${stats.totalRevenue.toLocaleString()}`,
+      value: `$${(stats.totalRevenue ?? 0).toLocaleString()}`,
       icon: DollarSign,
       description: "This month",
       trend: "+8%",
     },
     {
       title: "Products",
-      value: stats.totalProducts,
+      value: stats.totalProducts ?? 0,
       icon: Package,
-      description: `${stats.lowStockItems} low stock`,
+      description: `${stats.lowStockItems ?? 0} low stock`,
       trend: "+5%",
     },
     {
       title: "Customers",
-      value: stats.totalCustomers,
+      value: stats.totalCustomers ?? 0,
       icon: Users,
       description: "Total registered",
       trend: "+15%",
