@@ -79,7 +79,7 @@ export class PrismaQueryBuilder<T = any> {
    * Add search functionality - searches across specified fields
    */
   search(fields?: string[]): this {
-    const searchTerm = this.query?.searchTerm;
+    const searchTerm = (this.query?.searchTerm || this.query?.q) as string;
     const searchFields = fields || this.searchFields;
 
     if (searchTerm && searchFields.length > 0) {
@@ -133,6 +133,7 @@ export class PrismaQueryBuilder<T = any> {
       "newest", // UI filter - not a DB field
       "popular", // UI filter - not a DB field
       "featured", // Handled separately
+      "q", // Search term alias
     ];
 
     excludedFields.forEach((field) => delete queryObj[field]);
