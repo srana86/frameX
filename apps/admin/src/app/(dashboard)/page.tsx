@@ -26,7 +26,6 @@ import {
   Clock,
   Layers,
   ShieldCheck,
-  Zap,
   BarChart3,
   PieChart,
 } from "lucide-react";
@@ -141,10 +140,10 @@ function StatCard({
           {trend && trendValue && (
             <div
               className={`flex items-center gap-1 text-xs font-medium ${trend === "up"
-                  ? "text-green-600"
-                  : trend === "down"
-                    ? "text-red-600"
-                    : "text-muted-foreground"
+                ? "text-green-600"
+                : trend === "down"
+                  ? "text-red-600"
+                  : "text-muted-foreground"
                 }`}
             >
               {trend === "up" ? (
@@ -409,12 +408,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href="/simulate">
-            <Button variant="outline" className="gap-2">
-              <Zap className="h-4 w-4" />
-              Flow Simulation
-            </Button>
-          </Link>
+
           <Link href="/fraud-check">
             <Button className="gap-2">
               <ShieldCheck className="h-4 w-4" />
@@ -745,14 +739,7 @@ export default function DashboardPage() {
                 Database Overview
               </Button>
             </Link>
-            <div className="pt-2">
-              <Link href="/simulate" className="block">
-                <Button className="w-full gap-2">
-                  <Zap className="h-4 w-4" />
-                  Run Flow Simulation
-                </Button>
-              </Link>
-            </div>
+
           </CardContent>
         </Card>
       </div>

@@ -36,18 +36,20 @@ const apiClient = axios.create({
 export const serverSideApiClient = (
   token?: string,
   tenantId?: string,
-  domain?: string
+  domain?: string,
+  baseURL?: string,
+  additionalHeaders?: Record<string, string>
 ) => {
-  // Always use internal URL for server-side calls
-  const serverBaseUrl =
-    process.env.INTERNAL_API_URL || "http://localhost:8080/api/v1";
+  const serverBaseUrl = baseURL;
+
   return axios.create({
     baseURL: serverBaseUrl,
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      "X-Tenant-ID": tenantId || "",
-      "X-Domain": domain || "",
+      ...(tenantId ? { "X-Tenant-ID": tenantId } : {}),
+      ...(domain ? { "X-Domain": domain } : {}),
+      ...additionalHeaders,
     },
     withCredentials: true,
   });

@@ -14,6 +14,7 @@ import {
   Store,
   ChevronLeft,
   BarChart3,
+  Palette,
   FileText,
   Gift,
   Truck,
@@ -25,9 +26,11 @@ import {
   TrendingUp,
   Box,
   Tag,
-  Image,
+  Image as ImageIcon,
   Code,
   Zap,
+  Phone,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/cn";
@@ -160,8 +163,57 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       {
         title: "Brand",
         href: "brand",
-        icon: Image,
+        icon: ImageIcon,
         description: "Branding & identity",
+        permission: "FULL",
+      },
+      {
+        title: "Identity",
+        href: "brand/identity",
+        icon: Palette,
+        description: "Name & tagline",
+        permission: "FULL",
+      },
+      {
+        title: "Logo",
+        href: "brand/logo",
+        icon: ImageIcon,
+        description: "Logo & icons",
+        permission: "FULL",
+      },
+      {
+        title: "SEO",
+        href: "brand/seo",
+        icon: Globe,
+        description: "Search engine settings",
+        permission: "FULL",
+      },
+      {
+        title: "Contact",
+        href: "brand/contact",
+        icon: Phone,
+        description: "Store contact info",
+        permission: "FULL",
+      },
+      {
+        title: "Social",
+        href: "brand/social",
+        icon: Share2,
+        description: "Social media links",
+        permission: "FULL",
+      },
+      {
+        title: "Theme",
+        href: "brand/theme",
+        icon: Palette,
+        description: "Colors & styles",
+        permission: "FULL",
+      },
+      {
+        title: "Hero Slides",
+        href: "brand/hero-slides",
+        icon: ImageIcon,
+        description: "Homepage banners",
         permission: "FULL",
       },
       {
@@ -462,7 +514,7 @@ export function StoreAdminShell({
               <ChevronLeft className="h-4 w-4" />
               <span>Back to Stores</span>
             </Link>
-            
+
             {/* Store Switcher - shows when multiple stores */}
             {accessibleStores.length > 1 ? (
               <StoreSwitcher
@@ -481,7 +533,7 @@ export function StoreAdminShell({
                 </div>
               </div>
             )}
-            
+
             {permission && (
               <div className="mt-2">
                 <span className="text-xs text-muted-foreground">

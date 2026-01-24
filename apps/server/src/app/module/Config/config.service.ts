@@ -20,150 +20,164 @@ const getBrandConfigFromDB = async (tenantId: string) => {
   return {
     id: config.id,
     tenantId: config.tenantId,
-    brandName: config.name,
-    tagline: theme.tagline || "",
+    brandName: config.name || "My Store",
+    brandTagline: theme.brandTagline || "",
+
     logo: {
-      light: config.logo || "",
-      dark: theme.logoDark || config.logo || ""
+      type: theme.logoType || (config.logo ? "image" : "text"),
+      style: theme.logoStyle || "default",
+      imagePath: config.logo || "",
+      text: theme.logoText || {
+        primary: config.name || "My Store",
+        secondary: "",
+      },
+      altText: theme.logoAltText || `${config.name} Logo`,
+      icon: theme.logoIcon || {
+        symbol: (config.name || "M").charAt(0),
+        backgroundColor: config.primaryColor || "#000000",
+        iconColor: "#ffffff",
+        size: "md",
+        borderRadius: "md",
+      },
+      colors: theme.logoColors || {
+        primary: config.primaryColor || "#000000",
+        secondary: config.secondaryColor || "#ffffff",
+        gradientFrom: config.primaryColor || "#000000",
+        gradientTo: config.secondaryColor || "#ffffff",
+      },
     },
+
     favicon: {
-      url: config.favicon || "/favicon.ico"
+      path: config.favicon || "/favicon.ico",
+      appleTouchIcon: theme.appleTouchIcon || config.favicon || "/favicon.ico",
+      manifestIcon: theme.manifestIcon || config.favicon || "/favicon.ico",
     },
+
     meta: theme.meta || {
-      title: config.name,
+      title: {
+        default: config.name || "My Store",
+        template: `%s | ${config.name || "My Store"}`,
+      },
       description: "",
-      keywords: "",
+      keywords: [],
+      metadataBase: "",
+      socialShareImage: "",
+      openGraph: {
+        title: config.name || "My Store",
+        description: "",
+        type: "website",
+        locale: "en_US",
+        siteName: config.name || "My Store",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: config.name || "My Store",
+        description: "",
+      },
     },
-    contact: (config.contactInfo as any) || { email: "", phone: "", address: "" },
-    social: (config.socialLinks as any) || { facebook: "", twitter: "", instagram: "", youtube: "" },
-    footer: theme.footer || { copyright: "All rights reserved." },
+
+    contact: (config.contactInfo as any) || {
+      email: "",
+      phone: "",
+      address: "",
+    },
+
+    social: (config.socialLinks as any) || {
+      facebook: "",
+      twitter: "",
+      instagram: "",
+      youtube: "",
+    },
+
+    footer: theme.footer || {
+      description: "",
+      copyrightText: `© ${new Date().getFullYear()} ${config.name}. All rights reserved.`,
+    },
+
     theme: {
       primaryColor: config.primaryColor || "#000000",
-      secondaryColor: config.secondaryColor || "#ffffff"
     },
+
     currency: {
-      code: config.currencyIso || "BDT",
-      symbol: config.currencySymbol || "৳",
-      position: theme.currencyPosition || "before"
+      iso: config.currencyIso || "BDT",
     },
   };
 };
 
-
 const updateBrandConfigIntoDB = async (tenantId: string, payload: any) => {
-  // Transform frontend BrandConfig to database schema
-  // Frontend sends: brandName, brandTagline, logo (object), favicon (object), meta, contact, social, footer, theme, currency
-  // Database expects: name, logo (string), favicon (string), theme (json), socialLinks (json), contactInfo (json), etc.
-
-  const transformedData: any = {};
-
-  // Map brandName to name
-  if (payload.brandName !== undefined) {
-    transformedData.name = payload.brandName;
-  }
-
-  // Store logo as JSON in theme or as string path
-  if (payload.logo !== undefined) {
-    if (typeof payload.logo === 'object') {
-      // If it's an image type, use the imagePath
-      if (payload.logo.type === 'image' && payload.logo.imagePath) {
-        transformedData.logo = payload.logo.imagePath;
-      } else {
-        // Store the whole logo config in theme.logo
-        transformedData.logo = null; // No image path
-      }
-    } else {
-      transformedData.logo = payload.logo;
-    }
-  }
-
-  // Store favicon path
-  if (payload.favicon?.url !== undefined) {
-    transformedData.favicon = payload.favicon.url;
-  }
-
-  // Map theme.primaryColor to primaryColor
-  if (payload.theme?.primaryColor !== undefined) {
-    transformedData.primaryColor = payload.theme.primaryColor;
-  }
-
-  // Map theme.secondaryColor to secondaryColor
-  if (payload.theme?.secondaryColor !== undefined) {
-    transformedData.secondaryColor = payload.theme.secondaryColor;
-  }
-
-  // Map currency.code to currencyIso
-  if (payload.currency?.code !== undefined) {
-    transformedData.currencyIso = payload.currency.code;
-    // Get symbol for common currencies if symbol not provided
-    const symbols: Record<string, string> = {
-      USD: '$', EUR: '€', GBP: '£', JPY: '¥', BDT: '৳', INR: '₹',
-    };
-    transformedData.currencySymbol = payload.currency.symbol || symbols[payload.currency.code] || payload.currency.code;
-  }
-
-  // Store social media links
-  if (payload.social !== undefined) {
-    transformedData.socialLinks = payload.social;
-  }
-
-  // Store contact info
-  if (payload.contact !== undefined) {
-    transformedData.contactInfo = payload.contact;
-  }
-
-  // Store extended brand config in theme JSON (for fields without columns)
-  transformedData.theme = {
-    primaryColor: payload.theme?.primaryColor,
-    secondaryColor: payload.theme?.secondaryColor,
-    tagline: payload.tagline,
-    meta: payload.meta,
-    footer: payload.footer,
-    logoDark: payload.logo?.dark,
-    currencyPosition: payload.currency?.position,
+  // Map simplified fields to top-level columns
+  const transformedData: any = {
+    name: payload.brandName,
+    logo: payload.logo?.imagePath || null,
+    favicon: payload.favicon?.path || null,
+    primaryColor: payload.theme?.primaryColor || null,
+    currencyIso: payload.currency?.iso || null,
+    contactInfo: payload.contact || {},
+    socialLinks: payload.social || {},
   };
 
-  // ... (previous transformation code remains)
+  // Determine currency symbol
+  if (payload.currency?.iso) {
+    const symbols: Record<string, string> = {
+      USD: "$",
+      EUR: "€",
+      GBP: "£",
+      JPY: "¥",
+      BDT: "৳",
+      INR: "₹",
+    };
+    transformedData.currencySymbol =
+      symbols[payload.currency.iso] || payload.currency.iso;
+  }
+
+  // Store the rest in theme JSON
+  transformedData.theme = {
+    brandTagline: payload.brandTagline,
+    logoType: payload.logo?.type,
+    logoStyle: payload.logo?.style,
+    logoText: payload.logo?.text,
+    logoAltText: payload.logo?.altText,
+    logoIcon: payload.logo?.icon,
+    logoColors: payload.logo?.colors,
+    appleTouchIcon: payload.favicon?.appleTouchIcon,
+    manifestIcon: payload.favicon?.manifestIcon,
+    meta: payload.meta,
+    footer: payload.footer,
+  };
 
   // Sync Asset References
   try {
-    // 1. Get existing config to compare
     const existingConfig = await prisma.brandConfig.findUnique({
-      where: { tenantId }
+      where: { tenantId },
     });
 
-    // 2. Extract old URLs from existing config
-    const oldTheme = existingConfig?.theme as any;
-    const oldConfig = oldTheme?.brandConfig || {};
-
-    const oldUrls = {
-      'logo.light': oldConfig.logo?.light,
-      'logo.dark': oldConfig.logo?.dark,
-      'favicon': oldConfig.favicon?.url,
-      'meta.socialShareImage': oldConfig.meta?.socialShareImage,
+    const oldTheme = (existingConfig?.theme as any) || {};
+    const oldUrls: Record<string, string | string[] | null> = {
+      logo: existingConfig?.logo || null,
+      favicon: existingConfig?.favicon || null,
+      appleTouchIcon: oldTheme.appleTouchIcon || null,
+      manifestIcon: oldTheme.manifestIcon || null,
+      socialShareImage: oldTheme.meta?.socialShareImage || null,
     };
 
-    // 3. Extract new URLs from payload
-    const newUrls = {
-      'logo.light': payload.logo?.light,
-      'logo.dark': payload.logo?.dark,
-      'favicon': payload.favicon?.url,
-      'meta.socialShareImage': payload.meta?.socialShareImage,
+    const newUrls: Record<string, string | string[] | null> = {
+      logo: payload.logo?.imagePath || null,
+      favicon: payload.favicon?.path || null,
+      appleTouchIcon: payload.favicon?.appleTouchIcon || null,
+      manifestIcon: payload.favicon?.manifestIcon || null,
+      socialShareImage: payload.meta?.socialShareImage || null,
     };
 
-    // 4. Sync references
-    // We import dynamically to avoid circular dependencies if any
     const { AssetServices } = await import("../Asset/asset.service");
     await AssetServices.syncReferences(
       tenantId,
       "BrandConfig",
-      existingConfig?.id || "temp-id", // If new, we'll fix ID later or use tenantId logic
+      existingConfig?.id || "temp-id",
       oldUrls,
       newUrls
     );
   } catch (error) {
     console.error("[BrandConfig] Failed to sync asset references:", error);
-    // Continue with save - don't block main functionality
   }
 
   const result = await prisma.brandConfig.upsert({
@@ -171,16 +185,12 @@ const updateBrandConfigIntoDB = async (tenantId: string, payload: any) => {
     update: transformedData,
     create: {
       tenantId,
-      name: transformedData.name || 'My Store',
-      currencyIso: transformedData.currencyIso || 'BDT',
-      currencySymbol: transformedData.currencySymbol || '৳',
       ...transformedData,
+      name: transformedData.name || "My Store",
+      currencyIso: transformedData.currencyIso || "BDT",
+      currencySymbol: transformedData.currencySymbol || "৳",
     },
   });
-
-  // If we couldn't get ID before (creation case), we should technically sync again with correct ID
-  // But for BrandConfig, there's only one per tenant, so we could use tenantId as entityId conceptually
-  // For now, let's keep it simple.
 
   return result;
 };

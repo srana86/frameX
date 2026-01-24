@@ -6,8 +6,8 @@
 
 import { headers } from "next/headers";
 
-// Internal API URL for server-side calls
-const API_URL = process.env.INTERNAL_API_URL || "http://localhost:8080/api/v1";
+// Internal API URL for server-side calls - DEPRECATED, will be dynamic
+// const API_URL = process.env.INTERNAL_API_URL || "http://localhost:8080/api/v1";
 
 // Helper to get domain from headers for tenant resolution
 async function getDomainHeader(): Promise<string> {
@@ -15,7 +15,36 @@ async function getDomainHeader(): Promise<string> {
     const headersList = await headers();
     const host =
       headersList.get("x-forwarded-host") || headersList.get("host") || "";
-    return host.split(":")[0];
+    // Don't split by colon to keep port
+    return host;
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Get the current protocol (http or https)
+ */
+async function getProtocol(): Promise<string> {
+  const headersList = await headers();
+  const xForwardedProto = headersList.get("x-forwarded-proto");
+  if (xForwardedProto) {
+    return xForwardedProto.split(",")[0].trim();
+  }
+  return process.env.NODE_ENV === "production" ? "https" : "http";
+}
+
+/**
+ * Get all cookies formatted as a single string for the Cookie header
+ */
+async function getCookiesHeader(): Promise<string> {
+  try {
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    return cookieStore
+      .getAll()
+      .map((cookie) => `${cookie.name}=${cookie.value}`)
+      .join("; ");
   } catch {
     return "";
   }
@@ -80,14 +109,19 @@ class CursorShim<T> {
     }
 
     try {
-      const domain = await getDomainHeader();
+      const host = await getDomainHeader();
+      const protocol = await getProtocol();
+      const cookiesHeader = await getCookiesHeader();
+      const absoluteApiUrl = `${protocol}://${host}/api/v1`;
+
       const res = await fetch(
-        `${API_URL}/${this.collectionName}?${params.toString()}`,
+        `${absoluteApiUrl}/${this.collectionName}?${params.toString()}`,
         {
           cache: "no-store",
           headers: {
-            "X-Domain": domain,
+            "X-Domain": host,
             "X-Tenant-ID": (await getTenantIdForAPI()) || "",
+            Cookie: cookiesHeader,
           },
         }
       );
@@ -138,13 +172,18 @@ class CollectionShim<T> {
 
   async insertOne(doc: any) {
     try {
-      const domain = await getDomainHeader();
-      const res = await fetch(`${API_URL}/${this.collectionName}`, {
+      const host = await getDomainHeader();
+      const protocol = await getProtocol();
+      const cookiesHeader = await getCookiesHeader();
+      const absoluteApiUrl = `${protocol}://${host}/api/v1`;
+
+      const res = await fetch(`${absoluteApiUrl}/${this.collectionName}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Domain": domain,
+          "X-Domain": host,
           "X-Tenant-ID": (await getTenantIdForAPI()) || "",
+          Cookie: cookiesHeader,
         },
         body: JSON.stringify(doc),
       });
