@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
-  Beaker,
   CreditCard,
   Database,
   History,
@@ -73,12 +72,6 @@ const NAV_GROUPS: NavGroup[] = [
         href: "/database",
         icon: Database,
         description: "Tenant storage",
-      },
-      {
-        title: "Simulation",
-        href: "/simulate",
-        icon: Beaker,
-        description: "Provisioning rehearsal",
       },
     ],
   },
@@ -309,15 +302,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
 
-            <div className='mt-8 rounded-xl border-t bg-muted/30 p-4 text-sm'>
-              <p className='font-medium text-primary'>Need a rehearsal?</p>
-              <p className='mt-1 text-muted-foreground'>Run the simulation flow to validate onboarding before going live.</p>
-              <Link href='/simulate' className='mt-3 inline-flex'>
-                <Button size='sm' className='w-full'>
-                  Launch Simulator
-                </Button>
-              </Link>
-            </div>
+
           </div>
         </aside>
 
@@ -358,11 +343,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </div>
 
               <div className='flex items-center gap-2'>
-                <Link href='/simulate' className='hidden sm:inline-flex'>
-                  <Button variant='outline' size='sm'>
-                    Flow Simulation
-                  </Button>
-                </Link>
+
                 <Link href='/fraud-check'>
                   <Button size='sm'>Fraud Check</Button>
                 </Link>
