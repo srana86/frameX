@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { OrderServices } from "./order.service";
-import { UserServices } from "../User/user.service";
+import { UserServices } from "../StoreUser/user.service";
 
 // Get all orders
 const getAllOrders = catchAsync(async (req: Request, res: Response) => {
@@ -27,9 +27,11 @@ const getSingleOrder = catchAsync(async (req: Request, res: Response) => {
 
   const result = await OrderServices.getSingleOrderFromDB(req.tenantId, id);
 
-  // If not admin/tenant, check if the order belongs to the user (by email/phone)
-  if (user?.role !== "admin" && user?.role !== "tenant") {
-    const userDoc = await UserServices.getSingleUserFromDB(req.tenantId, user?.userId);
+  // If not admin/tenant/owner/staff, check if the order belongs to the user (by email/phone)
+  const isPrivilegedRole = ["admin", "tenant", "owner", "staff"].includes(user?.role || "");
+
+  if (user && !isPrivilegedRole) {
+    const userDoc = await UserServices.getSingleUserFromDB(req.tenantId, user.userId);
 
     const emailMatch = userDoc?.email && result.customer?.email === userDoc.email;
     const phoneMatch = userDoc?.phone && result.customer?.phone === userDoc.phone;

@@ -28,6 +28,7 @@ export default async function AffiliatesPage({ params }: AffiliatesPageProps) {
     affiliates: any[];
     pendingWithdrawals: any[];
     stats: { totalAffiliates: number; totalEarnings: number; pendingPayouts: number };
+    settings: any;
   } = {
     affiliates: [],
     pendingWithdrawals: [],
@@ -36,22 +37,25 @@ export default async function AffiliatesPage({ params }: AffiliatesPageProps) {
       totalEarnings: 0,
       pendingPayouts: 0,
     },
+    settings: {},
   };
 
   try {
     const storeApi = createServerStoreApiClient(storeId);
 
     // Fetch in parallel
-    const [affiliatesRes, statsRes, withdrawalsRes] = await Promise.all([
+    const [affiliatesRes, statsRes, withdrawalsRes, settingsRes] = await Promise.all([
       storeApi.get("affiliates"),
       storeApi.get("affiliates/stats"),
-      storeApi.get("affiliates/withdrawals?status=PENDING")
+      storeApi.get("affiliates/withdrawals?status=PENDING"),
+      storeApi.get("affiliate/settings")
     ]);
 
     initialData = {
-      affiliates: (affiliatesRes as any).affiliates || [],
-      stats: (statsRes as any).settings || (statsRes as any) || initialData.stats, // Handle possible variations
-      pendingWithdrawals: (withdrawalsRes as any).withdrawals || [],
+      affiliates: (affiliatesRes as any).data || (affiliatesRes as any).affiliates || [],
+      stats: (statsRes as any).data || (statsRes as any).settings || (statsRes as any) || initialData.stats,
+      pendingWithdrawals: (withdrawalsRes as any).data?.withdrawals || (withdrawalsRes as any).withdrawals || [],
+      settings: (settingsRes as any).data?.settings || (settingsRes as any).settings || {},
     };
 
     // If stats are wrapped in an object, extract them

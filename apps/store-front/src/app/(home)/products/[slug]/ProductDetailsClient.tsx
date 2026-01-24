@@ -85,7 +85,7 @@ async function getProductBySlug(slug: string): Promise<Product | null> {
         slug: d.slug,
         name: d.name,
         brand: d.brand,
-        category: d.category,
+        category: typeof d.category === "object" ? d.category?.name || d.category?.label || "General" : d.category || "General",
         description: d.description ?? "",
         price: Number(d.price ?? 0),
         images: Array.isArray(d.images) ? d.images : [],
@@ -272,11 +272,10 @@ export default async function ProductDetailsClient({ params }: Props) {
                     <span className='text-muted-foreground'>{product.category || "Product"}</span>
                   </div>
                   <span
-                    className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                      isOutOfStock
+                    className={`text-xs font-medium px-2.5 py-1 rounded-full ${isOutOfStock
                         ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                         : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                    }`}
+                      }`}
                   >
                     {isOutOfStock ? "Waitlist" : "In Stock"}
                   </span>

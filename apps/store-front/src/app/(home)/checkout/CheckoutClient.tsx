@@ -43,6 +43,7 @@ import type { ApplyCouponResponse } from "@/lib/coupon-types";
 import { getSourceTrackingForOrder } from "@/lib/source-tracking";
 import { storeUserData, getUserDataForTracking } from "@/lib/tracking/user-data-store";
 import apiClient, { apiRequest } from "@/lib/api-client";
+import { useSession } from "@/lib/auth-client";
 
 type FormValues = CustomerInfo & {
   paymentMethod: PaymentMethod;
@@ -71,19 +72,21 @@ export default function CheckoutClient() {
   const [calculatingShipping, setCalculatingShipping] = useState(false);
   const [defaultDeliveryCharge, setDefaultDeliveryCharge] = useState<number | null>(null);
   const [configFreeShippingThreshold, setConfigFreeShippingThreshold] = useState<number | null>(null);
+  const { data: session } = useSession();
 
   // Load default delivery charge and free shipping threshold on mount
   useEffect(() => {
     const loadDeliveryConfig = async () => {
       try {
-        const data: any = await apiRequest("GET", "/delivery-config");
-        if (data) {
-          if (typeof data.defaultDeliveryCharge === "number") {
-            setDefaultDeliveryCharge(data.defaultDeliveryCharge);
+        const response: any = await apiRequest("GET", "/delivery-config");
+        if (response && response.data) {
+          const configData = response.data;
+          if (typeof configData.defaultDeliveryCharge === "number") {
+            setDefaultDeliveryCharge(configData.defaultDeliveryCharge);
           }
           // If freeShippingThreshold is provided in config, use it; otherwise disable free shipping
-          if (typeof data.freeShippingThreshold === "number") {
-            setConfigFreeShippingThreshold(data.freeShippingThreshold);
+          if (typeof configData.freeShippingThreshold === "number") {
+            setConfigFreeShippingThreshold(configData.freeShippingThreshold);
           } else {
             // If not configured, set to a very high value to effectively disable free shipping
             setConfigFreeShippingThreshold(Number.MAX_SAFE_INTEGER);
@@ -152,9 +155,9 @@ export default function CheckoutClient() {
   useEffect(() => {
     const checkPaymentConfig = async () => {
       try {
-        const config: any = await apiRequest("GET", "/sslcommerz-config");
-        if (config) {
-          setOnlinePaymentEnabled(config.enabled === true);
+        const response: any = await apiRequest("GET", "/sslcommerz-config");
+        if (response && response.data) {
+          setOnlinePaymentEnabled(response.data.enabled === true);
         }
       } catch (error) {
         console.error("Failed to check payment config:", error);
@@ -180,6 +183,21 @@ export default function CheckoutClient() {
     },
   });
 
+  // Pre-fill form values when session data is available
+  useEffect(() => {
+    if (session?.user) {
+      if (!form.getValues("fullName") && (session.user.fullName || session.user.name)) {
+        form.setValue("fullName", session.user.fullName || session.user.name || "");
+      }
+      if (!form.getValues("email") && session.user.email) {
+        form.setValue("email", session.user.email);
+      }
+      if (!form.getValues("phone") && session.user.phone) {
+        form.setValue("phone", session.user.phone);
+      }
+    }
+  }, [session, form]);
+
   // Watch phone and email for blocked customer check
   const watchedPhone = form.watch("phone");
   const watchedEmail = form.watch("email");
@@ -198,20 +216,21 @@ export default function CheckoutClient() {
 
       setCheckingBlockStatus(true);
       try {
-        const data: any = await apiRequest("POST", "/blocked-customers/check", {
+        const response: any = await apiRequest("POST", "/blocked-customers/check", {
           phone: watchedPhone,
           email: watchedEmail,
         });
 
-        if (data) {
-          setIsCustomerBlocked(data.isBlocked);
-          if (data.isBlocked && data.customer) {
+        if (response && response.data) {
+          const blockData = response.data;
+          setIsCustomerBlocked(blockData.isBlocked);
+          if (blockData.isBlocked && blockData.customer) {
             const reasonText =
-              data.customer.reason === "fraud"
+              blockData.customer.reason === "fraud"
                 ? "fraudulent activity"
-                : data.customer.reason === "abuse"
+                : blockData.customer.reason === "abuse"
                   ? "policy violations"
-                  : data.customer.reason === "chargeback"
+                  : blockData.customer.reason === "chargeback"
                     ? "payment disputes"
                     : "policy violations";
             setBlockReason(reasonText);
@@ -262,12 +281,12 @@ export default function CheckoutClient() {
 
       setCalculatingShipping(true);
       try {
-        const data: any = await apiRequest("POST", "/delivery/storefront/calculate-shipping", {
+        const response: any = await apiRequest("POST", "/delivery/storefront/calculate-shipping", {
           city: watchedCity.trim(),
         });
 
-        if (data && typeof data.shipping === "number") {
-          setDynamicShipping(data.shipping);
+        if (response && response.data && typeof response.data.shipping === "number") {
+          setDynamicShipping(response.data.shipping);
         }
       } catch (error) {
         console.error("Error calculating shipping:", error);
@@ -379,7 +398,8 @@ export default function CheckoutClient() {
 
       // Server-side tracking - InitiateCheckout
       apiRequest("GET", "/brand-config")
-        .then((brandConfig: any) => {
+        .then((response: any) => {
+          const brandConfig = response?.data;
           const currency = brandConfig?.currency?.iso || "USD";
           return import("@/lib/tracking/server-side-tracking").then(({ trackInitiateCheckout }) => {
             trackInitiateCheckout({
@@ -424,7 +444,8 @@ export default function CheckoutClient() {
 
       // Server-side tracking - AddPaymentInfo
       apiRequest("GET", "/brand-config")
-        .then((brandConfig: any) => {
+        .then((response: any) => {
+          const brandConfig = response?.data;
           const currency = brandConfig?.currency?.iso || "USD";
           // Get stored user data for better event matching
           const storedUserData = getUserDataForTracking();
@@ -474,7 +495,8 @@ export default function CheckoutClient() {
       const sourceTracking = getSourceTrackingForOrder();
       const orderWithSource = sourceTracking ? { ...orderWithCoupon, sourceTracking } : orderWithCoupon;
 
-      const saved: any = await apiRequest("POST", "/orders", orderWithSource);
+      const response: any = await apiRequest("POST", "/orders", orderWithSource);
+      const saved = response?.data;
 
       if (!saved || !saved.id) {
         toast.dismiss("place-order");
@@ -625,18 +647,15 @@ export default function CheckoutClient() {
                     Customer & Delivery Details
                   </CardTitle>
                 </CardHeader>
-                <CardContent className='space-y-3'>
-                  <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
+                <CardContent className='space-y-4'>
+                  <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                     <FormField
                       control={form.control}
                       name='fullName'
                       rules={{ required: "Full name is required" }}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className='flex items-center gap-2'>
-                            <User className='w-4 h-4' />
-                            Full Name *
-                          </FormLabel>
+                          <FormLabel>Full Name *</FormLabel>
                           <FormControl>
                             <Input placeholder='Your full name' {...field} className='h-11' />
                           </FormControl>
@@ -651,98 +670,94 @@ export default function CheckoutClient() {
                         required: "Phone is required",
                         validate: (value) => {
                           if (!value) return "Phone is required";
-
-                          // Remove all non-digit characters except +
-                          const cleaned = value.replace(/[^\d+]/g, "");
-
-                          // Remove leading + if present
-                          const digitsOnly = cleaned.replace(/^\+/, "");
-
-                          // Flexible validation - accept any number with at least 10 digits
-                          if (digitsOnly.length >= 10 && digitsOnly.length <= 15) {
-                            // Bangladesh patterns (most common)
-                            const bdPatternWithZero = /^01[3-9]\d{8}$/;
-                            if (bdPatternWithZero.test(digitsOnly)) {
-                              return true;
-                            }
-
-                            // With country code 880
-                            if (digitsOnly.startsWith("880")) {
-                              const withoutCountryCode = digitsOnly.slice(3);
-                              if (/^1[3-9]\d{8}$/.test(withoutCountryCode)) {
-                                return true;
-                              }
-                            }
-
-                            // Accept any valid-looking international number (10-15 digits)
-                            // This allows customers from other countries or with different formats
-                            if (/^\d{10,15}$/.test(digitsOnly)) {
-                              return true;
-                            }
-                          }
-
-                          return "Please enter a valid phone number (e.g., 01*********)";
+                          const digitsOnly = value.replace(/[^\d+]/g, "").replace(/^\+/, "");
+                          if (digitsOnly.length >= 10 && digitsOnly.length <= 15) return true;
+                          return "Please enter a valid phone number";
                         },
                       }}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className='flex items-center gap-2'>
-                            <Phone className='w-4 h-4' />
-                            Phone Number *
-                          </FormLabel>
+                          <FormLabel>Phone Number *</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder='01XXXXXXXXX'
-                              {...field}
-                              className='h-11'
-                              onChange={(e) => {
-                                // Allow users to type freely, clean on validate
-                                field.onChange(e.target.value);
-                              }}
-                            />
+                            <Input placeholder='01XXXXXXXXX' {...field} className='h-11' />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-                  <FormField
-                    control={form.control}
-                    name='email'
-                    rules={{
-                      pattern: {
-                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: "Please enter a valid email address",
-                      },
-                    }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className='flex items-center gap-2'>
-                          <Mail className='w-4 h-4' />
-                          Email (optional)
-                        </FormLabel>
-                        <FormControl>
-                          <Input type='email' placeholder='name@example.com' {...field} className='h-11' />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
-                  <FormField
-                    control={form.control}
-                    name='addressLine1'
-                    rules={{ required: "Address is required" }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Street Address *</FormLabel>
-                        <FormControl>
-                          <Input placeholder='Your street address' {...field} className='h-11' />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+                    <FormField
+                      control={form.control}
+                      name='email'
+                      rules={{
+                        pattern: {
+                          value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                          message: "Invalid email address",
+                        },
+                      }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email (optional)</FormLabel>
+                          <FormControl>
+                            <Input type='email' placeholder='name@example.com' {...field} className='h-11' />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='city'
+                      rules={{ required: "City is required" }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>City *</FormLabel>
+                          <FormControl>
+                            <Input placeholder='e.g. Dhaka' {...field} className='h-11' />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className='grid grid-cols-1 gap-4 sm:grid-cols-3'>
+                    <div className='sm:col-span-2'>
+                      <FormField
+                        control={form.control}
+                        name='addressLine1'
+                        rules={{ required: "Address is required" }}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Street Address *</FormLabel>
+                            <FormControl>
+                              <Input placeholder='House, Road, Area...' {...field} className='h-11' />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div>
+                      <FormField
+                        control={form.control}
+                        name='postalCode'
+                        rules={{ required: "Postal code is required" }}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Postal Code *</FormLabel>
+                            <FormControl>
+                              <Input placeholder='1234' {...field} className='h-11' />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
                   <FormField
                     control={form.control}
                     name='notes'
@@ -750,7 +765,7 @@ export default function CheckoutClient() {
                       <FormItem>
                         <FormLabel>Delivery Notes (optional)</FormLabel>
                         <FormControl>
-                          <Textarea placeholder='Any delivery instructions (optional)' {...field} className='min-h-20' />
+                          <Textarea placeholder='Any delivery instructions' {...field} className='min-h-20' />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

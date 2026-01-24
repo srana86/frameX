@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState, useRef } from "react";
+import { useEffect, useCallback, useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut, getSession } from "@/lib/auth-client";
 
@@ -59,16 +59,25 @@ export function useAuth(options: UseAuthOptions = {}): UseAuthReturn {
   const hasRedirected = useRef(false);
 
   // Transform BetterAuth session to AuthUser
-  const user: AuthUser | null = session.data?.user
-    ? {
+  const user: AuthUser | null = useMemo(() => {
+    if (!session.data?.user) return null;
+
+    return {
       id: session.data.user.id,
       fullName: session.data.user.name || "",
       email: session.data.user.email,
       phone: session.data.user.phone,
       role: ((session.data.user.role || "CUSTOMER").toLowerCase() as "customer" | "staff" | "tenant" | "admin" | "super_admin"),
       tenantId: session.data.user.tenantId,
-    }
-    : null;
+    };
+  }, [
+    session.data?.user?.id,
+    session.data?.user?.name,
+    session.data?.user?.email,
+    session.data?.user?.phone,
+    session.data?.user?.role,
+    session.data?.user?.tenantId,
+  ]);
 
   const isLoading = session.isPending;
   const isAuthenticated = !!user;

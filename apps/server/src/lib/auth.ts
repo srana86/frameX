@@ -13,6 +13,74 @@ import redis from "./redis";
  *
  * Sessions are stored in Redis for performance with PostgreSQL backup.
  */
+/**
+ * Resolve tenant from request headers
+ */
+async function resolveTenant(ctx: { request?: Request | null }) {
+  const request = ctx?.request;
+  if (!request) return null;
+
+  let domain: string | undefined;
+
+  // Priority 1: x-domain header
+  const xDomain = request.headers.get("x-domain");
+  if (xDomain) domain = xDomain;
+
+  // Priority 2: x-forwarded-domain
+  if (!domain) {
+    const xForwardedDomain = request.headers.get("x-forwarded-domain");
+    if (xForwardedDomain) domain = xForwardedDomain;
+  }
+
+  // Priority 3: Host header (for direct browser requests)
+  if (!domain) {
+    const xForwardedHost = request.headers.get("x-forwarded-host");
+    if (xForwardedHost) {
+      domain = xForwardedHost;
+    } else {
+      const host = request.headers.get("host");
+      if (host) domain = host;
+    }
+  }
+
+  // Priority 4: Origin header (for cross-origin API calls)
+  if (!domain) {
+    const origin = request.headers.get("origin");
+    if (origin) {
+      try {
+        const originUrl = new URL(origin);
+        domain = originUrl.hostname;
+      } catch (e) { }
+    }
+  }
+
+  if (!domain) return null;
+
+  // Skip tenant resolution for main platform domains
+  if (
+    domain === "localhost" ||
+    domain.endsWith("framextech.com") ||
+    domain.endsWith("framextech.local")
+  ) {
+    const isMainPlatform =
+      domain === "localhost" ||
+      domain === "framextech.com" ||
+      domain === "framextech.local";
+    if (isMainPlatform) return null;
+  }
+
+  try {
+    const tenantDomain = await getTenantByDomain(domain);
+    return tenantDomain || null;
+  } catch (error) {
+    console.error(`[BetterAuth] Failed to resolve tenant for domain: ${domain}`, error);
+    return null;
+  }
+}
+
+/**
+ * BetterAuth Server Instance
+ */
 export const auth = betterAuth({
   // Base URL for OAuth callbacks
   baseURL: process.env.BETTER_AUTH_URL || `http://localhost:${config.port}`,
@@ -75,20 +143,17 @@ export const auth = betterAuth({
   // Extend User Schema with custom fields for multi-tenant e-commerce
   user: {
     additionalFields: {
-      // Multi-tenant support - links user to a specific store
       tenantId: {
         type: "string",
         required: false,
-        input: false, // Auto-resolved from domain, not user input
+        input: true, // MUST be true to allow the before hook to inject it into the body
       },
-      // User role for access control
       role: {
         type: "string",
         required: false,
-        defaultValue: "CUSTOMER", // Default for storefront users
-        input: false, // Don't allow users to set their own role on signup
+        defaultValue: "CUSTOMER",
+        input: false,
       },
-      // Phone number for contact
       phone: {
         type: "string",
         required: false,
@@ -97,95 +162,82 @@ export const auth = betterAuth({
     },
   },
 
+  plugins: [
+    {
+      id: "tenant-isolation",
+      hooks: {
+        before: [
+          {
+            // Intercept signup, signin, and OAuth callbacks
+            matcher: (ctx) =>
+              ctx.path.startsWith("/sign-up") ||
+              ctx.path.startsWith("/sign-in") ||
+              ctx.path.startsWith("/callback/"),
+            handler: async (ctx) => {
+              const tenant = await resolveTenant(ctx as any);
+              if (!tenant) return { context: ctx };
+
+              const body = ctx.body as any;
+              const tenantSlug = tenant.tenant.slug || tenant.tenantId;
+
+              // 1. Scope Email for Credentials using RFC-compliant subaddressing (local+slug@domain)
+              if (body?.email && body.email.includes("@")) {
+                const originalEmail = body.email;
+                const [local, domain] = originalEmail.split("@");
+                body.email = `${local}+${tenantSlug}@${domain}`;
+                console.log(`[BetterAuth Hook] Scoping email: ${originalEmail} -> ${body.email} (Tenant: ${tenantSlug})`);
+              }
+
+              // 2. Scope accountId if present (for social callbacks or linking)
+              if (body?.accountId) {
+                const originalAccountId = body.accountId;
+                body.accountId = `${tenant.tenantId}:${body.accountId}`;
+                console.log(`[BetterAuth Hook] Scoping accountId: ${originalAccountId} -> ${body.accountId}`);
+              }
+
+              // 3. Ensure tenantId is attached for user creation
+              if (ctx.path.startsWith("/sign-up") || ctx.path.startsWith("/callback/")) {
+                if (body) {
+                  body.tenantId = tenant.tenantId;
+                  console.log(`[BetterAuth Hook] Attaching tenantId: ${tenant.tenantId}`);
+                }
+              }
+
+              return { context: ctx };
+            },
+          },
+        ],
+        after: [
+          {
+            // Intercept session lookups and auth responses to clean up virtual emails
+            matcher: (ctx) =>
+              ctx.path.startsWith("/get-session") ||
+              ctx.path.startsWith("/sign-in") ||
+              ctx.path.startsWith("/sign-up") ||
+              ctx.path.startsWith("/callback/"),
+            handler: async (ctx) => {
+              const response = ctx.json;
+              if (response?.user?.email && response.user.email.includes("+")) {
+                const physicalEmail = response.user.email;
+                // Strip the last +... part (Virtual Email -> Real Email)
+                const [localPlus, domain] = physicalEmail.split("@");
+                const lastPlusIndex = localPlus.lastIndexOf("+");
+                if (lastPlusIndex !== -1) {
+                  response.user.email = `${localPlus.substring(0, lastPlusIndex)}@${domain}`;
+                }
+                console.log(`[BetterAuth Hook] Descoping email: ${physicalEmail} -> ${response.user.email}`);
+              }
+              return { response };
+            },
+          },
+        ],
+      },
+    } as any,
+  ],
+
   databaseHooks: {
     user: {
       create: {
-        // Before hook: Resolve tenant from domain for storefront customers
-        before: async (user, ctx) => {
-          // Check if this is a storefront signup (has x-domain header)
-          const request = ctx?.request;
-          if (!request) {
-            // No request context - likely an OWNER signup from main platform
-            // Don't require tenant for these - return void to proceed unchanged
-            return;
-          }
-
-          // Try to extract domain from request headers
-          let domain: string | undefined;
-
-          // Priority 1: x-domain header (frontend sends current domain)
-          const xDomain = request.headers.get("x-domain");
-          if (xDomain) {
-            domain = xDomain;
-          }
-
-          // Priority 2: x-forwarded-domain header (for proxied requests)
-          if (!domain) {
-            const xForwardedDomain = request.headers.get("x-forwarded-domain");
-            if (xForwardedDomain) {
-              domain = xForwardedDomain;
-            }
-          }
-
-          // Priority 3: Origin header (for cross-origin API calls)
-          if (!domain) {
-            const origin = request.headers.get("origin");
-            if (origin) {
-              try {
-                const originUrl = new URL(origin);
-                domain = originUrl.hostname;
-              } catch (e) {
-                // Invalid origin URL, continue
-              }
-            }
-          }
-
-          // If no domain headers, this might be an OWNER signup - skip tenant resolution
-          if (!domain) {
-            return;
-          }
-
-          // Skip tenant resolution for main platform domains
-          if (
-            domain === "localhost" ||
-            domain.endsWith("framextech.com") ||
-            domain.endsWith("framextech.local")
-          ) {
-            // Check if this is NOT a tenant subdomain (e.g., just framextech.com)
-            const isMainPlatform =
-              domain === "localhost" ||
-              domain === "framextech.com" ||
-              domain === "framextech.local";
-            if (isMainPlatform) {
-              return;
-            }
-          }
-
-          // Resolve tenant from domain for storefront signups
-          try {
-            const tenantDomain = await getTenantByDomain(domain);
-            if (tenantDomain) {
-              // Attach tenantId to user and return wrapped in { data: ... }
-              return {
-                data: {
-                  ...user,
-                  tenantId: tenantDomain.tenantId,
-                },
-              };
-            }
-          } catch (error) {
-            console.error(
-              `[BetterAuth] Failed to resolve tenant for domain: ${domain}`,
-              error
-            );
-            // Don't block signup if tenant resolution fails
-          }
-
-          // Return void to proceed with original user data
-          return;
-        },
-
-        // After hook: Create StoreOwner record for OWNER users
         after: async (user) => {
           if (user.role === "OWNER") {
             try {

@@ -298,6 +298,10 @@ const moduleRoutes = [
     route: CronRoutes,
   },
   {
+    path: "/affiliate",
+    route: AffiliateRoutes,
+  },
+  {
     path: "/affiliates",
     route: AffiliateRoutes,
   },

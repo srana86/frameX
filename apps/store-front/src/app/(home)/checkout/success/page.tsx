@@ -49,8 +49,8 @@ function OrderSuccessContent() {
         if (!res.ok) {
           throw new Error("Failed to fetch order");
         }
-        const data = (await res.json()) as Order;
-        setOrder(data);
+        const response = await res.json();
+        setOrder(response.data || response);
       } catch (err: any) {
         setError(err?.message || "Failed to load order details");
       } finally {
@@ -141,10 +141,10 @@ function OrderSuccessContent() {
             event: "purchase",
             ecommerce: {
               transaction_id: order.id,
-              value: order.total,
+              value: Number(order.total),
               currency: currency,
               tax: 0,
-              shipping: order.shipping,
+              shipping: Number(order.shipping),
               items: dataLayerItems,
             },
           });
@@ -158,13 +158,13 @@ function OrderSuccessContent() {
               {
                 content_ids: contentIds,
                 content_type: "product",
-                value: order.total,
+                value: Number(order.total),
                 currency: currency,
                 num_items: numItems,
                 contents: order.items.map((item) => ({
                   id: item.productId,
                   quantity: item.quantity,
-                  item_price: item.price,
+                  item_price: Number(item.price),
                 })),
               },
               { eventID: eventId }
@@ -175,14 +175,14 @@ function OrderSuccessContent() {
           if ((window as any).ttq) {
             (window as any).ttq.track("CompletePayment", {
               content_type: "product",
-              value: order.total,
+              value: Number(order.total),
               currency: currency,
               quantity: numItems,
               contents: order.items.map((item) => ({
                 content_id: item.productId,
                 content_name: item.name,
                 quantity: item.quantity,
-                price: item.price,
+                price: Number(item.price),
               })),
             });
           }
@@ -194,7 +194,13 @@ function OrderSuccessContent() {
               order_id: order.id,
               value: order.total,
               currency: currency,
-              line_items: dataLayerItems,
+              line_items: order.items.map((item) => ({
+                item_id: item.productId,
+                item_name: item.name,
+                item_category: item.category || "Product",
+                price: Number(item.price),
+                quantity: item.quantity,
+              })),
             });
           }
 
@@ -202,7 +208,7 @@ function OrderSuccessContent() {
           if ((window as any).snaptr) {
             (window as any).snaptr("track", "PURCHASE", {
               currency: currency,
-              value: order.total,
+              value: Number(order.total),
               transaction_id: order.id,
             });
           }
@@ -215,13 +221,13 @@ function OrderSuccessContent() {
               "track",
               "Purchase",
               {
-                value: order.total,
+                value: Number(order.total),
                 currency: currency,
               },
             ]);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [order]);
 
@@ -275,10 +281,11 @@ function OrderSuccessContent() {
   }
 
   const addressLines = [
-    order.customer.addressLine1,
-    order.customer.addressLine2,
+    order.customer?.address,
+    (order.customer as any)?.addressLine1,
+    (order.customer as any)?.addressLine2,
   ].filter(Boolean);
-  const locationLine = [order.customer.city, order.customer.postalCode]
+  const locationLine = [order.customer?.city, (order.customer as any)?.postalCode]
     .filter(Boolean)
     .join(", ");
 
@@ -435,7 +442,7 @@ function OrderSuccessContent() {
                           </div>
                           <p className="mt-1 text-sm font-semibold text-primary">
                             {currencySymbol}
-                            {(item.price * item.quantity).toFixed(2)}
+                            {(Number(item.price) * item.quantity).toFixed(2)}
                           </p>
                         </div>
                       </div>
@@ -458,7 +465,9 @@ function OrderSuccessContent() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-1">
-                  <p className="font-semibold">{order.customer.fullName}</p>
+                  <p className="font-semibold">
+                    {order.customer?.name || (order.customer as any)?.fullName}
+                  </p>
                   {addressLines.map((line, index) => (
                     <p
                       key={`address-line-${index}`}
@@ -473,20 +482,20 @@ function OrderSuccessContent() {
                     </p>
                   )}
                   <div className="mt-3 space-y-1">
-                    {order.customer.phone && (
+                    {order.customer?.phone && (
                       <div className="flex items-center gap-2 text-sm">
                         <Phone className="w-4 h-4 text-muted-foreground" />
                         <span>{order.customer.phone}</span>
                       </div>
                     )}
-                    {order.customer.email && (
+                    {order.customer?.email && (
                       <div className="flex items-center gap-2 text-sm">
                         <Mail className="w-4 h-4 text-muted-foreground" />
                         <span>{order.customer.email}</span>
                       </div>
                     )}
                   </div>
-                  {order.customer.notes && (
+                  {order.customer?.notes && (
                     <div className="mt-3 rounded-lg bg-accent/50 p-3">
                       <p className="text-xs font-medium text-muted-foreground mb-1">
                         Delivery Notes:
@@ -514,22 +523,22 @@ function OrderSuccessContent() {
                     </span>
                     <span className="font-medium">
                       {currencySymbol}
-                      {order.subtotal.toFixed(2)}
+                      {Number(order.subtotal).toFixed(2)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Shipping</span>
                     <span className="font-medium">
-                      {order.shipping === 0 ? (
+                      {Number(order.shipping) === 0 ? (
                         <span className="text-emerald-600 dark:text-emerald-400">
                           Free
                         </span>
                       ) : (
-                        `${currencySymbol}${order.shipping.toFixed(2)}`
+                        `${currencySymbol}${Number(order.shipping).toFixed(2)}`
                       )}
                     </span>
                   </div>
-                  {order.discountAmount && order.discountAmount > 0 && (
+                  {order.discountAmount && Number(order.discountAmount) > 0 && (
                     <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">Discount</span>
@@ -541,20 +550,20 @@ function OrderSuccessContent() {
                       </div>
                       <span className="font-semibold">
                         -{currencySymbol}
-                        {order.discountAmount.toFixed(2)}
+                        {Number(order.discountAmount).toFixed(2)}
                       </span>
                     </div>
                   )}
-                  {order.vatTaxAmount && order.vatTaxAmount > 0 && (
+                  {order.vatTaxAmount && Number(order.vatTaxAmount) > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">
                         {order.vatTaxPercentage
-                          ? `VAT/Tax (${order.vatTaxPercentage}%)`
+                          ? `VAT/Tax (\${order.vatTaxPercentage}%)`
                           : "VAT/Tax"}
                       </span>
                       <span className="font-medium">
                         {currencySymbol}
-                        {order.vatTaxAmount.toFixed(2)}
+                        {Number(order.vatTaxAmount).toFixed(2)}
                       </span>
                     </div>
                   )}
@@ -563,7 +572,7 @@ function OrderSuccessContent() {
                     <span>Total</span>
                     <span>
                       {currencySymbol}
-                      {order.total.toFixed(2)}
+                      {Number(order.total).toFixed(2)}
                     </span>
                   </div>
                 </div>

@@ -329,7 +329,7 @@ const getAffiliateProgressFromDB = async (tenantId: string, userId: string) => {
     where: { tenantId, userId },
   });
   if (!affiliate) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Affiliate not found");
+    return null;
   }
 
   const settings = await getAffiliateSettingsFromDB(tenantId);

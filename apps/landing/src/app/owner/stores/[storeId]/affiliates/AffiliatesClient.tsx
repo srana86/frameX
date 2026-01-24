@@ -26,11 +26,16 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
+  Settings,
+  Save,
 } from "lucide-react";
 import { toast } from "sonner";
 import { createStoreApiClient } from "@/lib/store-api-client";
 import { cn } from "@/utils/cn";
 import type { StaffPermission } from "@/contexts/StoreContext";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface Affiliate {
   id: string;
@@ -62,6 +67,7 @@ interface AffiliatesClientProps {
       totalEarnings: number;
       pendingPayouts: number;
     };
+    settings: any;
   };
   storeId: string;
   permission: StaffPermission | null;
@@ -81,6 +87,8 @@ export function AffiliatesClient({
   const [stats, setStats] = useState(initialData.stats);
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [settings, setSettings] = useState(initialData.settings);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   // Permission check
   const canEdit = permission === null || permission === "EDIT" || permission === "FULL";
@@ -160,6 +168,21 @@ export function AffiliatesClient({
     }
   };
 
+  // Save settings
+  const handleSaveSettings = async () => {
+    if (!canEdit) return;
+    setSavingSettings(true);
+    try {
+      const storeApi = createStoreApiClient(storeId);
+      await storeApi.post(`affiliate/settings`, settings);
+      toast.success("Affiliate settings updated successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update settings");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -217,6 +240,10 @@ export function AffiliatesClient({
           </TabsTrigger>
           <TabsTrigger value="withdrawals">
             Pending Withdrawals ({withdrawals.length})
+          </TabsTrigger>
+          <TabsTrigger value="settings">
+            <Settings className="w-4 h-4 mr-2" />
+            Settings
           </TabsTrigger>
         </TabsList>
 
@@ -379,6 +406,103 @@ export function AffiliatesClient({
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        {/* Settings Tab */}
+        <TabsContent value="settings">
+          <Card>
+            <CardHeader>
+              <CardTitle>Affiliate Program Settings</CardTitle>
+              <CardDescription>Configure how your affiliate program works</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between space-x-2">
+                <div className="space-y-0.5">
+                  <Label htmlFor="enabled">Enable Affiliate Program</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Allow customers to sign up and earn commissions
+                  </p>
+                </div>
+                <Switch
+                  id="enabled"
+                  checked={settings.enabled}
+                  onCheckedChange={(checked) => setSettings({ ...settings, enabled: checked })}
+                  disabled={!canEdit}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="minWithdrawal">Minimum Withdrawal Amount</Label>
+                <Input
+                  id="minWithdrawal"
+                  type="number"
+                  value={settings.minWithdrawalAmount}
+                  onChange={(e) => setSettings({ ...settings, minWithdrawalAmount: parseFloat(e.target.value) })}
+                  disabled={!canEdit}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="cookieExpiry">Cookie Expiry (Days)</Label>
+                <Input
+                  id="cookieExpiry"
+                  type="number"
+                  value={settings.cookieExpiryDays}
+                  onChange={(e) => setSettings({ ...settings, cookieExpiryDays: parseInt(e.target.value) })}
+                  disabled={!canEdit}
+                />
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Commission Levels</h3>
+                {Object.entries(settings.commissionLevels || {}).map(([level, data]: [string, any]) => (
+                  <div key={level} className="flex items-center gap-4 p-4 border rounded-lg">
+                    <div className="flex-1">
+                      <Label>Level {level} Commission (%)</Label>
+                      <Input
+                        type="number"
+                        value={data.percentage}
+                        onChange={(e) => {
+                          const newLevels = { ...settings.commissionLevels };
+                          newLevels[level] = { ...data, percentage: parseFloat(e.target.value) };
+                          setSettings({ ...settings, commissionLevels: newLevels });
+                        }}
+                        disabled={!canEdit}
+                      />
+                    </div>
+                    {level !== "1" && (
+                      <div className="flex-1">
+                        <Label>Orders Required</Label>
+                        <Input
+                          type="number"
+                          value={settings.salesThresholds?.[level] || 0}
+                          onChange={(e) => {
+                            const newThresholds = { ...settings.salesThresholds };
+                            newThresholds[level] = parseInt(e.target.value);
+                            setSettings({ ...settings, salesThresholds: newThresholds });
+                          }}
+                          disabled={!canEdit}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {canEdit && (
+                <div className="pt-4 flex justify-end">
+                  <Button onClick={handleSaveSettings} disabled={savingSettings}>
+                    {savingSettings ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Save Settings
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

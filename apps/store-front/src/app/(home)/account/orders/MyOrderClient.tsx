@@ -77,7 +77,7 @@ export default function MyOrdersClient() {
         if (userProfile.phone) params.append("phone", userProfile.phone);
 
         const ordersData = await apiRequest<any>("GET", `/orders/user?${params.toString()}`);
-        setOrders(ordersData);
+        setOrders(ordersData.data?.orders || []);
         setError(null);
       } catch (err: any) {
         setError(err?.message || "Failed to load orders");
@@ -236,7 +236,7 @@ export default function MyOrdersClient() {
                           <p className='text-xs text-muted-foreground'>Total Amount</p>
                           <p className='font-bold text-lg text-primary'>
                             {currencySymbol}
-                            {order.total.toFixed(2)}
+                            {Number(order.total).toFixed(2)}
                           </p>
                         </div>
                       </div>
@@ -319,7 +319,7 @@ export default function MyOrdersClient() {
                             <p className='text-xs text-muted-foreground'>Total</p>
                             <p className='font-bold text-lg text-primary'>
                               {currencySymbol}
-                              {order.total.toFixed(2)}
+                              {Number(order.total).toFixed(2)}
                             </p>
                           </div>
                           <Button

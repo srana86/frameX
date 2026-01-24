@@ -28,7 +28,8 @@ export default function AffiliatePage() {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [paymentDetails, setPaymentDetails] = useState<any>({});
   const [assignedCoupon, setAssignedCoupon] = useState<Coupon | null>(null);
-  const [commissionFilter, setCommissionFilter] = useState<"all" | "delivered" | "pending">("all");
+  const [systemEnabled, setSystemEnabled] = useState(true);
+  const [commissionFilter, setCommissionFilter] = useState("all");
   const [progress, setProgress] = useState<{
     currentLevel: number;
     deliveredOrders: number;
@@ -49,55 +50,40 @@ export default function AffiliatePage() {
       // Get affiliate info
       // apiRequest handles errors, but here we want to handle the case where affiliate system is disabled
       // or user has no affiliate account gracefully.
-      let affiliateData;
+      let response;
       try {
-        affiliateData = await apiRequest<any>("GET", "/affiliate/me");
+        response = await apiRequest<any>("GET", "/affiliate/me");
       } catch (err) {
-        // If 404 or similar, it might mean just not created yet? 
-        // Backend returns success:true even if null?
-        // Let's assume standard error handling. 
-        // If backend checks usage, it might throw 400 if disabled.
-        // We'll wrap individual calls.
         console.warn("Affiliate check failed", err);
-        // Stop loading if critical failure
         return;
       }
 
-      // Check if affiliate system is enabled (backend should return this structure)
-      // Backend (AffiliateController.getMyAffiliate) returns: { success: true, data: ... }
-      // apiRequest returns data directly.
-      // Wait, backend endpoint /affiliate/me returns just the affiliate object?
-      // Step 1782: getMyAffiliate returns `result`, which is `Affiliate`.
-      // It DOES NOT return `{ enabled: boolean }` structure like the Next.js API did.
-      // This is a discrepancy. Backend `getMyAffiliate` just returns the affiliate doc or null?
-      // Step 1782 line 11: `AffiliateServices.getMyAffiliateFromDB(user.id)`.
-      // I should check `affiliate.service.ts` to see what it returns.
-      // If backend doesn't return `enabled`, I might need to fetch `/affiliate/settings` separately?
-      // Only admin/tenant can fetch settings?
-      // User role 'customer' might not have access to settings.
-      // I'll need to check this.
+      // Backend returns { success: true, ..., data: { affiliate: Affiliate | null, enabled: boolean } }
+      if (response && response.data?.enabled === false) {
+        // Affiliate system disabled for this tenant
+        setSystemEnabled(false);
+        setLoading(false);
+        return;
+      }
+      setSystemEnabled(true);
 
-      // Temporary assumption: backend /affiliate/me returns the affiliate object.
-      // If null, user hasn't created one.
-
-      // If I need 'enabled' status, I might need a public/customer endpoint for checking status.
-      // Or `me` endpoint should include it.
+      const affiliateData = response?.data?.affiliate;
 
       if (affiliateData) {
         setAffiliate(affiliateData);
 
         // Load commissions
         const commissionsData = await apiRequest<any>("GET", "/affiliate/commissions");
-        setCommissions(commissionsData.commissions || []);
+        setCommissions(commissionsData.data?.commissions || []);
 
         // Load withdrawals
         const withdrawalsData = await apiRequest<any>("GET", "/affiliate/withdrawals");
-        setWithdrawals(withdrawalsData.withdrawals || []);
+        setWithdrawals(withdrawalsData.data?.withdrawals || []);
 
         // Load progress
         const progressData = await apiRequest<any>("GET", "/affiliate/progress");
-        if (progressData) {
-          setProgress(progressData);
+        if (progressData && progressData.data) {
+          setProgress(progressData.data);
         }
 
         // Load assigned coupon if exists
@@ -197,6 +183,30 @@ export default function AffiliatePage() {
         <div className='text-center'>
           <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto'></div>
           <p className='mt-4 text-muted-foreground'>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!systemEnabled) {
+    return (
+      <div className='min-h-screen bg-background'>
+        <div className='mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12'>
+          <div className='mb-8 sm:mb-12 text-center'>
+            <h1 className='text-2xl sm:text-3xl lg:text-4xl font-light tracking-tight mb-2'>Affiliate Program</h1>
+            <p className='text-sm sm:text-base text-muted-foreground'>Earn commissions on every sale you refer</p>
+          </div>
+
+          <Card className='border border-destructive/20 bg-destructive/5'>
+            <CardContent className='pt-6 text-center shadow-none border-none'>
+              <XCircle className='w-12 h-12 text-destructive mx-auto mb-4 opacity-50' />
+              <h2 className='text-lg font-medium mb-1'>System Currently Disabled</h2>
+              <p className='text-sm text-muted-foreground'>
+                The affiliate program is currently disabled for this store. Please check back later or contact support if you have
+                any questions.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

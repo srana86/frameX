@@ -63,8 +63,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadShippingConfig = async () => {
       try {
-        const data = await apiRequest<any>("GET", "/storefront/delivery-config");
-        if (!data) return;
+        const response = await apiRequest<any>("GET", "/storefront/delivery-config");
+        if (!response || !response.data) return;
+        const data = response.data;
 
         if (typeof data.defaultDeliveryCharge === "number") {
           setBaseShippingFee(data.defaultDeliveryCharge);

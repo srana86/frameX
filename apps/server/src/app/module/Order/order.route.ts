@@ -32,7 +32,7 @@ router.post(
 );
 
 // Get single order by ID
-router.get("/:id", tenantMiddleware, auth(), OrderControllers.getSingleOrder);
+router.get("/:id", tenantMiddleware, OrderControllers.getSingleOrder);
 
 // Update order (admin/tenant only)
 router.patch(

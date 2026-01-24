@@ -66,9 +66,9 @@ const trackMetaPixelValidationSchema = z.object({
         "other",
       ])
       .optional(),
-    fbp: z.string().optional(),
-    fbc: z.string().optional(),
-    clientIpAddress: z.string().optional(),
+    fbp: z.string().nullable().optional(),
+    fbc: z.string().nullable().optional(),
+    clientIpAddress: z.string().nullable().optional(),
   }),
 });
 

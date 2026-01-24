@@ -6,9 +6,8 @@ import { BlockedCustomerServices } from "./blockedCustomer.service";
 
 const createBlockedCustomer = catchAsync(
   async (req: Request, res: Response) => {
-    const user = (req as any).user;
     const result = await BlockedCustomerServices.createBlockedCustomerIntoDB(
-      user.tenantId,
+      req.tenantId,
       req.body
     );
 
@@ -23,8 +22,7 @@ const createBlockedCustomer = catchAsync(
 
 const getAllBlockedCustomers = catchAsync(
   async (req: Request, res: Response) => {
-    const user = (req as any).user;
-    const result = await BlockedCustomerServices.getAllBlockedCustomersFromDB(user.tenantId);
+    const result = await BlockedCustomerServices.getAllBlockedCustomersFromDB(req.tenantId);
 
     sendResponse(res, {
       statusCode: StatusCodes.OK,
@@ -36,10 +34,9 @@ const getAllBlockedCustomers = catchAsync(
 );
 
 const checkBlockedCustomer = catchAsync(async (req: Request, res: Response) => {
-  const user = (req as any).user;
   const { phone, email } = req.body;
   const result = await BlockedCustomerServices.checkBlockedCustomerFromDB(
-    user.tenantId,
+    req.tenantId,
     phone,
     email
   );
@@ -54,10 +51,9 @@ const checkBlockedCustomer = catchAsync(async (req: Request, res: Response) => {
 
 const getSingleBlockedCustomer = catchAsync(
   async (req: Request, res: Response) => {
-    const user = (req as any).user;
     const { id } = req.params;
     const result =
-      await BlockedCustomerServices.getSingleBlockedCustomerFromDB(user.tenantId, id);
+      await BlockedCustomerServices.getSingleBlockedCustomerFromDB(req.tenantId, id);
 
     sendResponse(res, {
       statusCode: StatusCodes.OK,
@@ -70,10 +66,9 @@ const getSingleBlockedCustomer = catchAsync(
 
 const updateBlockedCustomer = catchAsync(
   async (req: Request, res: Response) => {
-    const user = (req as any).user;
     const { id } = req.params;
     const result = await BlockedCustomerServices.updateBlockedCustomerIntoDB(
-      user.tenantId,
+      req.tenantId,
       id,
       req.body
     );
@@ -89,9 +84,8 @@ const updateBlockedCustomer = catchAsync(
 
 const deleteBlockedCustomer = catchAsync(
   async (req: Request, res: Response) => {
-    const user = (req as any).user;
     const { id } = req.params;
-    await BlockedCustomerServices.deleteBlockedCustomerFromDB(user.tenantId, id);
+    await BlockedCustomerServices.deleteBlockedCustomerFromDB(req.tenantId, id);
 
     sendResponse(res, {
       statusCode: StatusCodes.OK,

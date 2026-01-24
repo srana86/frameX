@@ -16,7 +16,7 @@ async function getProducts(): Promise<Product[]> {
       slug: d.slug,
       name: d.name,
       brand: d.brand,
-      category: d.category,
+      category: typeof d.category === "object" ? d.category?.name || d.category?.label || "General" : d.category || "General",
       description: d.description ?? "",
       price: Number(d.price ?? 0),
       images: Array.isArray(d.images) ? d.images : [],

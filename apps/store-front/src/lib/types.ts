@@ -48,13 +48,15 @@ export type OrderStatus =
   | "cancelled";
 
 export type CustomerInfo = {
-  fullName: string;
+  fullName?: string;
+  name?: string;
   email?: string;
   phone: string;
-  addressLine1: string;
+  addressLine1?: string;
   addressLine2?: string;
+  address?: string;
   city: string;
-  postalCode: string;
+  postalCode?: string;
   notes?: string;
 };
 

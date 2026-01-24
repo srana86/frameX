@@ -31,7 +31,11 @@ async function getProducts(): Promise<Product[]> {
   try {
     const client = await getPublicServerClient();
     const response = await client.get("/products", { params: { limit: 300 } });
-    return response.data?.data?.products || [];
+    const products = response.data?.data?.products || [];
+    return products.map((p: any) => ({
+      ...p,
+      category: typeof p.category === "object" ? p.category?.name || p.category?.label || "General" : p.category || "General",
+    }));
   } catch (error) {
     console.error("Failed to load products:", error);
     return [];
@@ -59,7 +63,11 @@ async function getMostLovedProducts(): Promise<Product[]> {
     const response = await client.get("/products/most-loved", {
       params: { limit: 8 },
     });
-    return response.data?.data || [];
+    const products = response.data?.data || [];
+    return products.map((p: any) => ({
+      ...p,
+      category: typeof p.category === "object" ? p.category?.name || p.category?.label || "General" : p.category || "General",
+    }));
   } catch (error) {
     console.error("Failed to load most loved products:", error);
     return [];
@@ -99,12 +107,12 @@ export default async function Home() {
     categories.length > 0
       ? categories
       : Array.from(productsByCategory.keys()).map((name) => ({
-          id: name.toLowerCase().replace(/\s+/g, "-"),
-          name,
-          order: 0,
-          createdAt: "",
-          updatedAt: "",
-        }));
+        id: name.toLowerCase().replace(/\s+/g, "-"),
+        name,
+        order: 0,
+        createdAt: "",
+        updatedAt: "",
+      }));
 
   // Get first hero slide for mobile promo banner (if available)
   const promoSlide = heroSlides.length > 0 ? heroSlides[0] : null;

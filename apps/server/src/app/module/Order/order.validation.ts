@@ -3,7 +3,7 @@ import { z } from "zod";
 // Customer info schema
 const customerInfoSchema = z.object({
   fullName: z.string({ message: "Full name is required" }),
-  email: z.string().email().optional(),
+  email: z.string().email().optional().or(z.literal("")),
   phone: z.string({ message: "Phone is required" }),
   addressLine1: z.string({ message: "Address line 1 is required" }),
   addressLine2: z.string().optional(),
@@ -22,7 +22,7 @@ const cartLineItemSchema = z.object({
   size: z.string().optional(),
   color: z.string().optional(),
   quantity: z.number(),
-  category: z.string().optional(),
+  category: z.any().optional(),
 });
 
 // Create order validation schema

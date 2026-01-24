@@ -273,35 +273,81 @@ const deleteOrderFromDB = async (tenantId: string, id: string) => {
 // Get orders for customer
 const getUserOrdersFromDB = async (
   tenantId: string,
-  customerPhone: string,
+  userId: string,
   query: Record<string, unknown>
 ) => {
-  const customer = await prisma.customer.findFirst({
-    where: { tenantId, phone: customerPhone },
-  });
+  // Identify search criteria (phone and email)
+  let phone = query.phone as string;
+  let email = query.email as string;
 
-  if (!customer) {
+  // If not in query, fetch from user profile
+  if (!phone || !email) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { phone: true, email: true },
+    });
+
+    if (user) {
+      phone = phone || user.phone || "";
+      email = email || user.email || "";
+    }
+  }
+
+  if (!phone && !email) {
     return { meta: { page: 1, limit: 10, total: 0, totalPage: 0 }, data: [] };
   }
 
+  // Find all matching customer records for this tenant
+  const customers = await prisma.customer.findMany({
+    where: {
+      tenantId,
+      OR: [
+        phone ? { phone } : undefined,
+        email ? { email } : undefined,
+      ].filter(Boolean) as any[],
+    },
+    select: { id: true },
+  });
+
+  const customerIds = customers.map((c: { id: string }) => c.id);
+
+  if (customerIds.length === 0) {
+    return { meta: { page: 1, limit: 10, total: 0, totalPage: 0 }, data: [] };
+  }
+
+  const page = Number(query.page) || 1;
+  const limit = Number(query.limit) || 10;
+  const skip = (page - 1) * limit;
+
   const orders = await prisma.order.findMany({
-    where: { tenantId, customerId: customer.id },
-    include: { items: true },
+    where: {
+      tenantId,
+      customerId: { in: customerIds },
+      isDeleted: false,
+    },
+    include: {
+      items: true,
+      customer: true,
+    },
     orderBy: { createdAt: "desc" },
-    take: Number(query.limit) || 10,
-    skip: ((Number(query.page) || 1) - 1) * (Number(query.limit) || 10),
+    take: limit,
+    skip: skip,
   });
 
   const total = await prisma.order.count({
-    where: { tenantId, customerId: customer.id },
+    where: {
+      tenantId,
+      customerId: { in: customerIds },
+      isDeleted: false,
+    },
   });
 
   return {
     meta: {
-      page: Number(query.page) || 1,
-      limit: Number(query.limit) || 10,
+      page,
+      limit,
       total,
-      totalPage: Math.ceil(total / (Number(query.limit) || 10)),
+      totalPage: Math.ceil(total / limit),
     },
     data: orders,
   };

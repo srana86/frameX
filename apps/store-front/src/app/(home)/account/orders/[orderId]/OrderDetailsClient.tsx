@@ -74,8 +74,8 @@ export default function OrderDetailsClient() {
 
     const fetchOrder = async () => {
       try {
-        const data: any = await apiRequest("GET", `/orders/${orderId}`);
-        setOrder(data);
+        const response: any = await apiRequest("GET", `/orders/${orderId}`);
+        setOrder(response.data || response);
         setError(null);
       } catch (err: any) {
         setError(err?.message || "Failed to load order details");
@@ -130,8 +130,15 @@ export default function OrderDetailsClient() {
     );
   }
 
-  const addressLines = [order.customer.addressLine1, order.customer.addressLine2].filter(Boolean);
-  const locationLine = [order.customer.city, order.customer.postalCode].filter(Boolean).join(", ");
+  const addressLines = [
+    order.customer?.address,
+    order.customer?.addressLine1,
+    order.customer?.addressLine2,
+  ].filter(Boolean);
+  const locationLine = [
+    order.customer?.city,
+    order.customer?.postalCode,
+  ].filter(Boolean).join(", ");
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-background via-background to-muted/20'>
@@ -295,12 +302,12 @@ export default function OrderDetailsClient() {
                           <div className='flex items-baseline gap-2'>
                             <p className='text-sm sm:text-base font-bold text-primary'>
                               {currencySymbol}
-                              {(item.price * item.quantity).toFixed(2)}
+                              {(Number(item.price) * item.quantity).toFixed(2)}
                             </p>
                             {item.price && (
                               <p className='text-xs text-muted-foreground'>
                                 ({currencySymbol}
-                                {item.price.toFixed(2)} each)
+                                {Number(item.price).toFixed(2)} each)
                               </p>
                             )}
                           </div>
@@ -323,7 +330,9 @@ export default function OrderDetailsClient() {
               </CardHeader>
               <CardContent className='space-y-3'>
                 <div className='space-y-1'>
-                  <p className='font-semibold text-sm'>{order.customer.fullName}</p>
+                  <p className='font-semibold text-sm'>
+                    {order.customer?.name || order.customer?.fullName}
+                  </p>
                   {addressLines.map((line, index) => (
                     <p key={`address-line-${index}`} className='text-xs sm:text-sm text-muted-foreground leading-relaxed'>
                       {line}
@@ -333,20 +342,20 @@ export default function OrderDetailsClient() {
                 </div>
                 <Separator />
                 <div className='space-y-2'>
-                  {order.customer.phone && (
+                  {order.customer?.phone && (
                     <div className='flex items-center gap-2 text-xs sm:text-sm'>
                       <Phone className='w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0' />
                       <span className='break-all'>{order.customer.phone}</span>
                     </div>
                   )}
-                  {order.customer.email && (
+                  {order.customer?.email && (
                     <div className='flex items-center gap-2 text-xs sm:text-sm'>
                       <Mail className='w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0' />
                       <span className='break-all'>{order.customer.email}</span>
                     </div>
                   )}
                 </div>
-                {order.customer.notes && (
+                {order.customer?.notes && (
                   <div className='mt-3 rounded-lg bg-muted/50 p-3'>
                     <p className='text-xs font-medium text-muted-foreground mb-1'>Delivery Notes:</p>
                     <p className='text-xs sm:text-sm leading-relaxed'>{order.customer.notes}</p>
@@ -370,16 +379,16 @@ export default function OrderDetailsClient() {
                     </span>
                     <span className='font-medium'>
                       {currencySymbol}
-                      {order.subtotal.toFixed(2)}
+                      {Number(order.subtotal).toFixed(2)}
                     </span>
                   </div>
                   <div className='flex items-center justify-between gap-2'>
                     <span className='text-muted-foreground'>Shipping</span>
                     <span className='font-medium'>
-                      {order.shipping === 0 ? (
+                      {Number(order.shipping) === 0 ? (
                         <span className='text-emerald-600 dark:text-emerald-400'>Free</span>
                       ) : (
-                        `${currencySymbol}${order.shipping.toFixed(2)}`
+                        `${currencySymbol}${Number(order.shipping).toFixed(2)}`
                       )}
                     </span>
                   </div>
@@ -395,7 +404,7 @@ export default function OrderDetailsClient() {
                       </div>
                       <span className='font-semibold shrink-0'>
                         -{currencySymbol}
-                        {order.discountAmount.toFixed(2)}
+                        {Number(order.discountAmount).toFixed(2)}
                       </span>
                     </div>
                   )}
@@ -406,7 +415,7 @@ export default function OrderDetailsClient() {
                       </span>
                       <span className='font-medium'>
                         {currencySymbol}
-                        {order.vatTaxAmount.toFixed(2)}
+                        {Number(order.vatTaxAmount).toFixed(2)}
                       </span>
                     </div>
                   )}
@@ -415,7 +424,7 @@ export default function OrderDetailsClient() {
                     <span>Total</span>
                     <span className='text-primary text-lg sm:text-xl'>
                       {currencySymbol}
-                      {order.total.toFixed(2)}
+                      {Number(order.total).toFixed(2)}
                     </span>
                   </div>
                 </div>
