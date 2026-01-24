@@ -46,7 +46,11 @@ interface Order {
   id: string;
   createdAt: string;
   status: string;
-  paymentStatus: string;
+  paymentStatus?: string;
+  payment?: {
+    status: string;
+    method?: string;
+  };
   total: number;
   customer?: {
     name?: string;
@@ -149,7 +153,8 @@ export function OrdersClient({
           query.set("status", status);
         }
         const result = await storeApi.getWithMeta(`orders?${query.toString()}`);
-        setOrders(result.data as Order[]);
+        const ordersData = (result.data as any).orders || [];
+        setOrders(ordersData as Order[]);
         if (result.meta) {
           setPagination(result.meta as PaginationData);
         }
@@ -310,18 +315,18 @@ export function OrdersClient({
                         <span
                           className={cn(
                             "rounded-full px-2 py-1 text-xs font-medium",
-                            order.paymentStatus === "COMPLETED"
+                            (order.payment?.status || order.paymentStatus) === "COMPLETED"
                               ? "bg-green-100 text-green-700"
-                              : order.paymentStatus === "FAILED"
+                              : (order.payment?.status || order.paymentStatus) === "FAILED"
                                 ? "bg-red-100 text-red-700"
                                 : "bg-yellow-100 text-yellow-700"
                           )}
                         >
-                          {order.paymentStatus}
+                          {order.payment?.status || order.paymentStatus || "PENDING"}
                         </span>
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        ${order.total.toFixed(2)}
+                        ${Number(order.total).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Link

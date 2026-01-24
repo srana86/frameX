@@ -265,8 +265,8 @@ export default function AffiliatePage() {
   // Calculate stats from commissions - only count delivered orders
   const deliveredCommissions = commissions.filter((c) => c.order?.status === "delivered");
   const pendingCommissions = commissions.filter((c) => c.order?.status && c.order.status !== "delivered" && c.order.status !== "cancelled");
-  const deliveredEarnings = deliveredCommissions.reduce((sum, c) => sum + (c.commissionAmount || 0), 0);
-  const pendingEarnings = pendingCommissions.reduce((sum, c) => sum + (c.commissionAmount || 0), 0);
+  const deliveredEarnings = deliveredCommissions.reduce((sum, c) => sum + Number(c.commissionAmount || 0), 0);
+  const pendingEarnings = pendingCommissions.reduce((sum, c) => sum + Number(c.commissionAmount || 0), 0);
 
   const stats = [
     {
@@ -278,7 +278,7 @@ export default function AffiliatePage() {
     },
     {
       label: "Available Balance",
-      value: `${currencySymbol}${(affiliate.availableBalance || 0).toFixed(2)}`,
+      value: `${currencySymbol}${Number(affiliate.availableBalance || 0).toFixed(2)}`,
       icon: Wallet,
       color: "text-blue-600",
     },
@@ -291,7 +291,7 @@ export default function AffiliatePage() {
     },
     {
       label: "Total Withdrawn",
-      value: `${currencySymbol}${(affiliate.totalWithdrawn || 0).toFixed(2)}`,
+      value: `${currencySymbol}${Number(affiliate.totalWithdrawn || 0).toFixed(2)}`,
       icon: TrendingUp,
       color: "text-orange-600",
     },
@@ -526,11 +526,11 @@ export default function AffiliatePage() {
                                 <TableCell className='font-mono text-sm'>{commission.orderId.slice(-6)}</TableCell>
                                 <TableCell>
                                   {currencySymbol}
-                                  {commission.orderTotal.toFixed(2)}
+                                  {Number(commission.orderTotal).toFixed(2)}
                                 </TableCell>
                                 <TableCell className='font-semibold text-green-600'>
                                   {currencySymbol}
-                                  {commission.commissionAmount.toFixed(2)} ({commission.commissionPercentage}%)
+                                  {Number(commission.commissionAmount).toFixed(2)} ({commission.commissionPercentage}%)
                                 </TableCell>
                                 <TableCell>
                                   <Badge
@@ -614,7 +614,7 @@ export default function AffiliatePage() {
                   <p className='text-xs text-muted-foreground mb-1'>Available Balance</p>
                   <p className='text-2xl sm:text-3xl font-light'>
                     {currencySymbol}
-                    {(affiliate.availableBalance || 0).toFixed(2)}
+                    {Number(affiliate.availableBalance || 0).toFixed(2)}
                   </p>
                 </div>
                 <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
@@ -622,7 +622,7 @@ export default function AffiliatePage() {
                     <Button
                       className='w-full'
                       disabled={
-                        (affiliate.availableBalance || 0) <= 0 ||
+                        Number(affiliate.availableBalance || 0) <= 0 ||
                         commissions.some((c) => c.order?.status && c.order.status !== "delivered" && c.order.status !== "cancelled")
                       }
                     >
@@ -732,7 +732,7 @@ export default function AffiliatePage() {
                         <div>
                           <p className='text-sm font-medium'>
                             {currencySymbol}
-                            {withdrawal.amount.toFixed(2)}
+                            {Number(withdrawal.amount).toFixed(2)}
                           </p>
                           <p className='text-xs text-muted-foreground mt-1'>{new Date(withdrawal.requestedAt).toLocaleDateString()}</p>
                         </div>

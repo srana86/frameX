@@ -192,6 +192,14 @@ const createOrderIntoDB = async (payload: TOrderCreate) => {
           };
         }),
       },
+      payment: {
+        create: {
+          tenantId: payload.tenantId,
+          amount: new Decimal(payload.total),
+          status: "PENDING",
+          method: payload.paymentMethod,
+        },
+      },
     },
     include: {
       items: true,

@@ -6,7 +6,7 @@ import { StatisticsServices } from "./statistics.service";
 
 // Get comprehensive statistics
 const getStatistics = catchAsync(async (req: Request, res: Response) => {
-  const result = await StatisticsServices.getStatisticsFromDB();
+  const result = await StatisticsServices.getStatisticsFromDB(req.tenantId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

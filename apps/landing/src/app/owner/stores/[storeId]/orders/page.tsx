@@ -55,8 +55,9 @@ export default async function OrdersPage({
     }
 
     const result = await storeApi.getWithMeta(`orders?${query.toString()}`);
+    const ordersData = (result.data as any).orders || [];
     initialData = {
-      orders: Array.isArray(result.data) ? result.data : [],
+      orders: Array.isArray(ordersData) ? ordersData : [],
       pagination: result.meta || { page: 1, limit: 20, total: 0, totalPages: 0 },
     };
   } catch (error) {

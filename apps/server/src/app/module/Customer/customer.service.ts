@@ -52,7 +52,8 @@ const getAllCustomersFromDB = async (tenantId: string, query: Record<string, unk
       totalSpent,
       firstOrderDate,
       lastOrderDate,
-      averageOrderValue
+      averageOrderValue,
+      createdAt: c.createdAt
     };
   });
 

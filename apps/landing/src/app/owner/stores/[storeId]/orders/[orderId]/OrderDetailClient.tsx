@@ -50,10 +50,9 @@ import type { StaffPermission } from "@/contexts/StoreContext";
 interface OrderItem {
   id: string;
   productId: string;
-  productName: string;
+  name: string;
   quantity: number;
   price: number;
-  total: number;
   image?: string;
 }
 
@@ -61,37 +60,21 @@ interface Order {
   id: string;
   orderNumber: string;
   status: string;
-  paymentStatus: string;
-  paymentMethod: string;
+  total: number;
   subtotal: number;
   discount: number;
-  shipping: number;
-  tax: number;
-  total: number;
-  currency: string;
-  customer: {
+  deliveryFee: number;
+  deliveryAddress?: string;
+  currency?: string;
+  customer?: {
     id: string;
     name: string;
     email: string;
     phone?: string;
   };
-  shippingAddress: {
-    name: string;
-    address1: string;
-    address2?: string;
-    city: string;
-    state: string;
-    zip: string;
-    country: string;
-  };
-  billingAddress?: {
-    name: string;
-    address1: string;
-    address2?: string;
-    city: string;
-    state: string;
-    zip: string;
-    country: string;
+  payment?: {
+    status: string;
+    method?: string;
   };
   items: OrderItem[];
   notes?: string;
@@ -196,7 +179,8 @@ export function OrderDetailClient({
 
   const statusStyle = STATUS_STYLES[order.status] || STATUS_STYLES.PENDING;
   const StatusIcon = statusStyle.icon;
-  const paymentStyle = PAYMENT_STATUS_STYLES[order.paymentStatus] || PAYMENT_STATUS_STYLES.PENDING;
+  const paymentStatus = order.payment?.status || "PENDING";
+  const paymentStyle = PAYMENT_STATUS_STYLES[paymentStatus] || PAYMENT_STATUS_STYLES.PENDING;
 
   return (
     <div className="space-y-6">
@@ -252,7 +236,7 @@ export function OrderDetailClient({
                 )}
               >
                 <CreditCard className="h-4 w-4" />
-                Payment: {order.paymentStatus}
+                Payment: {paymentStatus}
               </span>
             </div>
             {canEdit && (
@@ -313,20 +297,20 @@ export function OrderDetailClient({
                             <div className="h-12 w-12 rounded-lg bg-muted overflow-hidden">
                               <img
                                 src={item.image}
-                                alt={item.productName}
+                                alt={item.name}
                                 className="h-full w-full object-cover"
                               />
                             </div>
                           )}
-                          <span className="font-medium">{item.productName}</span>
+                          <span className="font-medium">{item.name}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-center">{item.quantity}</TableCell>
                       <TableCell className="text-right">
-                        {formatCurrency(item.price)}
+                        {formatCurrency(Number(item.price))}
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        {formatCurrency(item.total)}
+                        {formatCurrency(Number(item.price) * item.quantity)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -339,26 +323,22 @@ export function OrderDetailClient({
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>{formatCurrency(order.subtotal)}</span>
+                  <span>{formatCurrency(Number(order.subtotal))}</span>
                 </div>
-                {order.discount > 0 && (
+                {Number(order.discount) > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Discount</span>
-                    <span className="text-green-600">-{formatCurrency(order.discount)}</span>
+                    <span className="text-green-600">-{formatCurrency(Number(order.discount))}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span>{formatCurrency(order.shipping)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax</span>
-                  <span>{formatCurrency(order.tax)}</span>
+                  <span>{formatCurrency(Number(order.deliveryFee))}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span>{formatCurrency(order.total)}</span>
+                  <span>{formatCurrency(Number(order.total))}</span>
                 </div>
               </div>
             </CardContent>
@@ -376,13 +356,17 @@ export function OrderDetailClient({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div>
-                <p className="font-medium">{order.customer.name}</p>
-                <p className="text-sm text-muted-foreground">{order.customer.email}</p>
-                {order.customer.phone && (
-                  <p className="text-sm text-muted-foreground">{order.customer.phone}</p>
-                )}
-              </div>
+              {order.customer ? (
+                <div>
+                  <p className="font-medium">{order.customer.name}</p>
+                  <p className="text-sm text-muted-foreground">{order.customer.email}</p>
+                  {order.customer.phone && (
+                    <p className="text-sm text-muted-foreground">{order.customer.phone}</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">Guest Customer</p>
+              )}
             </CardContent>
           </Card>
 
@@ -395,22 +379,13 @@ export function OrderDetailClient({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="font-medium">{order.shippingAddress.name}</p>
-              <p className="text-sm text-muted-foreground">
-                {order.shippingAddress.address1}
-              </p>
-              {order.shippingAddress.address2 && (
-                <p className="text-sm text-muted-foreground">
-                  {order.shippingAddress.address2}
+              {order.deliveryAddress ? (
+                <p className="text-sm text-muted-foreground whitespace-pre-line">
+                  {order.deliveryAddress}
                 </p>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">No address provided</p>
               )}
-              <p className="text-sm text-muted-foreground">
-                {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
-                {order.shippingAddress.zip}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {order.shippingAddress.country}
-              </p>
             </CardContent>
           </Card>
 
@@ -426,7 +401,7 @@ export function OrderDetailClient({
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Method</span>
                 <span className="capitalize">
-                  {order.paymentMethod.toLowerCase().replace(/_/g, " ")}
+                  {(order.payment?.method || "N/A").toLowerCase().replace(/_/g, " ")}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
@@ -438,7 +413,7 @@ export function OrderDetailClient({
                     paymentStyle.text
                   )}
                 >
-                  {order.paymentStatus}
+                  {paymentStatus}
                 </span>
               </div>
             </CardContent>

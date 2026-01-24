@@ -174,7 +174,7 @@ export function AffiliatesClient({
     setSavingSettings(true);
     try {
       const storeApi = createStoreApiClient(storeId);
-      await storeApi.post(`affiliate/settings`, settings);
+      await storeApi.patch(`affiliate/settings`, settings);
       toast.success("Affiliate settings updated successfully");
     } catch (error: any) {
       toast.error(error.message || "Failed to update settings");
