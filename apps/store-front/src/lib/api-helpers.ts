@@ -6,9 +6,6 @@
 
 import { headers } from "next/headers";
 
-// Internal API URL for server-side calls - DEPRECATED, will be dynamic
-// const API_URL = process.env.INTERNAL_API_URL || "http://localhost:8080/api/v1";
-
 // Helper to get domain from headers for tenant resolution
 async function getDomainHeader(): Promise<string> {
   try {
