@@ -41,7 +41,24 @@ interface CustomUser {
   role?: string; // customer, tenant, admin
   phone?: string;
   fullName?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  postalCode?: string;
+  notes?: string;
 }
+
+// Typed update params
+export type UpdateProfileParams = {
+  name?: string;
+  image?: string;
+  phone?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  postalCode?: string;
+  notes?: string;
+};
 
 interface CustomSession {
   user: CustomUser;
@@ -85,9 +102,15 @@ const {
   signOut,
   useSession: useAuthSession,
   getSession: getAuthSession,
+  updateUser: originalUpdateUser,
 } = authClient;
 
 export { signIn, signOut };
+
+// Export wrapped updateUser to handle custom fields
+export const updateUser = (params: UpdateProfileParams) => {
+  return originalUpdateUser(params as any);
+};
 
 export const useSession = () => {
   const session = useAuthSession();

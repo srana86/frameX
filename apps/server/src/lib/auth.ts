@@ -159,6 +159,31 @@ export const auth = betterAuth({
         required: false,
         input: true,
       },
+      addressLine1: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+      addressLine2: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+      city: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+      postalCode: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+      notes: {
+        type: "string",
+        required: false,
+        input: true,
+      },
     },
   },
 

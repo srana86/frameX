@@ -27,10 +27,12 @@ export function SearchDropdown({ onClose }: SearchDropdownProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasFetchedDefaults = useRef(false);
 
   // Fetch default newest products
   const fetchDefaultProducts = useCallback(async () => {
-    if (defaultProducts.length > 0) return; // Already loaded
+    if (hasFetchedDefaults.current) return;
+    hasFetchedDefaults.current = true;
 
     setLoadingDefaults(true);
     try {
@@ -41,14 +43,14 @@ export function SearchDropdown({ onClose }: SearchDropdownProps) {
     } finally {
       setLoadingDefaults(false);
     }
-  }, [defaultProducts.length]);
+  }, []); // Stable function
 
   // Load default products when dropdown opens
   useEffect(() => {
-    if (isOpen && defaultProducts.length === 0 && !loadingDefaults) {
+    if (isOpen && !hasFetchedDefaults.current && !loadingDefaults) {
       fetchDefaultProducts();
     }
-  }, [isOpen, defaultProducts.length, loadingDefaults, fetchDefaultProducts]);
+  }, [isOpen, loadingDefaults, fetchDefaultProducts]);
 
   // Debounced search
   const performSearch = useCallback(async (searchQuery: string) => {

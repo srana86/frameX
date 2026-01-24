@@ -20,6 +20,12 @@ model User {
   status    UserStatus @default(ACTIVE)
   deletedAt DateTime? // Soft delete timestamp
 
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  postalCode   String?
+  notes        String?
+
   // BetterAuth relations
   sessions  Session[]
   accounts  Account[]

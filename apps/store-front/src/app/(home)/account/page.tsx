@@ -100,24 +100,41 @@ export default function AccountPage() {
   useEffect(() => {
     if (userProfile) {
       setFormData({
-        fullName: userProfile.fullName || "",
+        fullName: userProfile.name || userProfile.fullName || "",
         email: userProfile.email || "",
         phone: userProfile.phone || "",
-        addressLine1: "", // Address info not available in session
-        addressLine2: "",
-        city: "",
-        postalCode: "",
-        notes: "",
+        addressLine1: userProfile.addressLine1 || "",
+        addressLine2: userProfile.addressLine2 || "",
+        city: userProfile.city || "",
+        postalCode: userProfile.postalCode || "",
+        notes: userProfile.notes || "",
       });
     }
   }, [userProfile]);
 
   const handleSave = async () => {
     try {
-      // TODO: Update profile via BetterAuth or separate Customer endpoint
-      // const data = await apiRequest<any>("PUT", "/auth/update-profile", formData);
-      toast.info("Profile update not yet implemented with new auth system");
+      const { updateUser } = await import("@/lib/auth-client");
+
+      const { error } = await updateUser({
+        name: formData.fullName,
+        phone: formData.phone,
+        addressLine1: formData.addressLine1,
+        addressLine2: formData.addressLine2,
+        city: formData.city,
+        postalCode: formData.postalCode,
+        notes: formData.notes,
+      });
+
+      if (error) {
+        throw new Error(error.message || "Failed to update profile");
+      }
+
+      toast.success("Profile updated successfully!");
       setIsEditing(false);
+
+      // Refresh session to reflect changes
+      router.refresh();
     } catch (error: any) {
       toast.error(error?.message || "Failed to update profile");
     }
