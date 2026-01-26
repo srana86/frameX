@@ -30,7 +30,15 @@ const createOrderValidationSchema = z.object({
   body: z.object({
     id: z.string().optional(),
     status: z
-      .enum(["pending", "processing", "shipped", "delivered", "cancelled"])
+      .enum([
+        "PENDING",
+        "CONFIRMED",
+        "PROCESSING",
+        "SHIPPED",
+        "DELIVERED",
+        "CANCELLED",
+        "REFUNDED",
+      ])
       .optional(),
     orderType: z.enum(["online", "offline"]).optional(),
     items: z.array(cartLineItemSchema).min(1, "At least one item is required"),
@@ -45,7 +53,7 @@ const createOrderValidationSchema = z.object({
       message: "Payment method is required",
     }),
     paymentStatus: z
-      .enum(["pending", "completed", "failed", "cancelled", "refunded"])
+      .enum(["PENDING", "COMPLETED", "FAILED", "CANCELLED", "REFUNDED"])
       .optional(),
     paidAmount: z.number().optional(),
     paymentTransactionId: z.string().optional(),
@@ -63,10 +71,18 @@ const createOrderValidationSchema = z.object({
 const updateOrderValidationSchema = z.object({
   body: z.object({
     status: z
-      .enum(["pending", "processing", "shipped", "delivered", "cancelled"])
+      .enum([
+        "PENDING",
+        "CONFIRMED",
+        "PROCESSING",
+        "SHIPPED",
+        "DELIVERED",
+        "CANCELLED",
+        "REFUNDED",
+      ])
       .optional(),
     paymentStatus: z
-      .enum(["pending", "completed", "failed", "cancelled", "refunded"])
+      .enum(["PENDING", "COMPLETED", "FAILED", "CANCELLED", "REFUNDED"])
       .optional(),
     paidAmount: z.number().optional(),
     paymentTransactionId: z.string().optional(),
