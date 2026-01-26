@@ -270,9 +270,17 @@ const renewSubscription = async (
   };
 };
 
+const getTenantSubscriptionFromDB = async (tenantId: string) => {
+  return prisma.tenantSubscription.findFirst({
+    where: { tenantId },
+    include: { plan: true },
+  });
+};
+
 export const SubscriptionServices = {
   getAllSubscriptions,
   getSubscriptionById,
+  getTenantSubscriptionFromDB,
   createSubscription,
   updateSubscription,
   deleteSubscription,

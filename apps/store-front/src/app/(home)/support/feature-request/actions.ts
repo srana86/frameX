@@ -1,6 +1,7 @@
 "use server";
 
 import { getTenantId } from "@/lib/env-utils";
+import { getPublicServerClient } from "@/lib/server-utils";
 
 type ActionState = {
   success: boolean;
@@ -15,14 +16,9 @@ export async function submitFeatureRequest(_: ActionState, formData: FormData): 
   const contactPhone = String(formData.get("contactPhone") || "").trim();
 
   const tenantId = getTenantId();
-  const apiBase = process.env.SUPER_ADMIN_URL || process.env.NEXT_PUBLIC_SUPERADMIN_API_URL || process.env.NEXT_PUBLIC_SUPER_ADMIN_URL;
 
   if (!tenantId) {
     return { success: false, message: "Missing tenant id (set TENANT_ID)." };
-  }
-
-  if (!apiBase) {
-    return { success: false, message: "Missing SUPERADMIN_API_URL." };
   }
 
   if (!title || !description) {
@@ -30,31 +26,19 @@ export async function submitFeatureRequest(_: ActionState, formData: FormData): 
   }
 
   try {
-    // Transform /api/ paths to /api/v1/ for FrameX-Server compatibility if needed
-    const apiEndpoint = apiBase.endsWith("/") ? apiBase.slice(0, -1) : apiBase;
-    const url = `${apiEndpoint}/api/v1/feature-requests`;
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        description,
-        priority,
-        contactEmail: contactEmail || undefined,
-        contactPhone: contactPhone || undefined,
-        tenantId,
-      }),
-      cache: "no-store",
+    const client = await getPublicServerClient();
+    const res = await client.post("feature-requests", {
+      title,
+      description,
+      priority,
+      contactEmail: contactEmail || undefined,
+      contactPhone: contactPhone || undefined,
+      tenantId,
     });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || "Failed to submit request");
-    }
 
     return { success: true, message: "Request submitted. We will review soon." };
   } catch (error: any) {
-    return { success: false, message: error?.message || "Failed to submit request" };
+    const errorMessage = error?.response?.data?.message || error?.message || "Failed to submit request";
+    return { success: false, message: errorMessage };
   }
 }

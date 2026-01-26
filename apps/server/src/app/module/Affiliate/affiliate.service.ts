@@ -1,7 +1,13 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma, PrismaQueryBuilder, Decimal } from "@framex/database";
 import AppError from "../../errors/AppError";
 import { StatusCodes } from "http-status-codes";
+import {
+  TAffiliate,
+  TAffiliateSettings,
+  WithdrawalStatus,
+  TWithdrawalRequestPayload,
+  TAffiliateSettingsUpdatePayload
+} from "./affiliate.interface";
 
 import {
   calculateAffiliateLevel,
@@ -19,7 +25,7 @@ function generatePromoCode(userId: string, name?: string): string {
 }
 
 // Get affiliate settings (create default if not exists)
-const getAffiliateSettingsFromDB = async (tenantId: string) => {
+const getAffiliateSettingsFromDB = async (tenantId: string): Promise<TAffiliateSettings> => {
   let settings = await prisma.affiliateSettings.findUnique({
     where: { tenantId },
   });
@@ -45,7 +51,7 @@ const getAffiliateSettingsFromDB = async (tenantId: string) => {
     });
   }
 
-  return settings;
+  return settings as unknown as TAffiliateSettings;
 };
 
 // Get current user's affiliate info
@@ -178,7 +184,7 @@ const createMyAffiliateFromDB = async (tenantId: string, userId: string) => {
 // Get all affiliates (admin)
 const getAllAffiliatesFromDB = async (
   tenantId: string,
-  query: Record<string, unknown>
+  query: Record<string, string>
 ) => {
   const builder = new PrismaQueryBuilder({
     model: prisma.affiliate,
@@ -268,7 +274,7 @@ const getCommissionsFromDB = async (
   tenantId: string,
   userId: string | null,
   affiliateId: string | null,
-  query: Record<string, unknown>
+  query: Record<string, any> // Keeps compatibility with PrismaQueryBuilder for now
 ) => {
   let finalAffiliateId = affiliateId;
 
@@ -335,11 +341,11 @@ const getAffiliateProgressFromDB = async (tenantId: string, userId: string) => {
   const settings = await getAffiliateSettingsFromDB(tenantId);
   const deliveredOrders = affiliate.deliveredOrders || 0;
 
-  const settingsAny = settings as any;
+  const settingsAny = settings as TAffiliateSettings;
   const actualLevel = calculateAffiliateLevel(deliveredOrders, settingsAny);
 
   const nextLevelInfo = getNextLevelProgress(
-    actualLevel as any,
+    actualLevel as 1 | 2 | 3 | 4 | 5,
     deliveredOrders,
     settingsAny
   );
@@ -360,13 +366,15 @@ const getAffiliateProgressFromDB = async (tenantId: string, userId: string) => {
 // Get withdrawals
 const getWithdrawalsFromDB = async (
   tenantId: string,
-  user: any,
+  user: { id: string; role: string },
   affiliateId: string | null,
   status: string | null
 ) => {
   let finalAffiliateId = affiliateId;
 
-  if (user.role !== "TENANT" && user.role !== "ADMIN" && !affiliateId) {
+  const isStoreManager = ["TENANT", "OWNER", "STAFF", "ADMIN", "SUPER_ADMIN"].includes(user.role);
+
+  if (!isStoreManager && !affiliateId) {
     const affiliate = await prisma.affiliate.findFirst({
       where: { tenantId, userId: user.id },
     });
@@ -376,7 +384,7 @@ const getWithdrawalsFromDB = async (
     finalAffiliateId = affiliate.id;
   }
 
-  const where: any = { tenantId };
+  const where: Record<string, unknown> = { tenantId };
   if (finalAffiliateId) {
     where.affiliateId = finalAffiliateId;
   }
@@ -393,7 +401,7 @@ const getWithdrawalsFromDB = async (
   // Using BetterAuth User model
   return Promise.all(
     withdrawals.map(async (w) => {
-      let affiliateUser: any = null;
+      let affiliateUser: { name: string; email: string; phone: string | null } | null = null;
       if (w.affiliate) {
         affiliateUser = await prisma.user.findUnique({
           where: { id: w.affiliate.userId },
@@ -493,7 +501,7 @@ const createWithdrawalFromDB = async (
 const updateWithdrawalFromDB = async (
   tenantId: string,
   withdrawalId: string,
-  newStatus: "PENDING" | "APPROVED" | "REJECTED" | "COMPLETED",
+  newStatus: WithdrawalStatus,
   processedBy: string,
   notes?: string
 ) => {
@@ -504,7 +512,7 @@ const updateWithdrawalFromDB = async (
     throw new AppError(StatusCodes.NOT_FOUND, "Withdrawal not found");
   }
 
-  const updateData: any = {
+  const updateData: Record<string, unknown> = {
     status: newStatus,
     processedBy,
     notes,

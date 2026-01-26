@@ -7,7 +7,6 @@ import { CartProvider } from "@/components/providers/cart-provider";
 import { WishlistProvider } from "@/components/providers/wishlist-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/site/ThemeProvider";
-import { BrandLoaderWrapper } from "@/components/site/BrandLoaderWrapper";
 import { TrackingScripts } from "@/components/site/TrackingScripts";
 import { SourceTracker } from "@/components/site/SourceTracker";
 import { VisitTracker } from "@/components/site/VisitTracker";
@@ -15,6 +14,7 @@ import { defaultBrandConfig, type BrandConfig } from "@/lib/brand-config";
 import { loadTenantDocument } from "@/lib/tenant-data-loader";
 import { getAdsConfig } from "@/lib/ads-config";
 import { hexToOklch } from "@/lib/utils";
+import { getDomain, getProtocol } from "@/lib/server-utils";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -68,12 +68,9 @@ function getAbsoluteUrl(
 export async function generateMetadata(): Promise<Metadata> {
   const brandConfig = await getBrandConfig();
 
-  // Get current host from request headers for dynamic metadataBase
-  const headersList = await headers();
-  const host = headersList.get("host") || "localhost:3000";
-  const protocol =
-    headersList.get("x-forwarded-proto") ||
-    (host.includes("localhost") ? "http" : "https");
+  // Get current host for dynamic metadataBase
+  const host = await getDomain();
+  const protocol = await getProtocol();
   const metadataBase = new URL(`${protocol}://${host}`);
 
   // Get absolute URLs for images (filter out empty strings)
@@ -89,15 +86,15 @@ export async function generateMetadata(): Promise<Metadata> {
   // Get absolute URLs for favicons
   const faviconPath = brandConfig.favicon.path
     ? getAbsoluteUrl(brandConfig.favicon.path, metadataBase) ||
-      brandConfig.favicon.path
+    brandConfig.favicon.path
     : "/favicon.ico";
   const appleTouchIcon = brandConfig.favicon.appleTouchIcon
     ? getAbsoluteUrl(brandConfig.favicon.appleTouchIcon, metadataBase) ||
-      brandConfig.favicon.appleTouchIcon
+    brandConfig.favicon.appleTouchIcon
     : faviconPath;
   const manifestIcon = brandConfig.favicon.manifestIcon
     ? getAbsoluteUrl(brandConfig.favicon.manifestIcon, metadataBase) ||
-      brandConfig.favicon.manifestIcon
+    brandConfig.favicon.manifestIcon
     : null;
 
   // Build icons array
@@ -175,12 +172,8 @@ export default async function RootLayout({
   // Apply theme color immediately via style tag to prevent FOUC
   const themeColorOklch = hexToOklch(brandConfig.theme.primaryColor);
 
-  // Get absolute URLs for favicons using dynamic host from headers
-  const headersList = await headers();
-  const host = headersList.get("host") || "localhost:3000";
-  const protocol =
-    headersList.get("x-forwarded-proto") ||
-    (host.includes("localhost") ? "http" : "https");
+  const host = await getDomain() || "localhost:3000";
+  const protocol = await getProtocol();
   const metadataBaseUrl = `${protocol}://${host}`;
 
   // Helper to get absolute URL
@@ -269,9 +262,8 @@ export default async function RootLayout({
                 appleLink.href = appleUrl;
                 head.appendChild(appleLink);
                 
-                ${
-                  manifestIcon
-                    ? `
+                ${manifestIcon
+                ? `
                 // Remove existing manifest icon
                 var existingManifest = document.querySelector('link[rel="icon"][sizes="192x192"]');
                 if (existingManifest) existingManifest.remove();
@@ -284,8 +276,8 @@ export default async function RootLayout({
                 manifestLink.href = manifestUrl;
                 head.appendChild(manifestLink);
                 `
-                    : ""
-                }
+                : ""
+              }
                 
                 // Update theme-color meta tag
                 var meta = document.querySelector('meta[name="theme-color"]');
@@ -299,7 +291,6 @@ export default async function RootLayout({
             `,
           }}
         />
-        <BrandLoaderWrapper brandConfig={brandConfig} />
         <TrackingScripts adsConfig={adsConfig} />
         <Suspense fallback={null}>
           <SourceTracker />

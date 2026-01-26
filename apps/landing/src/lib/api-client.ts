@@ -61,7 +61,7 @@ export class ApiError extends Error {
 /**
  * Make an API request and handle the response
  */
-async function apiRequest<T>(
+export async function apiRequest<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {

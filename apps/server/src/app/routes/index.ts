@@ -24,6 +24,7 @@ import { TenantSubscriptionRoutes } from "../module/TenantSubscription/tenantSub
 import { OwnerRoutes } from "../module/Owner/owner.route";
 import { StaffRoutes } from "../module/Staff/staff.route";
 import { StoreAccessRoutes } from "../module/StoreAccess/storeAccess.route";
+import { ProfitAnalysisRoutes } from "../module/ProfitAnalysis/profitAnalysis.route";
 
 // Store modules (from store-server)
 import { ProductRoutes } from "../module/Product/product.route";
@@ -166,6 +167,10 @@ const moduleRoutes = [
   {
     path: "/store-access",
     route: StoreAccessRoutes,
+  },
+  {
+    path: "/profit-analysis",
+    route: ProfitAnalysisRoutes,
   },
 
   // ==================== STORE ROUTES (tenant-scoped) ====================

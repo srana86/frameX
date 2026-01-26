@@ -44,14 +44,14 @@ router.post(
 router.get(
   "/",
   tenantMiddleware,
-  auth("admin", "tenant", "owner"),
+  auth("admin", "tenant", "owner", "staff", "super_admin"),
   AffiliateControllers.getAllAffiliates
 );
 
 router.get(
   "/list",
   tenantMiddleware,
-  auth("admin", "tenant", "owner"),
+  auth("admin", "tenant", "owner", "staff", "super_admin"),
   AffiliateControllers.getAllAffiliates
 );
 
@@ -59,7 +59,7 @@ router.get(
 router.get(
   "/commissions",
   tenantMiddleware,
-  auth("admin", "tenant", "customer"),
+  auth("admin", "tenant", "owner", "staff", "super_admin", "customer"),
   AffiliateControllers.getCommissions
 );
 
@@ -75,7 +75,7 @@ router.get(
 router.get(
   "/withdrawals",
   tenantMiddleware,
-  auth("admin", "tenant", "customer"),
+  auth("admin", "tenant", "owner", "staff", "super_admin", "customer"),
   AffiliateControllers.getWithdrawals
 );
 
@@ -83,7 +83,7 @@ router.get(
 router.post(
   "/withdrawals",
   tenantMiddleware,
-  auth("customer", "tenant", "admin"),
+  auth("customer", "tenant", "owner", "staff", "super_admin", "admin"),
   validateRequest(AffiliateValidation.createWithdrawalValidationSchema),
   AffiliateControllers.handleWithdrawal
 );
@@ -92,7 +92,7 @@ router.post(
 router.get(
   "/settings",
   tenantMiddleware,
-  auth("admin", "tenant", "owner"),
+  auth("admin", "tenant", "owner", "staff", "super_admin"),
   AffiliateControllers.getSettings
 );
 
@@ -100,7 +100,7 @@ router.get(
 router.get(
   "/stats",
   tenantMiddleware,
-  auth("admin", "tenant", "owner"),
+  auth("admin", "tenant", "owner", "staff", "super_admin"),
   AffiliateControllers.getStats
 );
 
@@ -108,7 +108,7 @@ router.get(
 router.patch(
   "/settings",
   tenantMiddleware,
-  auth("admin", "tenant", "owner"),
+  auth("admin", "tenant", "owner", "staff", "super_admin"),
   validateRequest(AffiliateValidation.updateSettingsValidationSchema),
   AffiliateControllers.updateSettings
 );
@@ -116,7 +116,7 @@ router.patch(
 router.put(
   "/settings",
   tenantMiddleware,
-  auth("admin", "tenant", "owner"),
+  auth("admin", "tenant", "owner", "staff", "super_admin"),
   validateRequest(AffiliateValidation.updateSettingsValidationSchema),
   AffiliateControllers.updateSettings
 );
@@ -125,14 +125,14 @@ router.put(
 router.patch(
   "/:id",
   tenantMiddleware,
-  auth("admin", "tenant", "owner"),
+  auth("admin", "tenant", "owner", "staff", "super_admin"),
   AffiliateControllers.updateAffiliate
 );
 
 router.put(
   "/:id",
   tenantMiddleware,
-  auth("admin", "tenant", "owner"),
+  auth("admin", "tenant", "owner", "staff", "super_admin"),
   AffiliateControllers.updateAffiliate
 );
 
@@ -140,7 +140,7 @@ router.put(
 router.post(
   "/assign-coupon",
   tenantMiddleware,
-  auth("admin", "tenant", "owner"),
+  auth("admin", "tenant", "owner", "staff", "super_admin"),
   validateRequest(AffiliateValidation.assignCouponValidationSchema),
   AffiliateControllers.assignCoupon
 );

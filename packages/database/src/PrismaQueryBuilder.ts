@@ -19,13 +19,20 @@ export type QueryParams = {
   [key: string]: unknown;
 };
 
-export type PrismaModel = {
-  findMany: (args?: any) => Promise<any[]>;
-  count: (args?: any) => Promise<number>;
+export type PrismaModel<T> = {
+  findMany: (args?: {
+    where?: Record<string, any>;
+    orderBy?: Record<string, "asc" | "desc">[] | Record<string, "asc" | "desc"> | any;
+    skip?: number;
+    take?: number;
+    select?: Record<string, boolean>;
+    include?: Record<string, any>;
+  }) => Promise<T[]>;
+  count: (args?: { where?: Record<string, any> }) => Promise<number>;
 };
 
 interface QueryBuilderOptions<T> {
-  model: PrismaModel;
+  model: PrismaModel<T>;
   query: QueryParams;
   searchFields?: string[];
   defaultSort?: string;
@@ -48,7 +55,7 @@ interface QueryBuilderOptions<T> {
  *   .execute();
  */
 export class PrismaQueryBuilder<T = any> {
-  private model: PrismaModel;
+  private model: PrismaModel<T>;
   private query: QueryParams;
   private searchFields: string[];
   private defaultSort: string;
@@ -236,7 +243,14 @@ export class PrismaQueryBuilder<T = any> {
    * Execute the query and return data with pagination meta
    */
   async execute(): Promise<{ data: T[]; meta: PaginationMeta }> {
-    const findArgs: Record<string, any> = {
+    const findArgs: {
+      where: Record<string, any>;
+      orderBy?: Record<string, "asc" | "desc">[];
+      skip: number;
+      take: number;
+      select?: Record<string, boolean>;
+      include?: Record<string, any>;
+    } = {
       where: this.whereConditions,
       orderBy: this.orderBy.length > 0 ? this.orderBy : undefined,
       skip: this.skip,

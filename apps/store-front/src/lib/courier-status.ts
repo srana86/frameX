@@ -1,6 +1,6 @@
 import type { CourierService } from "@/types/delivery-config-types";
 import type { Order } from "@/lib/types";
-import { getCurrentTenant } from "@/lib/tenant-context";
+import { getTenantContext } from "@/lib/tenant-context";
 
 export interface CourierStatusResult {
   consignmentId: string;
@@ -530,14 +530,14 @@ async function resolveRedxDeliveryArea(
     const availableAreas =
       areas.length > 0
         ? areas
-            .slice(0, 10)
-            .map((a) => a.name)
-            .join(", ")
+          .slice(0, 10)
+          .map((a) => a.name)
+          .join(", ")
         : "No areas found";
     throw new Error(
       `Could not resolve RedX delivery area id for area "${deliveryDetails.area}" in city "${deliveryDetails.city}". ` +
-        `Available areas for this city: ${availableAreas}${areas.length > 10 ? "..." : ""}. ` +
-        `Please select an area that matches one of the available RedX areas.`
+      `Available areas for this city: ${availableAreas}${areas.length > 10 ? "..." : ""}. ` +
+      `Please select an area that matches one of the available RedX areas.`
     );
   }
 
@@ -677,8 +677,8 @@ async function createPaperflyOrder(
   }
 
   // Try to enrich with tenant information (brand name, phone) if available
-  const tenant = await getCurrentTenant().catch(() => null as any);
-  const tenantBrandName = (tenant as any)?.settings?.brandName || (tenant as any)?.name || "Tenant";
+  const tenant = await getTenantContext().catch(() => null as any);
+  const tenantBrandName = "Tenant";
   const tenantPhone = (tenant as any)?.phone || order.customer.phone;
 
   const baseUrl = "https://api.paperfly.com.bd/tenant/api/service/new_order.php";
@@ -797,10 +797,10 @@ async function createPaperflyOrder(
   // If all variations failed, throw a helpful error
   throw new Error(
     `Paperfly could not find a valid thana for area "${deliveryDetails.area}" in district "${deliveryDetails.city}". ` +
-      `Tried variations: ${thanaVariations.join(", ")}. ` +
-      `Paperfly requires exact thana names from their system. ` +
-      `Please contact Paperfly support or use a different area name that matches their thana list. ` +
-      `Last error: ${lastError}`
+    `Tried variations: ${thanaVariations.join(", ")}. ` +
+    `Paperfly requires exact thana names from their system. ` +
+    `Please contact Paperfly support or use a different area name that matches their thana list. ` +
+    `Last error: ${lastError}`
   );
 }
 

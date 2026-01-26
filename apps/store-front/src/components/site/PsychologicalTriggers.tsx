@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Clock, TrendingUp, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface PsychologicalTriggersProps {
   productSlug: string;

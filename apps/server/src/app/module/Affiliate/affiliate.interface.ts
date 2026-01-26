@@ -2,12 +2,12 @@
  * Affiliate System Interfaces
  */
 
-export type AffiliateStatus = "active" | "inactive" | "suspended";
+export type AffiliateStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 export type WithdrawalStatus =
-  | "pending"
-  | "approved"
-  | "rejected"
-  | "completed";
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "COMPLETED";
 export type CommissionLevel = 1 | 2 | 3 | 4 | 5;
 
 export interface TAffiliate {
@@ -53,7 +53,7 @@ export interface TAffiliateCommission {
   orderTotal: number;
   commissionPercentage: number;
   commissionAmount: number;
-  status: "pending" | "approved" | "cancelled";
+  status: "PENDING" | "APPROVED" | "CANCELLED";
   createdAt?: string;
   updatedAt?: string;
 }
@@ -75,4 +75,19 @@ export interface TAffiliateWithdrawal {
   processedAt?: string;
   processedBy?: string;
   notes?: string;
+}
+
+export interface TAffiliateSettingsUpdatePayload {
+  enabled?: boolean;
+  minWithdrawalAmount?: number;
+  commissionLevels?: TAffiliateSettings["commissionLevels"];
+  salesThresholds?: TAffiliateSettings["salesThresholds"];
+  cookieExpiryDays?: number;
+  updatedAt?: string;
+}
+
+export interface TWithdrawalRequestPayload {
+  amount: number;
+  paymentMethod: string;
+  paymentDetails: TAffiliateWithdrawal["paymentDetails"];
 }

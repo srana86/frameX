@@ -1,14 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { StatusCodes } from "http-status-codes";
 import { Request, Response } from "express";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { AffiliateServices } from "./affiliate.service";
+import { WithdrawalStatus, TAffiliateSettingsUpdatePayload } from "./affiliate.interface";
 
 // Get current user's affiliate info
 const getMyAffiliate = catchAsync(async (req: Request, res: Response) => {
-  const user = (req as any).user;
-  const result = await AffiliateServices.getMyAffiliateFromDB(user.tenantId, user.id);
+  const user = req.user;
+  const result = await AffiliateServices.getMyAffiliateFromDB(req.tenantId, user.id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -20,8 +20,8 @@ const getMyAffiliate = catchAsync(async (req: Request, res: Response) => {
 
 // Create affiliate account
 const createMyAffiliate = catchAsync(async (req: Request, res: Response) => {
-  const user = (req as any).user;
-  const result = await AffiliateServices.createMyAffiliateFromDB(user.tenantId, user.id);
+  const user = req.user;
+  const result = await AffiliateServices.createMyAffiliateFromDB(req.tenantId, user.id);
 
   sendResponse(res, {
     statusCode: StatusCodes.CREATED,
@@ -33,8 +33,7 @@ const createMyAffiliate = catchAsync(async (req: Request, res: Response) => {
 
 // Get all affiliates (admin)
 const getAllAffiliates = catchAsync(async (req: Request, res: Response) => {
-  const user = (req as any).user;
-  const result = await AffiliateServices.getAllAffiliatesFromDB(user.tenantId, req.query);
+  const result = await AffiliateServices.getAllAffiliatesFromDB(req.tenantId, req.query as Record<string, string>);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -50,12 +49,14 @@ const getCommissions = catchAsync(async (req: Request, res: Response) => {
   const user = (req as any).user;
   const { affiliateId } = req.query;
 
-  const userId = user.role !== "tenant" ? user.id : null;
+  const isStoreManager = ["TENANT", "OWNER", "STAFF", "ADMIN", "SUPER_ADMIN"].includes(user.role);
+
+  const userId = !isStoreManager ? user.id : null;
   const finalAffiliateId =
-    user.role === "tenant" && affiliateId ? String(affiliateId) : null;
+    isStoreManager && affiliateId ? String(affiliateId) : null;
 
   const result = await AffiliateServices.getCommissionsFromDB(
-    user.tenantId,
+    (req as any).tenantId,
     userId,
     finalAffiliateId,
     req.query
@@ -76,8 +77,8 @@ const getCommissions = catchAsync(async (req: Request, res: Response) => {
 
 // Get affiliate progress (uses current user's affiliate)
 const getAffiliateProgress = catchAsync(async (req: Request, res: Response) => {
-  const user = (req as any).user;
-  const result = await AffiliateServices.getAffiliateProgressFromDB(user.tenantId, user.id);
+  const user = req.user;
+  const result = await AffiliateServices.getAffiliateProgressFromDB(req.tenantId, user.id);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -93,7 +94,7 @@ const getWithdrawals = catchAsync(async (req: Request, res: Response) => {
   const { affiliateId, status } = req.query;
 
   const result = await AffiliateServices.getWithdrawalsFromDB(
-    user.tenantId,
+    (req as any).tenantId,
     user,
     affiliateId ? String(affiliateId) : null,
     status ? String(status) : null
@@ -112,9 +113,11 @@ const handleWithdrawal = catchAsync(async (req: Request, res: Response) => {
   const user = (req as any).user;
   const { action, withdrawalId, status: newStatus, notes } = req.body;
 
-  if (action === "create" && user.role === "customer") {
+  const isStoreManager = ["TENANT", "OWNER", "STAFF", "ADMIN", "SUPER_ADMIN"].includes(user.role);
+
+  if (action === "create" && user.role === "CUSTOMER") {
     const result = await AffiliateServices.createWithdrawalFromDB(
-      user.tenantId,
+      (req as any).tenantId,
       user.id,
       req.body
     );
@@ -125,11 +128,11 @@ const handleWithdrawal = catchAsync(async (req: Request, res: Response) => {
       message: "Withdrawal request created successfully",
       data: { withdrawal: result },
     });
-  } else if (action === "update" && user.role === "tenant") {
+  } else if (action === "update" && isStoreManager) {
     const result = await AffiliateServices.updateWithdrawalFromDB(
-      user.tenantId,
+      req.tenantId,
       withdrawalId,
-      newStatus,
+      newStatus as WithdrawalStatus,
       user.id,
       notes
     );
@@ -152,8 +155,7 @@ const handleWithdrawal = catchAsync(async (req: Request, res: Response) => {
 
 // Get affiliate settings
 const getSettings = catchAsync(async (req: Request, res: Response) => {
-  const user = (req as any).user;
-  let result = await AffiliateServices.getAffiliateSettingsFromDB(user.tenantId);
+  let result = await AffiliateServices.getAffiliateSettingsFromDB(req.tenantId);
 
   if (!result) {
     // Return default settings
@@ -199,7 +201,6 @@ const getSettings = catchAsync(async (req: Request, res: Response) => {
 
 // Update affiliate settings
 const updateSettings = catchAsync(async (req: Request, res: Response) => {
-  const user = (req as any).user;
   const {
     enabled,
     minWithdrawalAmount,
@@ -209,8 +210,7 @@ const updateSettings = catchAsync(async (req: Request, res: Response) => {
   } = req.body;
 
   const now = new Date().toISOString();
-  const settingsData: Partial<any> = {
-    // id: "affiliate_settings_v1", // No need to force ID here
+  const settingsData: TAffiliateSettingsUpdatePayload = {
     enabled: enabled ?? false,
     minWithdrawalAmount: minWithdrawalAmount ?? 100,
     commissionLevels: commissionLevels || {},
@@ -220,7 +220,7 @@ const updateSettings = catchAsync(async (req: Request, res: Response) => {
   };
 
   const result =
-    await AffiliateServices.updateAffiliateSettingsFromDB(user.tenantId, settingsData);
+    await AffiliateServices.updateAffiliateSettingsFromDB(req.tenantId, settingsData);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -308,10 +308,9 @@ const setCookie = catchAsync(async (req: Request, res: Response) => {
 
 // Assign coupon to affiliate
 const assignCoupon = catchAsync(async (req: Request, res: Response) => {
-  const user = (req as any).user;
-  const { affiliateId, couponId } = req.body;
+  const { affiliateId, couponId } = req.body as { affiliateId: string; couponId: string };
   const result = await AffiliateServices.assignCouponToAffiliateFromDB(
-    user.tenantId,
+    req.tenantId,
     affiliateId,
     couponId
   );
@@ -330,7 +329,7 @@ const updateAffiliate = catchAsync(async (req: Request, res: Response) => {
   const result = await AffiliateServices.updateAffiliateFromDB(
     req.tenantId,
     id,
-    req.body
+    req.body as Record<string, unknown>
   );
 
   sendResponse(res, {

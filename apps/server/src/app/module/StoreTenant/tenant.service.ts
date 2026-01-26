@@ -13,7 +13,7 @@ import {
 } from "./tenant.interface";
 
 // Get tenant context
-const getTenantContextFromDB = async (tenantId?: string) => {
+const getTenantContextFromDB = async (tenantId: string) => {
   if (!tenantId) throw new AppError(StatusCodes.BAD_REQUEST, "Tenant ID required");
 
   // Retrieve tenant from User table (as tenants are Users in the platform)
@@ -70,7 +70,7 @@ const getTenantDataFromBrandConfig = async (tenantId: string) => {
   const brandConfig = await ConfigServices.getBrandConfigFromDB(tenantId);
   return {
     tenant: {
-      name: brandConfig.name,
+      name: brandConfig.brandName,
       logo: brandConfig.logo,
       // Add other brand config fields as needed
     },

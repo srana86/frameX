@@ -11,15 +11,10 @@ import { toast } from "sonner";
 
 import {
   ShoppingCart,
-  ShoppingBag,
   Plus,
   Minus,
   Check,
   Share2,
-  ShoppingBasket,
-  ShoppingCartIcon,
-  LucideShoppingBag,
-  ShoppingBasketIcon,
   LucideShoppingCart,
 } from "lucide-react";
 import { AddToWishlist } from "./AddToWishlist";
@@ -66,9 +61,9 @@ export function AddToCart({ product, currencyCode }: { product: Product; currenc
           category: product.category,
           eventId,
           userData: storedUserData,
-        }).catch(() => {})
+        }).catch(() => { })
       )
-      .catch(() => {});
+      .catch(() => { });
 
     const sendPixelViewEvent = () => {
       const fbq = (window as any).fbq;
@@ -329,11 +324,10 @@ export function AddToCart({ product, currencyCode }: { product: Product; currenc
                 key={s}
                 type='button'
                 onClick={() => setSize(s)}
-                className={`relative h-9 sm:h-10 px-2.5 sm:px-3 min-w-[40px] sm:min-w-[44px] whitespace-nowrap rounded-lg sm:rounded-xl border-2 text-xs sm:text-sm font-medium transition-all duration-200 ${
-                  size === s
+                className={`relative h-9 sm:h-10 px-2.5 sm:px-3 min-w-[40px] sm:min-w-[44px] whitespace-nowrap rounded-lg sm:rounded-xl border-2 text-xs sm:text-sm font-medium transition-all duration-200 ${size === s
                     ? "border-primary bg-primary/10 text-primary shadow-md scale-105"
                     : "border-border hover:border-primary/50 hover:bg-accent/50"
-                }`}
+                  }`}
               >
                 {s}
                 {size === s && (
@@ -366,11 +360,10 @@ export function AddToCart({ product, currencyCode }: { product: Product; currenc
                   key={c}
                   type='button'
                   onClick={() => setColor(c)}
-                  className={`relative h-10 px-3 sm:px-4 rounded-xl border-2 text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-                    color === c
+                  className={`relative h-10 px-3 sm:px-4 rounded-xl border-2 text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-2 ${color === c
                       ? "border-primary bg-primary/10 text-primary shadow-md scale-105"
                       : "border-border hover:border-primary/50 hover:bg-accent/50 hover:scale-102"
-                  }`}
+                    }`}
                 >
                   {isColorName && (
                     <span
@@ -424,9 +417,8 @@ export function AddToCart({ product, currencyCode }: { product: Product; currenc
             onClick={handleAdd}
             disabled={adding || isOutOfStock}
             variant='outline'
-            className={`flex-1 h-8! sm:h-10! text-xs sm:text-sm font-medium rounded-xl border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 ${
-              isOutOfStock ? "opacity-60 cursor-not-allowed" : ""
-            }`}
+            className={`flex-1 h-8! sm:h-10! text-xs sm:text-sm font-medium rounded-xl border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 ${isOutOfStock ? "opacity-60 cursor-not-allowed" : ""
+              }`}
           >
             <div className='flex items-center justify-center gap-1.5 sm:gap-2'>
               {adding ? (
@@ -455,11 +447,10 @@ export function AddToCart({ product, currencyCode }: { product: Product; currenc
         <Button
           onClick={handleBuyNow}
           disabled={isOutOfStock}
-          className={`w-full h-12 sm:h-14 text-base sm:text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 ${
-            isOutOfStock
+          className={`w-full h-12 sm:h-14 text-base sm:text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 ${isOutOfStock
               ? "opacity-60 cursor-not-allowed"
               : "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary animate-pulse-once"
-          }`}
+            }`}
         >
           <ShoppingCart className='w-5 h-5 mr-2' />
           <span className='font-extrabold'>Buy Now</span>
