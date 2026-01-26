@@ -60,7 +60,7 @@ export function TrackingScripts({ adsConfig }: TrackingScriptsProps) {
     pixel.pageview(eventId);
 
     // Send server-side PageView with same event_id for deduplication
-    if (serverSideEnabled) {
+    if (serverSideEnabled && adsConfig.metaPixel.enabled && pixelId) {
       // Get Meta params from clientParamBuilder if available
       const metaParams = getAllMetaParams();
 

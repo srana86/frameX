@@ -204,6 +204,24 @@ export async function sendServerSideTracking(
         }
 
         const apiUrl = getApiBaseUrl();
+
+        // Get Ads config to verify if Meta Pixel is enabled
+        const adsResponse = await fetch(`${apiUrl}/ads-config`, {
+          cache: "no-store",
+          headers: getApiHeaders(),
+        });
+
+        if (!adsResponse.ok) {
+          return; // Silently fail if config can't be fetched
+        }
+
+        const adsJson = await adsResponse.json();
+        const adsConfig = adsJson?.data || adsJson;
+
+        if (!adsConfig?.metaPixel?.enabled || !adsConfig?.metaPixel?.pixelId) {
+          return; // Skip if Meta Pixel is not enabled or missing pixelId
+        }
+
         const response = await fetch(`${apiUrl}/tracking/meta-pixel`, {
           method: "POST",
           headers: getApiHeaders(),
@@ -253,65 +271,102 @@ export async function sendServerSideTracking(
   );
 
   // TikTok Pixel
-  const apiUrl = getApiBaseUrl();
   promises.push(
-    fetch(`${apiUrl}/tracking/tiktok-pixel`, {
-      method: "POST",
-      headers: getApiHeaders(),
-      body: JSON.stringify({
-        event: event.eventName,
-        event_id: eventId,
-        properties: {
-          value: event.value,
-          currency: currency,
-          content_type: event.contentCategory || "product",
-          quantity: event.numItems,
-        },
-        timestamp: Math.floor(Date.now() / 1000),
-      }),
-    })
-      .then((res) => {
+    (async () => {
+      try {
+        const apiUrl = getApiBaseUrl();
+        const adsResponse = await fetch(`${apiUrl}/ads-config`, {
+          cache: "no-store",
+          headers: getApiHeaders(),
+        });
+
+        if (!adsResponse.ok) return;
+
+        const adsJson = await adsResponse.json();
+        const adsConfig = adsJson?.data || adsJson;
+
+        if (!adsConfig?.tiktokPixel?.enabled || !adsConfig?.tiktokPixel?.pixelCode) {
+          return;
+        }
+
+        const res = await fetch(`${apiUrl}/tracking/tiktok-pixel`, {
+          method: "POST",
+          headers: getApiHeaders(),
+          body: JSON.stringify({
+            event: event.eventName,
+            event_id: eventId,
+            properties: {
+              value: event.value,
+              currency: currency,
+              content_type: event.contentCategory || "product",
+              quantity: event.numItems,
+            },
+            timestamp: Math.floor(Date.now() / 1000),
+          }),
+        });
+
         if (!res.ok && process.env.NODE_ENV !== "production") {
           console.warn("TikTok Pixel server-side tracking failed");
         }
-      })
-      .catch(() => { })
+      } catch (error) {
+        console.error("[Server-Side Tracking] TikTok Pixel error:", error);
+      }
+    })()
   );
 
   // Google Analytics 4
   promises.push(
-    fetch(`${apiUrl}/tracking/ga4`, {
-      method: "POST",
-      headers: getApiHeaders(),
-      body: JSON.stringify({
-        client_id: `client-${Date.now()}`,
-        events: [
-          {
-            name: event.eventName
-              .toLowerCase()
-              .replace(/([A-Z])/g, "_$1")
-              .toLowerCase(),
-            params: {
-              value: event.value,
-              currency: currency,
-              items: event.contentIds?.map((id, index) => ({
-                item_id: id,
-                item_name: event.contentName,
-                item_category: event.contentCategory,
-                quantity: event.numItems,
-                price: event.value ? event.value / (event.numItems || 1) : 0,
-              })),
-            },
-          },
-        ],
-      }),
-    })
-      .then((res) => {
+    (async () => {
+      try {
+        const apiUrl = getApiBaseUrl();
+        const adsResponse = await fetch(`${apiUrl}/ads-config`, {
+          cache: "no-store",
+          headers: getApiHeaders(),
+        });
+
+        if (!adsResponse.ok) return;
+
+        const adsJson = await adsResponse.json();
+        const adsConfig = adsJson?.data || adsJson;
+
+        if (!adsConfig?.googleTagManager?.enabled || !adsConfig?.googleTagManager?.containerId) {
+          return;
+        }
+
+        const res = await fetch(`${apiUrl}/tracking/ga4`, {
+          method: "POST",
+          headers: getApiHeaders(),
+          body: JSON.stringify({
+            client_id: `client-${Date.now()}`,
+            events: [
+              {
+                name: event.eventName
+                  .toLowerCase()
+                  .replace(/([A-Z])/g, "_$1")
+                  .toLowerCase(),
+                params: {
+                  value: event.value,
+                  currency: currency,
+                  items: event.contentIds?.map((id, index) => ({
+                    item_id: id,
+                    item_name: event.contentName,
+                    item_category: event.contentCategory,
+                    quantity: event.numItems,
+                    price: event.value ? event.value / (event.numItems || 1) : 0,
+                  })),
+                },
+              },
+            ],
+          }),
+        });
+
         if (!res.ok && process.env.NODE_ENV !== "production") {
           console.warn("GA4 server-side tracking failed");
         }
-      })
-      .catch(() => { })
+      } catch (error) {
+        console.error("[Server-Side Tracking] GA4 error:", error);
+      }
+    })()
   );
 
   // Execute all promises in parallel (failures are silently caught)

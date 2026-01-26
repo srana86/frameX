@@ -73,6 +73,7 @@ async function getStaffData() {
  */
 export default async function StaffPage() {
   const { staff, stores } = await getStaffData();
+  console.log(staff, stores);
 
   return <StaffListClient initialStaff={staff} stores={stores} />;
 }

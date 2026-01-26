@@ -7,7 +7,7 @@ import type { FooterPage } from "@/lib/types";
 async function getPage(slug: string): Promise<FooterPage | null> {
   try {
     const client = await getPublicServerClient();
-    const response = await client.get(`/pages/${slug}`);
+    const response = await client.get(`pages/${slug}`);
     if (response.data?.data) {
       return response.data.data as FooterPage;
     }

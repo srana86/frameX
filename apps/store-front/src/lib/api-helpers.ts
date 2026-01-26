@@ -1,47 +1,16 @@
+import { headers } from "next/headers";
+import { getPublicServerClient, getServerClient, getDomain, getProtocol, getCookiesHeader } from "./server-utils";
+
 /**
  * API Helper Functions
  * Refactored to use generic API fetch instead of MongoDB
  * Acts as a shim for legacy MongoDB calls in Server Actions
  */
 
-import { headers } from "next/headers";
-
 // Helper to get domain from headers for tenant resolution
 async function getDomainHeader(): Promise<string> {
   try {
-    const headersList = await headers();
-    const host =
-      headersList.get("x-forwarded-host") || headersList.get("host") || "";
-    // Don't split by colon to keep port
-    return host;
-  } catch {
-    return "";
-  }
-}
-
-/**
- * Get the current protocol (http or https)
- */
-async function getProtocol(): Promise<string> {
-  const headersList = await headers();
-  const xForwardedProto = headersList.get("x-forwarded-proto");
-  if (xForwardedProto) {
-    return xForwardedProto.split(",")[0].trim();
-  }
-  return process.env.NODE_ENV === "production" ? "https" : "http";
-}
-
-/**
- * Get all cookies formatted as a single string for the Cookie header
- */
-async function getCookiesHeader(): Promise<string> {
-  try {
-    const { cookies } = await import("next/headers");
-    const cookieStore = await cookies();
-    return cookieStore
-      .getAll()
-      .map((cookie) => `${cookie.name}=${cookie.value}`)
-      .join("; ");
+    return await getDomain();
   } catch {
     return "";
   }
@@ -75,55 +44,38 @@ class CursorShim<T> {
   }
 
   async toArray(): Promise<T[]> {
-    const params = new URLSearchParams();
+    const queryParams: Record<string, any> = {};
 
     // Serialize simple query params
     if (this.query) {
       Object.entries(this.query).forEach(([key, value]) => {
         if (typeof value !== "object") {
-          params.append(key, String(value));
-        } else {
-          // Basic support for nested/mongo-like queries? -> Ignore complex objects for now or JSON stringify
-          // API must support it. Assuming simple filters for now.
+          queryParams[key] = value;
         }
       });
     }
 
-    if (this.options.limit) params.append("limit", String(this.options.limit));
-    if (this.options.skip) params.append("skip", String(this.options.skip));
+    if (this.options.limit) queryParams.limit = this.options.limit;
+    if (this.options.skip) queryParams.skip = this.options.skip;
 
     // Handle sort (simple mapping)
     if (this.options.sort) {
-      // { _id: -1 } -> sortBy=_id&sortOrder=desc
       const keys = Object.keys(this.options.sort);
       if (keys.length > 0) {
-        params.append("sortBy", keys[0]);
-        params.append(
-          "sortOrder",
-          this.options.sort[keys[0]] === -1 ? "desc" : "asc"
-        );
+        queryParams.sortBy = keys[0];
+        queryParams.sortOrder = this.options.sort[keys[0]] === -1 ? "desc" : "asc";
       }
     }
 
     try {
-      const host = await getDomainHeader();
-      const protocol = await getProtocol();
-      const cookiesHeader = await getCookiesHeader();
-      const absoluteApiUrl = `${protocol}://${host}/api/v1`;
+      const client = await getPublicServerClient();
+      // Standardize legacy collection names (underscored) to API endpoints (hyphenated)
+      const endpoint = this.collectionName.replace(/_/g, "-");
+      const res = await client.get(endpoint, {
+        params: queryParams,
+      });
 
-      const res = await fetch(
-        `${absoluteApiUrl}/${this.collectionName}?${params.toString()}`,
-        {
-          cache: "no-store",
-          headers: {
-            "X-Domain": host,
-            "X-Tenant-ID": (await getTenantIdForAPI()) || "",
-            Cookie: cookiesHeader,
-          },
-        }
-      );
-      if (!res.ok) return [];
-      const json = await res.json();
+      const json = res.data;
       // Handle different API response formats
       if (Array.isArray(json)) return json;
       if (json.data) {
@@ -169,22 +121,12 @@ class CollectionShim<T> {
 
   async insertOne(doc: any) {
     try {
-      const host = await getDomainHeader();
-      const protocol = await getProtocol();
-      const cookiesHeader = await getCookiesHeader();
-      const absoluteApiUrl = `${protocol}://${host}/api/v1`;
-
-      const res = await fetch(`${absoluteApiUrl}/${this.collectionName}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Domain": host,
-          "X-Tenant-ID": (await getTenantIdForAPI()) || "",
-          Cookie: cookiesHeader,
-        },
-        body: JSON.stringify(doc),
-      });
-      const result = await res.json();
+      // Use getServerClient to ensure authentication is forwarded if available
+      const client = await getServerClient();
+      // Standardize legacy collection names (underscored) to API endpoints (hyphenated)
+      const endpoint = this.collectionName.replace(/_/g, "-");
+      const res = await client.post(endpoint, doc);
+      const result = res.data;
       return { acknowledged: true, insertedId: result.id || result._id };
     } catch (e) {
       console.error("API Insert Error:", e);
@@ -277,3 +219,4 @@ export class ObjectId {
     return typeof id === "string" && id.length > 0;
   }
 }
+

@@ -61,7 +61,7 @@ export async function getServerClient() {
 
   // Create an absolute URL for the API call
   // This ensures that the request goes through the same proxy (Nginx) as browser requests
-  const absoluteApiUrl = `${protocol}://${domain}/api/v1`;
+  const absoluteApiUrl = `${protocol}://${domain}/api/v1/`;
 
   return serverSideApiClient(token, undefined, domain, absoluteApiUrl, {
     Cookie: cookieHeader,
@@ -78,7 +78,7 @@ export async function getPublicServerClient() {
   const protocol = await getProtocol();
   const cookieHeader = await getCookiesHeader();
 
-  const absoluteApiUrl = `${protocol}://${domain}/api/v1`;
+  const absoluteApiUrl = `${protocol}://${domain}/api/v1/`;
 
   return serverSideApiClient(undefined, undefined, domain, absoluteApiUrl, {
     Cookie: cookieHeader,

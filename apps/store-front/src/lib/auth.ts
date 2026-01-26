@@ -1,5 +1,5 @@
-import { cookies, headers } from "next/headers";
 import { authClient } from "./auth-client";
+import { getDomain, getCookiesHeader } from "./server-utils";
 
 export interface CurrentUser {
   id: string;
@@ -17,15 +17,15 @@ export interface CurrentUser {
  */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   try {
-    const cookieStore = await cookies();
-    const headersList = await headers();
+    const domain = await getDomain();
+    const cookieHeader = await getCookiesHeader();
 
     // Call BetterAuth's getSession via the client, forwarding cookies and headers
     const { data: sessionData } = await authClient.getSession({
       fetchOptions: {
         headers: {
-          Cookie: cookieStore.toString(),
-          "x-domain": headersList.get("host") || "localhost",
+          Cookie: cookieHeader,
+          "x-domain": domain || "localhost",
         }
       }
     });
@@ -58,3 +58,4 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     return null;
   }
 }
+

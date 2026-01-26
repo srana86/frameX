@@ -23,4 +23,20 @@ router.post(
   TrackingControllers.trackMetaPixel
 );
 
+// TikTok Pixel
+router.post(
+  "/tiktok-pixel",
+  tenantMiddleware,
+  validateRequest(TrackingValidation.trackTikTokPixelValidationSchema),
+  TrackingControllers.trackTikTokPixel
+);
+
+// Google Analytics 4
+router.post(
+  "/ga4",
+  tenantMiddleware,
+  validateRequest(TrackingValidation.trackGA4ValidationSchema),
+  TrackingControllers.trackGA4
+);
+
 export const TrackingRoutes = router;

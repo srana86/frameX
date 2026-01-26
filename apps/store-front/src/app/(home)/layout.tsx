@@ -22,7 +22,7 @@ interface EnabledFooterPage {
 async function getBrandConfig(): Promise<BrandConfig | null> {
   try {
     const client = await getPublicServerClient();
-    const response = await client.get("/brand-config");
+    const response = await client.get("brand-config");
     if (response.data?.data) {
       // Merge with defaultBrandConfig to ensure all required fields are present
       const apiConfig = response.data.data;
@@ -49,7 +49,7 @@ async function getBrandConfig(): Promise<BrandConfig | null> {
 async function getEnabledPages(): Promise<EnabledFooterPage[]> {
   try {
     const client = await getPublicServerClient();
-    const response = await client.get("/pages/enabled");
+    const response = await client.get("pages/enabled");
     if (response.data?.data && Array.isArray(response.data.data)) {
       return response.data.data.map((page: any) => ({
         slug: page.slug,

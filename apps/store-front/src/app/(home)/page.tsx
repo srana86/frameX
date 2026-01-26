@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 async function getCategories(): Promise<ProductCategory[]> {
   try {
     const client = await getPublicServerClient();
-    const response = await client.get("/products/categories", {
+    const response = await client.get("products/categories", {
       params: { enabled: true },
     });
     return response.data?.data?.categories || [];
@@ -30,7 +30,7 @@ async function getCategories(): Promise<ProductCategory[]> {
 async function getProducts(): Promise<Product[]> {
   try {
     const client = await getPublicServerClient();
-    const response = await client.get("/products", { params: { limit: 300 } });
+    const response = await client.get("products", { params: { limit: 300 } });
     const products = response.data?.data?.products || [];
     return products.map((p: any) => ({
       ...p,
@@ -45,7 +45,7 @@ async function getProducts(): Promise<Product[]> {
 async function getHeroSlides(): Promise<HeroSlide[]> {
   try {
     const client = await getPublicServerClient();
-    const response = await client.get("/hero-slides");
+    const response = await client.get("hero-slides");
     return response.data?.data || response.data || [];
   } catch (error: any) {
     console.error(
@@ -60,7 +60,7 @@ async function getHeroSlides(): Promise<HeroSlide[]> {
 async function getMostLovedProducts(): Promise<Product[]> {
   try {
     const client = await getPublicServerClient();
-    const response = await client.get("/products/most-loved", {
+    const response = await client.get("products/most-loved", {
       params: { limit: 8 },
     });
     const products = response.data?.data || [];

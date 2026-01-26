@@ -31,7 +31,7 @@ setInterval(cleanupInactiveViewers, 10000);
 const trackProductViewerFromDB = async (
   tenantId: string,
   productSlug: string,
-  sessionId?: string
+  sessionId?: string | null
 ) => {
   if (!tenantId || !productSlug) {
     throw new Error("Tenant ID and Product slug are required");

@@ -45,7 +45,6 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
   return (
     <ProductDetailClient
-
       product={{
         ...product,
         stock: product.inventory?.quantity ?? 0,

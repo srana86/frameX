@@ -72,7 +72,37 @@ const trackMetaPixelValidationSchema = z.object({
   }),
 });
 
+const tiktokPixelPropertiesSchema = z.object({
+  value: z.number().optional(),
+  currency: z.string().optional(),
+  content_type: z.string().optional(),
+  quantity: z.number().optional(),
+});
+
+const trackTikTokPixelValidationSchema = z.object({
+  body: z.object({
+    event: z.string().min(1, "Event name is required"),
+    event_id: z.string().optional(),
+    properties: tiktokPixelPropertiesSchema.optional(),
+    timestamp: z.number().optional(),
+  }),
+});
+
+const trackGA4ValidationSchema = z.object({
+  body: z.object({
+    client_id: z.string().min(1, "Client ID is required"),
+    events: z.array(
+      z.object({
+        name: z.string().min(1, "Event name is required"),
+        params: z.record(z.string(), z.any()).optional(),
+      })
+    ),
+  }),
+});
+
 export const TrackingValidation = {
   trackFBEventValidationSchema,
   trackMetaPixelValidationSchema,
+  trackTikTokPixelValidationSchema,
+  trackGA4ValidationSchema,
 };
