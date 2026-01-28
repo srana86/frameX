@@ -66,14 +66,17 @@ export function TrackingScripts({ adsConfig }: TrackingScriptsProps) {
 
       // Send to server API with collected params
       // Send to server API with collected params
-      apiRequest("POST", "/tracking/meta-pixel", {
-        eventName: "PageView",
-        eventId,
-        actionSource: "website",
-        eventSourceUrl: typeof window !== "undefined" ? window.location.href : undefined,
-        fbp: metaParams.fbp || undefined,
-        fbc: metaParams.fbc || undefined,
-        clientIpAddress: metaParams.clientIpAddress || undefined,
+      apiRequest("/tracking/meta-pixel", {
+        method: "POST",
+        body: JSON.stringify({
+          eventName: "PageView",
+          eventId,
+          actionSource: "website",
+          eventSourceUrl: typeof window !== "undefined" ? window.location.href : undefined,
+          fbp: metaParams.fbp || undefined,
+          fbc: metaParams.fbc || undefined,
+          clientIpAddress: metaParams.clientIpAddress || undefined,
+        }),
       }).catch(() => {
         // Silently fail to not impact user experience
       });

@@ -1,4 +1,6 @@
-version: "3.9"
+# =============================================================================
+# PRODUCTION DEPLOYMENT - Using Multi-Tenant SSL
+# =============================================================================
 
 services:
   # ============ DATABASE ============
@@ -12,8 +14,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
       timeout: 5s
       retries: 5
     networks:
@@ -29,6 +31,11 @@ services:
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - framex-network
     deploy:
@@ -36,74 +43,33 @@ services:
         limits:
           memory: 512M
 
-  # ============ APPS (SCALABLE) ============
-  store:
-    image: framex/store:${VERSION:-latest}
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      REDIS_URL: redis://redis:6379
-      NODE_ENV: production
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - framex-network
-    deploy:
-      replicas: 2
-      resources:
-        limits:
-          memory: 512M
-      update_config:
-        parallelism: 1
-        delay: 10s
-      restart_policy:
-        condition: on-failure
-
-  store-api:
-    image: framex/store-api:${VERSION:-latest}
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      REDIS_URL: redis://redis:6379
-      NODE_ENV: production
-      PORT: 5000
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - framex-network
-    deploy:
-      replicas: 2
-      resources:
-        limits:
-          memory: 512M
-      update_config:
-        parallelism: 1
-        delay: 10s
-      restart_policy:
-        condition: on-failure
-
-  dashboard:
-    image: framex/dashboard:${VERSION:-latest}
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      NODE_ENV: production
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - framex-network
-    deploy:
-      replicas: 1
-      resources:
-        limits:
-          memory: 512M
-
+  # ============ APPS ============
   server:
     image: framex/server:${VERSION:-latest}
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
       NODE_ENV: production
-      PORT: 5001
+      PORT: 8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - framex-network
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 1G
+
+  landing:
+    image: framex/landing:${VERSION:-latest}
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NODE_ENV: production
+      PORT: 3001
     depends_on:
       postgres:
         condition: service_healthy
@@ -115,27 +81,64 @@ services:
         limits:
           memory: 512M
 
-  # ============ REVERSE PROXY ============
-  nginx:
-    build:
-      context: ./docker/nginx
-    container_name: framex-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./certs:/etc/letsencrypt:ro
+  admin:
+    image: framex/admin:${VERSION:-latest}
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NODE_ENV: production
+      PORT: 3002
     depends_on:
-      - store
-      - store-api
-      - dashboard
-      - server
+      postgres:
+        condition: service_healthy
     networks:
       - framex-network
     deploy:
+      replicas: 1
       resources:
         limits:
-          memory: 128M
+          memory: 512M
+
+  store-front:
+    image: framex/store-front:${VERSION:-latest}
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NODE_ENV: production
+      PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - framex-network
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 512M
+
+  # ============ REVERSE PROXY (Production SSL) ============
+  ssl-gateway:
+    build:
+      context: .
+      dockerfile: apps/multi-tenant-ssl/Dockerfile
+    environment:
+      NODE_ENV: production
+      BASE_DOMAIN: ${BASE_DOMAIN:-framextech.com}
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - server
+      - landing
+      - admin
+      - store-front
+    networks:
+      - framex-network
+    volumes:
+      - ssl_certs:/etc/ssl/tenants
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
 networks:
   framex-network:
@@ -144,3 +147,4 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  ssl_certs:

@@ -34,7 +34,7 @@ export function SearchDropdown({ onClose }: SearchDropdownProps) {
 
     setLoadingDefaults(true);
     try {
-      const data = await apiRequest<any>("GET", "/products/search?newest=true&limit=8");
+      const data = await apiRequest<any>("/products/search?newest=true&limit=8", { method: "GET" });
       setDefaultProducts(data.products || []);
     } catch (error) {
       console.error("Error fetching default products:", error);
@@ -60,7 +60,7 @@ export function SearchDropdown({ onClose }: SearchDropdownProps) {
 
     setLoading(true);
     try {
-      const data = await apiRequest<any>("GET", `/products/search?q=${encodeURIComponent(searchQuery)}&limit=8`);
+      const data = await apiRequest<any>(`/products/search?q=${encodeURIComponent(searchQuery)}&limit=8`, { method: "GET" });
       setResults(data.products || []);
     } catch (error) {
       console.error("Search error:", error);

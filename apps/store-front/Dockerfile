@@ -8,7 +8,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy package files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/store/package.json ./apps/store/
+COPY apps/store-front/package.json ./apps/store-front/
 COPY packages/ ./packages/
 
 # Install dependencies
@@ -20,18 +20,19 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/store/node_modules ./apps/store/node_modules
+COPY --from=deps /app/apps/store-front/node_modules ./apps/store-front/node_modules
 COPY --from=deps /app/packages ./packages
 COPY . .
-# Copy ecosystem file
-COPY apps/store/ecosystem.config.js ./apps/store/ecosystem.config.js
 
 # Generate Prisma client (dummy URL - no actual connection during build)
 RUN cd packages/database && DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate
 
 # Build the app
 ENV NEXT_TELEMETRY_DISABLED 1
-RUN pnpm --filter @framex/store build
+RUN pnpm --filter @framex/store-front build
+
+# Ensure public directory exists to avoid COPY failure
+RUN mkdir -p apps/store-front/public
 
 # Stage 3: Runner
 FROM node:20-alpine AS runner
@@ -40,24 +41,19 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# Install pm2 globally
-RUN npm install --global pm2
-
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Copy built application
-COPY --from=builder /app/apps/store/public ./apps/store/public
-COPY --from=builder --chown=nextjs:nodejs /app/apps/store/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/store/.next/static ./apps/store/.next/static
+COPY --from=builder /app/apps/store-front/public ./apps/store-front/public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/store-front/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/store-front/.next/static ./apps/store-front/.next/static
 
 USER nextjs
 
 EXPOSE 3000
 
-COPY --from=builder --chown=nextjs:nodejs /app/apps/store/ecosystem.config.js ./ecosystem.config.js
-
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-CMD ["pm2-runtime", "start", "ecosystem.config.js"]
+CMD ["node", "server.js"]

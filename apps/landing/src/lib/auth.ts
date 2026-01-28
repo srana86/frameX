@@ -8,6 +8,8 @@ export interface CurrentUser {
     id: string;
     email: string;
     name: string;
+    fullName?: string;
+    phone?: string;
     role: string;
     image?: string;
     emailVerified?: boolean;
@@ -36,6 +38,8 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
             id: user.id,
             email: user.email,
             name: user.name || '',
+            fullName: user.name || '',
+            phone: user.phone || '',
             role: user.role || 'CUSTOMER',
             image: user.image,
             emailVerified: user.emailVerified,

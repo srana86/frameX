@@ -61,8 +61,8 @@ export function NavLinks({ brandConfig, isNavbarVisible = true, isScrolled = fal
 
       try {
         const [categoriesData, brandsData] = await Promise.all([
-          apiRequest<any>("GET", "/products/categories?limit=20"),
-          apiRequest<any>("GET", "/products/brands"),
+          apiRequest<any>("/products/categories?limit=20", { method: "GET" }),
+          apiRequest<any>("/products/brands", { method: "GET" }),
         ]);
 
         const fetchedCategories = categoriesData?.categories || [];

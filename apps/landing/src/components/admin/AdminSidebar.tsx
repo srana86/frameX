@@ -146,7 +146,7 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
     // Fetch user profile
     const fetchProfile = async () => {
       try {
-        const data = await apiRequest<any>("GET", "/auth/me");
+        const data = await apiRequest<any>("/auth/me", { method: "GET" });
         if (data?.user) {
           setUserProfile(data.user);
         }
@@ -159,7 +159,7 @@ export function AdminSidebar({ brandConfig }: AdminSidebarProps) {
 
   const handleLogout = async () => {
     try {
-      await apiRequest("POST", "/auth/logout");
+      await apiRequest("/auth/logout", { method: "POST" });
       // Clear any stored user data
       if (typeof window !== "undefined") {
         localStorage.removeItem("shoestore_user_profile");

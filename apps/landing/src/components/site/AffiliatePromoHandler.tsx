@@ -48,9 +48,11 @@ export function AffiliatePromoHandler() {
       try {
         const { apiRequest } = await import("@/lib/api-client");
         const data = await apiRequest<{ success: boolean; promoCode: string }>(
-          "POST",
           "/affiliate/set-cookie",
-          { promoCode: refCode }
+          {
+            method: "POST",
+            body: JSON.stringify({ promoCode: refCode }),
+          }
         );
 
         if (data.success) {

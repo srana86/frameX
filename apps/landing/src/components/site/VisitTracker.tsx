@@ -17,10 +17,13 @@ export function VisitTracker() {
     // Track visit
     const trackVisit = async () => {
       try {
-        await apiRequest("POST", "/visits", {
-          path: pathname,
-          referrer: typeof document !== "undefined" ? document.referrer : "",
-          userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+        await apiRequest("/visits", {
+          method: "POST",
+          body: JSON.stringify({
+            path: pathname,
+            referrer: typeof document !== "undefined" ? document.referrer : "",
+            userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+          }),
         });
       } catch (error) {
         // Silently fail - don't impact user experience

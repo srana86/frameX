@@ -20,15 +20,8 @@ export type QueryParams = {
 };
 
 export type PrismaModel<T> = {
-  findMany: (args?: {
-    where?: Record<string, any>;
-    orderBy?: Record<string, "asc" | "desc">[] | Record<string, "asc" | "desc"> | any;
-    skip?: number;
-    take?: number;
-    select?: Record<string, boolean>;
-    include?: Record<string, any>;
-  }) => Promise<T[]>;
-  count: (args?: { where?: Record<string, any> }) => Promise<number>;
+  findMany: (args?: any) => Promise<T[] | any>;
+  count: (args?: any) => Promise<number>;
 };
 
 interface QueryBuilderOptions<T> {

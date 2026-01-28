@@ -26,7 +26,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-framex}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-framex} -d ${POSTGRES_DB:-framex}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -41,6 +41,11 @@ services:
       - redis_data:/data
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - framex-network
 
@@ -53,6 +58,11 @@ services:
       - "80:80"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - framex-network
 

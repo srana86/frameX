@@ -85,9 +85,12 @@ export function ProductViewers({ productSlug, stock, className }: ProductViewers
 
     const registerViewer = async () => {
       try {
-        const data = await apiRequest<{ sessionId: string; count: number }>("POST", "/product-viewers", {
-          slug: productSlug,
-          sessionId,
+        const data = await apiRequest<{ sessionId: string; count: number }>("/product-viewers", {
+          method: "POST",
+          body: JSON.stringify({
+            slug: productSlug,
+            sessionId,
+          }),
         });
 
         if (!mounted) return;
@@ -118,7 +121,9 @@ export function ProductViewers({ productSlug, stock, className }: ProductViewers
       if (!mounted || !productSlug) return;
 
       try {
-        const data = await apiRequest<{ count: number }>("GET", `/product-viewers?slug=${encodeURIComponent(productSlug)}`);
+        const data = await apiRequest<{ count: number }>(`/product-viewers?slug=${encodeURIComponent(productSlug)}`, {
+          method: "GET",
+        });
 
         if (mounted && data) {
           setViewerCount(data.count);
@@ -138,9 +143,12 @@ export function ProductViewers({ productSlug, stock, className }: ProductViewers
 
       // Remove viewer when leaving page
       if (sessionId && productSlug) {
-        apiRequest("DELETE", "/product-viewers", {
-          slug: productSlug,
-          sessionId,
+        apiRequest("/product-viewers", {
+          method: "DELETE",
+          body: JSON.stringify({
+            slug: productSlug,
+            sessionId,
+          }),
         }).catch(() => {
           // Ignore errors on cleanup
         });

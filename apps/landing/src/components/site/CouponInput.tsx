@@ -52,13 +52,16 @@ export function CouponInput({
 
     setLoading(true);
     try {
-      const data: any = await apiRequest("POST", "/coupons/apply", {
-        code: code.trim(),
-        cartSubtotal,
-        cartItems,
-        customerEmail,
-        customerPhone,
-        isFirstOrder,
+      const data: any = await apiRequest("/coupons/apply", {
+        method: "POST",
+        body: JSON.stringify({
+          code: code.trim(),
+          cartSubtotal,
+          cartItems,
+          customerEmail,
+          customerPhone,
+          isFirstOrder,
+        }),
       });
 
       if (data && data.success) {

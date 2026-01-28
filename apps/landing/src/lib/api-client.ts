@@ -181,3 +181,93 @@ export const api = {
     return apiRequest<T>(path, { ...options, method: "DELETE" });
   },
 };
+
+/**
+ * Server-side API client factory
+ * For use in Next.js server components and API routes
+ * Mimics the interface of the store-front axios client but uses fetch
+ */
+export const serverSideApiClient = (
+  token?: string,
+  tenantId?: string,
+  domain?: string,
+  baseURL?: string,
+  additionalHeaders?: Record<string, string>
+) => {
+  const getHeaders = () => {
+    const headers: Record<string, string> = { ...additionalHeaders };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    // Tenant ID is typically handled by domain, but can be added if needed
+    if (tenantId) headers["X-Tenant-ID"] = tenantId;
+    if (domain) headers["X-Domain"] = domain;
+    return headers;
+  };
+
+  const getUrl = (path: string) => {
+    if (!baseURL) return buildUrl(path);
+    const base = baseURL.endsWith('/') ? baseURL.slice(0, -1) : baseURL;
+    const p = path.startsWith('/') ? path : `/${path}`;
+    return `${base}${p}`;
+  };
+
+  const request = async <T>(path: string, method: string, data?: any, params?: any, options?: RequestInit) => {
+    let url = getUrl(path);
+
+    if (params) {
+      const searchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.append(key, String(value));
+        }
+      });
+      const queryString = searchParams.toString();
+      if (queryString) {
+        url += (url.includes('?') ? '&' : '?') + queryString;
+      }
+    }
+
+    const headers = { ...getHeaders(), ...options?.headers };
+
+    const response = await fetch(url, {
+      ...options,
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        ...headers as any
+      },
+      body: data ? JSON.stringify(data) : undefined,
+    });
+
+    const json = await response.json();
+
+    if (!response.ok) {
+      throw new ApiError(json.message || json.error || "Request failed", response.status, json);
+    }
+
+    if (json.success !== undefined && !json.success) {
+      throw new ApiError(json.message || "Request failed", response.status, json);
+    }
+
+    // Adapt to expected response format (mimicking axios response.data accessor in api-helpers)
+    // api-helpers does: const res = await client.get(...); const json = res.data;
+    // So we return an object with a data property containing the actual JSON response
+    return { data: json.data !== undefined ? json.data : json };
+  };
+
+  return {
+    get: <T>(path: string, config?: { params?: any, headers?: any } & RequestInit) =>
+      request<T>(path, "GET", undefined, config?.params, config),
+
+    post: <T>(path: string, data?: any, config?: { params?: any, headers?: any } & RequestInit) =>
+      request<T>(path, "POST", data, config?.params, config),
+
+    put: <T>(path: string, data?: any, config?: { params?: any, headers?: any } & RequestInit) =>
+      request<T>(path, "PUT", data, config?.params, config),
+
+    patch: <T>(path: string, data?: any, config?: { params?: any, headers?: any } & RequestInit) =>
+      request<T>(path, "PATCH", data, config?.params, config),
+
+    delete: <T>(path: string, config?: { params?: any, headers?: any } & RequestInit) =>
+      request<T>(path, "DELETE", undefined, config?.params, config),
+  };
+};

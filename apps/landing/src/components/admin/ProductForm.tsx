@@ -94,7 +94,7 @@ export default function ProductForm({ initial }: { initial?: Product }) {
 
   const loadCategories = async () => {
     try {
-      const data: any = await apiRequest("GET", "/products/categories");
+      const data: any = await apiRequest("/products/categories", { method: "GET" });
       // API returns { categories: [...], pagination: {...} }
       const categoriesList = Array.isArray(data) ? data : data?.data?.categories || data?.categories || [];
       setCategories(categoriesList);
@@ -157,8 +157,9 @@ export default function ProductForm({ initial }: { initial?: Product }) {
       form.append("file", compressedFile);
       form.append("folder", "products");
       form.append("resource_type", "auto");
-      const res: any = await apiRequest("POST", "/upload", form, undefined, {
-        "Content-Type": "multipart/form-data"
+      const res: any = await apiRequest("/upload", {
+        method: "POST",
+        body: form,
       });
       const url = res?.data?.secure_url || res?.data?.url || res?.secure_url || res?.url;
       if (url) {
@@ -218,7 +219,10 @@ export default function ProductForm({ initial }: { initial?: Product }) {
     } as Partial<Product> & { id?: string };
     try {
       toast.loading(id ? "Updating product..." : "Creating product...", { id: "save-product" });
-      await apiRequest(id ? "PUT" : "POST", id ? `/products/${id}` : "/products", payload);
+      await apiRequest(id ? `/products/${id}` : "/products", {
+        method: id ? "PUT" : "POST",
+        body: JSON.stringify(payload),
+      });
       toast.success(id ? "Product updated" : "Product created", { id: "save-product" });
       router.push("/merchant/products");
       router.refresh();

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { X, AlertTriangle, Clock, CreditCard, FileText, CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { SubscriptionStatusDetails, SubscriptionInvoice, MerchantSubscription, SubscriptionPlan } from "@/lib/subscription-types";
+import type { SubscriptionStatusDetails, SubscriptionInvoice, TenantSubscription, SubscriptionPlan } from "@/lib/subscription-types";
 import { apiRequest } from "@/lib/api-client";
 
 interface SubscriptionBannerProps {
@@ -11,7 +11,7 @@ interface SubscriptionBannerProps {
 }
 
 interface SubscriptionData {
-  subscription: MerchantSubscription | null;
+  subscription: TenantSubscription | null;
   plan: SubscriptionPlan | null;
   status: SubscriptionStatusDetails;
   pendingInvoice: SubscriptionInvoice | null;
@@ -35,7 +35,7 @@ export function SubscriptionBanner({ className }: SubscriptionBannerProps) {
 
   const fetchSubscriptionStatus = async () => {
     try {
-      const result = await apiRequest<SubscriptionData>("GET", "/subscription/status");
+      const result = await apiRequest<SubscriptionData>("/subscription/status", { method: "GET" });
       if (result) {
         console.log("[SubscriptionBanner] Received data:", result);
         setData(result);
@@ -191,7 +191,7 @@ export function SubscriptionBanner({ className }: SubscriptionBannerProps) {
 
 // Payment Modal Component
 interface PaymentModalProps {
-  subscription: MerchantSubscription | null;
+  subscription: TenantSubscription | null;
   plan: SubscriptionPlan | null;
   invoice: SubscriptionInvoice | null;
   onClose: () => void;
@@ -218,9 +218,13 @@ function PaymentModal({ subscription, plan, invoice, onClose, onPaymentSuccess }
     setLoading(true);
 
     try {
-      const data = await apiRequest<any>("POST", "/subscription/renew", {
-        invoiceId: invoice?.id,
-        ...formData,
+      const data = await apiRequest<any>("/subscription/renew", {
+        method: "POST",
+        body: JSON.stringify({
+          invoiceId: invoice?.id,
+          planId: plan?.id || "premium", // Assuming plan.id is available or a default
+          ...formData,
+        }),
       });
 
       if (data.GatewayPageURL) {

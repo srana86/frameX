@@ -64,8 +64,9 @@ export function ReviewForm({ productName, productSlug }: ReviewFormProps) {
       form.append("folder", "reviews");
       form.append("resource_type", "auto");
 
-      const data = await apiRequest<any>("POST", "/upload", form, {
-        "Content-Type": "multipart/form-data",
+      const data = await apiRequest<any>("/upload", {
+        method: "POST",
+        body: form,
       });
       const url = data?.secure_url || data?.url;
 
@@ -123,7 +124,10 @@ export function ReviewForm({ productName, productSlug }: ReviewFormProps) {
         return;
       }
 
-      await apiRequest("POST", `/products/${productSlug}/reviews`, reviewData);
+      await apiRequest(`/products/${productSlug}/reviews`, {
+        method: "POST",
+        body: JSON.stringify(reviewData),
+      });
 
       toast.success("Review submitted successfully!");
 

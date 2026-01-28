@@ -35,7 +35,7 @@ export function ProductCouponPreview({ productPrice, productId, categoryId }: Pr
 
   const loadCoupons = async () => {
     try {
-      const data = await apiRequest<any>("GET", "/coupons?status=active&limit=10");
+      const data = await apiRequest<any>("/coupons?status=active&limit=10", { method: "GET" });
 
       if (data) {
         const activeCoupons = (data.coupons || []).filter((coupon: Coupon) => {
@@ -71,10 +71,13 @@ export function ProductCouponPreview({ productPrice, productId, categoryId }: Pr
 
     setValidating(true);
     try {
-      const data: ApplyCouponResponse = await apiRequest("POST", "/coupons/apply", {
-        code: inputCode.trim(),
-        cartSubtotal: productPrice,
-        cartItems: [{ productId: productId || "", quantity: 1, price: productPrice }],
+      const data: ApplyCouponResponse = await apiRequest("/coupons/apply", {
+        method: "POST",
+        body: JSON.stringify({
+          code: inputCode.trim(),
+          cartSubtotal: productPrice,
+          cartItems: [{ productId: productId || "", quantity: 1, price: productPrice }],
+        }),
       });
 
       if (data.success) {

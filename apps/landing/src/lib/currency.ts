@@ -66,10 +66,11 @@ export function formatCurrency(
   options?: {
     showCode?: boolean;
     compact?: boolean;
+    decimals?: number;
   }
 ): string {
   const config = getCurrencyConfig(currencyCode);
-  const { showCode = false, compact = false } = options || {};
+  const { showCode = false, compact = false, decimals = 2 } = options || {};
 
   let formattedAmount: string;
 
@@ -83,8 +84,8 @@ export function formatCurrency(
     }
   } else {
     formattedAmount = amount.toLocaleString(config.locale, {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     });
   }
 
@@ -111,4 +112,10 @@ export function parseCurrencyAmount(value: string): number {
   // Remove all non-numeric characters except decimal point
   const cleaned = value.replace(/[^0-9.-]/g, "");
   return parseFloat(cleaned) || 0;
+}
+/**
+ * Alias for formatCurrency with adaptation for use-currency hook
+ */
+export function formatPrice(price: number, currencyIso: string, decimals: number = 2): string {
+  return formatCurrency(price, currencyIso, { decimals });
 }
